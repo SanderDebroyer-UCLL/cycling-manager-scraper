@@ -118,6 +118,16 @@ public class CyclistService {
                 System.err.println("Could not find the ranking element for URL: " + riderUrl);
             }
 
+            Element countryElement = doc.select("body > div.wrapper > div.content > div.page-content.page-object.default > div:nth-child(2) > div.left.w75.mb_w100 > div.left.w50.mb_w100 > div.rdr-info-cont > a").first();
+            if (countryElement != null) {
+                String countryText = countryElement.ownText().trim();
+                System.out.println("Country: " + countryText);
+                cyclist.setCountry(countryText);
+            }
+            else {
+                System.err.println("Could not find the country element for URL: " + riderUrl);
+            }
+
         } catch (IOException e) {
             System.err.println("Error accessing rider URL: " + riderUrl);
             e.printStackTrace();
@@ -161,5 +171,8 @@ public class CyclistService {
         System.err.println("Ranking element not found. Please check the CSS selector.");
         return null;
     }
-
+    private Element getCounctryElement(Document doc) {
+        Element countryElement = doc.select("ul.list.country").first();
+        return countryElement;
+    }
 }
