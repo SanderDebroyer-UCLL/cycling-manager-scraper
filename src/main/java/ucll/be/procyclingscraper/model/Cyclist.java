@@ -21,9 +21,4 @@ public class Cyclist {
     private int age;
     private String country;
     private String teamName;
-    // private String upcomingRaces;
-    // private String pastRaces;
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "team_id")
-//    private Team team;
 }
