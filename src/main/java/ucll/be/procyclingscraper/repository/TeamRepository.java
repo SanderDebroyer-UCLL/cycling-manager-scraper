@@ -11,6 +11,6 @@ import org.springframework.stereotype.Repository;
 import ucll.be.procyclingscraper.model.Team;
 
 @Repository
-public interface TeamRepository extends JpaRepository<Team, String> {
+public interface TeamRepository extends JpaRepository<Team, Long> {
 
 }

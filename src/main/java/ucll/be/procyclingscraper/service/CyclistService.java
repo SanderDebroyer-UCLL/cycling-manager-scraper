@@ -127,6 +127,8 @@ public class CyclistService {
             else {
                 System.err.println("Could not find the country element for URL: " + riderUrl);
             }
+            
+            // getUpcomingRaces();
 
         } catch (IOException e) {
             System.err.println("Error accessing rider URL: " + riderUrl);
@@ -171,8 +173,5 @@ public class CyclistService {
         System.err.println("Ranking element not found. Please check the CSS selector.");
         return null;
     }
-    private Element getCounctryElement(Document doc) {
-        Element countryElement = doc.select("ul.list.country").first();
-        return countryElement;
-    }
+    
 }
