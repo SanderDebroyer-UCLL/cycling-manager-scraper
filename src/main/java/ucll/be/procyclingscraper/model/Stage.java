@@ -1,12 +1,10 @@
 package ucll.be.procyclingscraper.model;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.*;
-
-import java.util.Date;
-import java.util.List;
 
 @Entity
 @Getter
@@ -24,5 +22,8 @@ public class Stage {
     private String endDate;
     private String startTime;
     private Integer distance;
-    private String niveau;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "race_id")
+    private Race race;
 }
