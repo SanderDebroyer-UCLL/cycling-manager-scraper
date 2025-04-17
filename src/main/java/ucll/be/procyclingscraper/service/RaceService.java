@@ -42,39 +42,62 @@ public class RaceService {
             for (Element row : raceRows) {
                 Elements cells = row.select("td");
                 if (cells.size() >= 3) {
-                    Element raceLinkElement = cells.get(1).selectFirst("a"); // <td> with race name
+                    Element raceLinkElement = cells.get(1).selectFirst("a");
                     String raceName = raceLinkElement.text();
-                    String raceHref = raceLinkElement.attr("href"); // <-- This is what you want
+                    String raceHref = raceLinkElement.attr("href");
                     String raceLevel = cells.get(2).text();
                     String raceUrl = "https://www.procyclingstats.com/" + raceHref;
                     Race race = new Race();
-                    Stage stage = stageService.scrapeStageDetails(raceUrl);
-            
-                    race.setName(raceName);
-                    race.setNiveau(raceLevel);
-                    // race.setUrl(raceHref); // Assuming you have a setUrl() method in Race class
-            
-                    System.out.println("Race: " + raceName + ", URL: " + raceUrl);
-            
-                    stageRepository.save(stage);
-                    race.setStages(List.of(stage));
-                    races.add(race);
-                    raceRepository.save(race);
+
+                    try {
+                        Document docRaceInfo = Jsoup.connect(raceUrl).userAgent(USER_AGENT).get();
+                        // stages = stageService.scrapeStageDetails(raceUrl);
+                        race.setName(raceName);
+                        race.setNiveau(raceLevel);
+                        race.setRaceUrl(raceUrl);
+                        System.out.println("Race: " + raceName + ", URL: " + raceUrl);
+
+                        Element startDateElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Startdate:) div:last-child").first();
+                        if (startDateElement != null) {
+                            race.setStartDate(startDateElement.text());
+                            System.out.println("Start date: " + startDateElement.text());
+                        } else {
+                            System.err.println("Start date element not found.");
+                        }
+
+                        Element endDateElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Enddate:) div:last-child").first();
+                        if (endDateElement != null) {
+                            race.setEndDate(endDateElement.text());
+                            System.out.println("End date: " + endDateElement.text());
+                        } else {
+                            System.err.println("End date element not found.");
+                        }
+
+                        Element distanceElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Total distance:) div:last-child").first();
+                        if (distanceElement != null) {
+                            try {
+                                race.setDistance(Integer.parseInt(distanceElement.text().replaceAll("[^0-9]", "")));
+                                System.out.println("Total distance: " + distanceElement.text());
+                            } catch (NumberFormatException e) {
+                                System.err.println("Invalid distance format: " + distanceElement.text());
+                            }
+                        } else {
+                            System.err.println("Distance element not found.");
+                        }
+                        race.setStages(stages);
+                        races.add(race);
+                        raceRepository.save(race);
+                    } catch (Exception e) {
+                        System.err.println("Error scraping stages for race: " + raceName);
+                        e.printStackTrace();
+                    }
                 }
             }
-            
+
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         return races;
-    }
-
-    private String cleanRaceName(String raceName) {
-        raceName = raceName.toLowerCase();
-        raceName = raceName.replaceAll("[^a-z0-9]", "-");
-        raceName = raceName.replaceAll("-+", "-");
-        raceName = raceName.replaceAll("^-|-$", "");
-        return raceName;
     }
 }

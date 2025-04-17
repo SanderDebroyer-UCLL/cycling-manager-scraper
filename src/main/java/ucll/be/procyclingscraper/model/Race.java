@@ -18,7 +18,10 @@ public class Race {
     private Long id;
     private String name;
     private String niveau;
-
-    @OneToMany(mappedBy = "race", cascade = CascadeType.ALL, orphanRemoval = true)
+    private String startDate;
+    private String endDate;
+    private Integer distance;
+    private String raceUrl;
+    @OneToMany(mappedBy = "id", cascade = CascadeType.ALL)
     private List<Stage> stages;
 }

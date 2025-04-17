@@ -18,8 +18,8 @@ public class StageController {
         this.stageService = stageService;
     }
 
-    // @GetMapping
-    // public List<Stage> scrapeStages() {
-    //     return stageService.scrapStages();
-    // }
+    @GetMapping
+    public List<Stage> scrapeStages() {
+        return stageService.scrapeStages();
+    }
 }

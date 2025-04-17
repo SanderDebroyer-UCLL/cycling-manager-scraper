@@ -22,8 +22,8 @@ public class Stage {
     private String endDate;
     private String startTime;
     private Integer distance;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "race_id")
-    private Race race;
+    private String raceName;
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "race_id")
+    // private Race race;
 }
