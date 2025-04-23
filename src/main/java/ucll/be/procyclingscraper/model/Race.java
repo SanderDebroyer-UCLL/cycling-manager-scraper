@@ -22,6 +22,8 @@ public class Race {
     private String endDate;
     private Integer distance;
     private String raceUrl;
-    @OneToMany(mappedBy = "id", cascade = CascadeType.ALL)
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "race_id")
     private List<Stage> stages;
 }

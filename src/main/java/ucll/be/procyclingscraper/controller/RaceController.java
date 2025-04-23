@@ -7,6 +7,8 @@ import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.service.RaceService;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/races")
@@ -18,8 +20,13 @@ public class RaceController {
         this.raceService = raceService;
     }
 
-    @GetMapping
+    @GetMapping("/scrape")
     public List<Race> scrapeRaces() {
         return raceService.scrapeRaces();
     }
+    @GetMapping()
+    public List<Race> getRaces() {
+        return raceService.getRaces();
+    }
+    
 }

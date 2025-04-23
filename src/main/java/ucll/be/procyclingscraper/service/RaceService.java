@@ -29,6 +29,9 @@ public class RaceService {
     @Autowired
     private RaceRepository raceRepository;
 
+    public List<Race> getRaces(){
+        return raceRepository.findAll();
+    }
     public List<Race> scrapeRaces() {
         List<Race> races = new ArrayList<>();
         List<Stage> stages = new ArrayList<>();
