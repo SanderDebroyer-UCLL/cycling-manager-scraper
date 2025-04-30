@@ -6,6 +6,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.TeamRepository;
 import ucll.be.procyclingscraper.model.Team;
@@ -28,6 +29,9 @@ public class CyclistService {
     @Autowired
     private TeamRepository teamRepository;
 
+    public List<Cyclist> getCyclists() {
+        return cyclistRepository.findAll();
+    }
     public List<Cyclist> scrapeCyclists() {
         List<Team> teams = teamRepository.findAll();
         if (teams.isEmpty()) {

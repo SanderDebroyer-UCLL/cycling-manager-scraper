@@ -13,5 +13,7 @@ import ucll.be.procyclingscraper.model.Cyclist;
 
 @Repository
 public interface CyclistRepository extends JpaRepository<Cyclist, Long> {
+
+    Cyclist findByName(String riderName);
     
 }

@@ -25,11 +25,14 @@ public class TeamService {
 
 
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3";
-    private static final int TEAM_LIMIT = 1;
+    private static final int TEAM_LIMIT = 36;
 
+    public List<Team> getTeams() {
+        return teamRepository.findAll();
+    }
     public List<Team> scrape() {
         List<Team> teams = new ArrayList<>();
-
+        
         try {
             Document doc = Jsoup.connect("https://www.procyclingstats.com/rankings/me/teams")
                     .userAgent(USER_AGENT)

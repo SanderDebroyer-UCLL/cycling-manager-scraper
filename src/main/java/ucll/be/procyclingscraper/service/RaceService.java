@@ -1,16 +1,18 @@
 package ucll.be.procyclingscraper.service;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
+import ucll.be.procyclingscraper.model.Team;
+import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
 import ucll.be.procyclingscraper.repository.StageRepository;
+import ucll.be.procyclingscraper.repository.TeamRepository;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,9 +31,16 @@ public class RaceService {
     @Autowired
     private RaceRepository raceRepository;
 
-    public List<Race> getRaces(){
+    @Autowired
+    private TeamRepository teamRepository;
+
+    @Autowired
+    private CyclistRepository cyclistRepository;
+
+    public List<Race> getRaces() {
         return raceRepository.findAll();
     }
+
     public List<Race> scrapeRaces() {
         List<Race> races = new ArrayList<>();
         List<Stage> stages = new ArrayList<>();
@@ -87,6 +96,7 @@ public class RaceService {
                         } else {
                             System.err.println("Distance element not found.");
                         }
+                        // scrapeAndSaveStartlist(raceUrl + "/startlist", race);
                         race.setStages(stages);
                         races.add(race);
                         raceRepository.save(race);
@@ -103,4 +113,45 @@ public class RaceService {
 
         return races;
     }
+
+    // public void scrapeAndSaveStartlist(String url, Race race) {
+    //     List<Cyclist> startList = new ArrayList<>();
+
+    //     try {
+    //         Document doc = Jsoup.connect(url).userAgent("Mozilla/5.0").get();
+    //         Elements teamElements = doc.select("div.shirtCont");
+
+    //         for (Element teamElement : teamElements) {
+    //             String teamName = teamElement.select("a").attr("href").split("/")[4].replace("-", " ");
+    //             Team team = teamRepository.findByName(teamName);
+
+    //             if (team != null) {
+    //                 Elements riderElements = teamElement.nextElementSibling().select("li");
+
+    //                 for (Element riderElement : riderElements) {
+    //                     String riderName = riderElement.select("a").text();
+    //                     Cyclist cyclist = cyclistRepository.findByName(riderName);
+
+    //                     if (cyclist != null) {
+    //                         // Assuming the cyclist is already associated with the correct team
+    //                         startList.add(cyclist);
+    //                         cyclist.addRace(race);
+    //                     } else {
+    //                         cyclist = new Cyclist();
+    //                         cyclist.setName(riderName);
+    //                         cyclist.setTeamName(teamName);
+    //                         cyclistRepository.save(cyclist);
+    //                         race.getStartList().add(cyclist);
+    //                     }
+    //                 }
+
+    //                 raceRepository.save(race);
+    //             } else {
+    //                 System.out.println("Team not found in repository: " + teamName);
+    //             }
+    //         }
+    //     } catch (IOException e) {
+    //         e.printStackTrace();
+    //     }
+    // }
 }

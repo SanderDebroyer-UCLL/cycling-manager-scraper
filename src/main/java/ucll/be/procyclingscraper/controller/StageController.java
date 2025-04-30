@@ -3,6 +3,8 @@ package ucll.be.procyclingscraper.controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.service.StageService;
 
@@ -18,8 +20,13 @@ public class StageController {
         this.stageService = stageService;
     }
 
-    @GetMapping
+    @GetMapping("/scrape")
     public List<Stage> scrapeStages() {
         return stageService.scrapeStages();
+    }
+    
+    @GetMapping()
+    public List<Stage> getStages() {
+        return stageService.getStages();
     }
 }

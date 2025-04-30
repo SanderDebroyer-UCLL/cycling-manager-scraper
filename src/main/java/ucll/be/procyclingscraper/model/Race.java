@@ -26,4 +26,12 @@ public class Race {
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "race_id")
     private List<Stage> stages;
+
+    @ManyToMany
+    @JoinTable(
+        name = "race_cyclist",
+        joinColumns = @JoinColumn(name = "race_id"),
+        inverseJoinColumns = @JoinColumn(name = "cyclist_id")
+    )
+    private List<Cyclist> startList;
 }

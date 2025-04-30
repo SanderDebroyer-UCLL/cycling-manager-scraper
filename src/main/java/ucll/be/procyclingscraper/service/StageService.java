@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.repository.RaceRepository;
@@ -32,6 +33,10 @@ public class StageService {
 
     @Autowired
     StageRepository stageRepository;
+
+    public List<Stage> getStages() {
+        return stageRepository.findAll();
+    }
 
     public List<Stage> scrapeStages() {
         List<Race> races = raceRepository.findAll();
@@ -61,12 +66,16 @@ public class StageService {
                                 String date = cells.get(0).text();
                                 String stageName = cells.get(3).select("a").text();
                                 String stageUrl = cells.get(3).select("a").attr("abs:href");
-    
+                                if (stageUrl.isEmpty() || stageUrl.isBlank()) {
+                                    continue;
+                                }
                                 Stage stage = new Stage();
-                                stage.setStartDate(date);
+                                stage.setStageUrl(stageUrl);
+                                System.out.println("stageURL" + stageUrl);
+                                stage.setDate(date);
                                 stage.setName(stageName);
                                 logger.info("Scraped stage URL: {}", stageUrl);
-                                stagesList.add(stage);
+                                stagesList.add(scrapeStageDetails(stage));
                                 logger.info("Added stage: {}", stage);
                             }
                         }
@@ -92,6 +101,43 @@ public class StageService {
         return headers.size() > 0 && "Date".equals(headers.get(0).text().trim());
     }
     
+    private Stage scrapeStageDetails(Stage stage) {
+        try {
+            Document doc = Jsoup.connect(stage.getStageUrl())
+                    .userAgent(USER_AGENT)
+                    .get();
+    
+            Elements infoTable = doc.select("div.w30.right.mb_w100 > div > ul.infolist > li");
+    
+            for (Element row : infoTable) {
+                Elements cells = row.select("div");
+                if (cells.size() >= 2) {
+                    String key = cells.get(0).text().trim();
+                    String value = cells.get(1).text().trim();
+    
+                    if ("Start time:".equals(key)) {
+                        stage.setStartTime(value);
+                    } else if ("Distance:".equals(key)) {
+                        if (!value.isEmpty()) {
+                        stage.setDistance(Integer.parseInt(value.replaceAll("[^0-9]", "")));
+                        }
+                    } else if ("Vertical meters:".equals(key)) {
+                        if (!value.isEmpty()) {
+                        stage.setVerticalMeters(Integer.parseInt(value.replaceAll("[^0-9]", "")));
+                        }
+                    } else if ("Departure:".equals(key)) {
+                        stage.setDeparture(value);
+                    } else if ("Arrival:".equals(key)) {
+                        stage.setArrival(value);
+                    }
+                }
+            }
+    
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return stage;
+    }
     
     
     

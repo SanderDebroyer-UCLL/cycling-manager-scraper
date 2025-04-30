@@ -21,5 +21,11 @@ public class Cyclist {
     private int age;
     private String country;
     private String teamName;
-    // private ListupcomingRaces;
+
+    @ManyToMany(mappedBy = "startList")
+    private List<Race> upcomingRaces;
+
+    public void addRace(Race race){
+        upcomingRaces.add(race);
+    }
 }

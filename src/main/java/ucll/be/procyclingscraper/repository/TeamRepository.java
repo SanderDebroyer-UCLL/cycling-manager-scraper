@@ -13,4 +13,6 @@ import ucll.be.procyclingscraper.model.Team;
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
 
+    Team findByName(String teamName);
+
 }
