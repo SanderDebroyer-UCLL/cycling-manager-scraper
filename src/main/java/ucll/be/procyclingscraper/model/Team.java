@@ -1,13 +1,14 @@
 package ucll.be.procyclingscraper.model;
 
-//import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+//import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Getter
@@ -20,7 +21,8 @@ public class Team {
     private Long id;
     private String name;
     private int ranking;
-    @OneToMany(mappedBy = "id")
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Cyclist> cyclists;
     private String teamUrl;
 }

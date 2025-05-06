@@ -37,8 +37,9 @@ public class CyclistService {
         if (teams.isEmpty()) {
             return null;
         }
-
+        
         List<Cyclist> cyclists = new ArrayList<>();
+        List<Cyclist> cyclistsListTeam = new ArrayList<>();
 
         for (Team team : teams) {
             System.out.println("Accessing URL: " + team.getTeamUrl());
@@ -61,7 +62,7 @@ public class CyclistService {
                                 System.out.println(cyclistUrl);
                                 Cyclist cyclist = scrapeCyclistDetails(cyclistUrl);
                                 if (cyclist != null) {
-                                    cyclist.setTeamName(team.getName());
+                                    cyclist.setTeam(team);
                                     System.out.println(cyclist);
                                     cyclists.add(cyclist);
                                     cyclistRepository.save(cyclist);

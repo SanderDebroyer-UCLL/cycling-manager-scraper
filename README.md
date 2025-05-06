@@ -7,7 +7,21 @@ We halen de data op via het scrapen van de website https://www.procyclingstats.c
 ---
 # Opstart
 
-Voor het opstarten moet je deze commando's uitvoeren in de folder: `\CyclingManager`
+### Stap 1 Installatie van het project
+Ga naar de github waarbij je het kan installeren. 
+Op de groene knop "Code" kan je drukken en vanonder staat Download zip. Download dit naar een correcte locatie die je weet staan. 
+
+### Stap 2 zip uitpakken
+Klik met rechter muisknop op de net geinstalleerde zip folder en selecteer alles uitpakken. 
+
+### Stap 3 Open terminal voor project 
+Open de folder waar je ht project hebt staan. Het einde van het pad zou moeten overeen komen met `\CyclingManager`
+
+Als je in de folder zit kan je rechtermuisknop duwen en naar en de optie open new terminal selecteren. Als je dit hebt gedaan krijg je een zwarte box met dit in in de test voor het pijltje `\CyclingManager>`
+
+### Stap 4
+Voor het opstarten moet je deze commando's uitvoeren in de folder: `\CyclingManager` 
+
 ```sh
 mvn clean install
 mvn compile
@@ -16,28 +30,38 @@ mvn spring-boot:run
 
 ---
 ## Structuur
+Hierbij zal er meer uitleg volgen per model, service, repository en controller zoals alles van cyclist bijvoorbeeld. Wat dit allemaal is wordt meer uitgelegd per item. Ook hier een relationeel model van onze database met de verschillende fields.
+
+**********************
 
 ### `Models`
 Dit zijn de modellen van elke entiteit die we gebruiken in de applicatie.
 We gebruiken hier verschillende annotaties voor het vereenvoudigen van het gebruik.
 Meer info vindt je hier: [Annotaties](#annotaties)
 
+Voor de relaties tussen verschillende tabellen te legegn gebruiken we ook specieke code zodat we data kunnen connecteren. Lees hier extra info over de relaties: [Relations](#relations)
+
 
 #### `Cyclist`
-Vertegenwoordigt een professionele wielrenner.
+Vertegenwoordigt een professionele wielrenner. Hierbij kunnen we de verschillende fields kiezen die beschikbaar zijn. 
+
+Ook wordt ze de relatie gelegd met Races via de field upcoming races(work in progres)
 
 
 
 `````java
-@Id
-@GeneratedValue(strategy = GenerationType.IDENTITY)
-private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-String name;
-int ranking;
-int age;
-String country;
-String teamName;
+    String name;
+    int ranking;
+    int age;
+    String country;
+    String teamName;
+
+    @ManyToMany(mappedBy = "startList")
+        private List<Race> upcomingRaces;
 `````
 
 #### `Team`
@@ -45,18 +69,63 @@ Vertegenwoordigt een wielerploeg met bijbehorende renners.
 Hiervoor is er ook een one-to-many relatie gelegd met de cyclist. Dus 1 ploeg kan meerdere renners hebben.
 
 `````java
-@Id
-@GeneratedValue(strategy = GenerationType.IDENTITY)
-private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-private String name;
-private int ranking;
-@OneToMany(mappedBy = "id")
-private List<Cyclist> cyclists;
-private String teamUrl;
+    private String name;
+    private int ranking;
+    @OneToMany(mappedBy = "id")
+    private List<Cyclist> cyclists;
+    private String teamUrl;
 `````
 
+#### `Race`
+Vertegenwoordigt een Race zoals Tour de France. Hierbij worden verschillende relaties opgeslagen. 
 
+One-To-Many race-> stages: Een race kan meerdere stages bevatten zoals in de Tour De France zijn er 21 stages. 
+
+Many-To-Many races-> cyclists: dit is voor de startlijst van renners per race te kunnnen opslagen (work in progress)
+
+`````java
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String niveau;
+    private String startDate;
+    private String endDate;
+    private Integer distance;
+    private String raceUrl;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "race_id")
+    private List<Stage> stages;
+
+    @ManyToMany
+    @JoinTable(
+        name = "race_cyclist",
+        joinColumns = @JoinColumn(name = "race_id"),
+        inverseJoinColumns = @JoinColumn(name = "cyclist_id")
+    )
+    private List<Cyclist> startList;
+`````
+#### `Stage`
+Vertegenwoordigt een Stage van een race. Hierbij zijn geen relaties zelf in vastgelegd aangezien dit al gedaan wordt in de race zelf. 
+
+`````java
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String departure;
+    private String arrival;
+    private String date;
+    private String startTime;
+    private Integer distance;
+    private String stageUrl;
+    private Integer verticalMeters;
+`````
 ---
 
 #### `CyclistService`
@@ -72,26 +141,62 @@ private String teamUrl;
 
 
 #### `TeamService`
+#### Scrape
 - Scrape van de topteams van ProCyclingStats.
 - Slaat teams op met hun URL en ranking.
+
+#### `RaceService`
+#### scrapeRaces
+- Scrape van de race data van een race-pagina.
+
+#### `StageService`
+#### scrapeStages
+- Scrape van de stages data van een race-pagina.
+#### isStagesTable
+- controleert op correcte tabel
+##### scrapeStageDetails
+- Scrape voor details van een stage zoals: start time, Distance, vertical meters, Departure, Arrival
+
+---
+
 
 ---
 
 ### `Repository`
 JPA Repositories voor uitvoering van de data die we in de database kunnen vinden. Hierbij zijn verschillende functionaliteiten standaard beschikbaar en moeten we deze niet meer aanmaken. Bijvoorbeeld een findAll of findByValue.
-
+Door dit is het meestal ook leeg buiten de eerste lijn.
+#### CyclistRepository
 - `CyclistRepository extends JpaRepository<Cyclist, String>`
+#### TeamRepository
 - `TeamRepository extends JpaRepository<Team, String>`
-
+#### RaceRepository
+- `RaceRepository extends JpaRepository<Race,Long>`
+#### StageRepository
+- `StageRepository extends JpaRepository<Stage,Long>`
 ---
 
+### `Controllers`
+Dit zal de API's maken of anders gezegd de links voor de gebruiker om te gebruiken. Ook worden deze links gebruikt met de frontend. 
+Hieronder kan u een lijst vinden van alle gebruikte links. 
 #### `CyclistController`
-- **GET /cyclists** – API definitie voor alle linken met Cyclist.
+- **GET /cyclists** – API definitie voor alle linken met Cyclist. Dit is een basis link waarbij er iets kan worden toegevoegd voor andere links. Het is ook de link voor alles te tonen. 
 
+- **GET /cyclists/scrape** – API definitie voor het scrapen zelf. 
 
 #### `TeamController`
 - **GET /teams** – API definitie voor alle linken met Team.
+Ook de get all. 
+- **GET /teams/scrape** – API defenitie voor het scrapen zelf.
 
+#### `RaceController`
+- **GET /reces** – API definitie voor alle linken met Race.
+Ook de get all. 
+- **GET /races/scrape** – API defenitie voor het scrapen zelf.
+
+#### `RaceController`
+- **GET /stages** – API definitie voor alle linken met Stage.
+Ook de get all. 
+- **GET /stages/scrape** – API defenitie voor het scrapen zelf.
 ---
 
 ## Gebruikte Technologieën
@@ -187,3 +292,30 @@ public class Person {
 }
 
 ````
+
+### Relations
+Hierbij even een korte uitleg van de database relaties die in de code gemaakt worden. Dit is ook een van de grootste rednen waarom we spring boot gebruiken. Spring boot zal veel automatiseren zodat we minder moeten doen. 
+
+#### OneToMany Race-> Stages
+Hierbij willen we de connectie tussen race en stages maken waarbij een race meerdere stages kan hebben. 
+We gebruiken hier ook cascade zodat als de race wordt verwijdert de stages ook worden verwijdert. 
+
+Ook moeten we zeggen wat hij moet geruiken om de stages te maken. Hierbij gebruiken we de id van race.
+```Java
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "race_id")
+    private List<Stage> stages;
+```
+
+#### ManyToMany Races -> Cyclists
+Hierbij zorgen we voor de relatie cyclist kunnen meerdere races hebben en omgekeerd. 
+Hiervoor gebruiken we een tussentabel (work in progress)
+```Java
+    @ManyToMany
+    @JoinTable(
+        name = "race_cyclist",
+        joinColumns = @JoinColumn(name = "race_id"),
+        inverseJoinColumns = @JoinColumn(name = "cyclist_id")
+    )
+    private List<Cyclist> startList;
+```

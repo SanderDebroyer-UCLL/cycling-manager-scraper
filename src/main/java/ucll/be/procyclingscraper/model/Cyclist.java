@@ -7,6 +7,8 @@ import lombok.Setter;
 import jakarta.persistence.*;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 @Getter
 @Setter
@@ -20,7 +22,10 @@ public class Cyclist {
     private int ranking;
     private int age;
     private String country;
-    private String teamName;
+    @ManyToOne
+    @JoinColumn(name = "team_id")
+    @JsonBackReference
+    private Team team;
 
     @ManyToMany(mappedBy = "startList")
     private List<Race> upcomingRaces;
