@@ -7,6 +7,10 @@ We halen de data op via het scrapen van de website https://www.procyclingstats.c
 ---
 # Opstart
 
+### Stap 1 Installatie nodige software
+Maven:
+
+Java: 
 ### Stap 1 Installatie van het project
 Ga naar de github waarbij je het kan installeren. 
 Op de groene knop "Code" kan je drukken en vanonder staat Download zip. Download dit naar een correcte locatie die je weet staan. 
@@ -19,19 +23,29 @@ Open de folder waar je ht project hebt staan. Het einde van het pad zou moeten o
 
 Als je in de folder zit kan je rechtermuisknop duwen en naar en de optie open new terminal selecteren. Als je dit hebt gedaan krijg je een zwarte box met dit in in de test voor het pijltje `\CyclingManager>`
 
-### Stap 4
+### Stap 4 installatie van project 
 Voor het opstarten moet je deze commando's uitvoeren in de folder: `\CyclingManager` 
+
+Voer commando per commando uit. 
 
 ```sh
 mvn clean install
+```
+```sh
 mvn compile
+```
+```sh
 mvn spring-boot:run
 ```
+
+### Stap 5 
+Gebruik de gegeven data in postman. Meer info hoe dit moet kan je hier vinden [Postman](#Postman)
 
 ---
 ## Structuur
 Hierbij zal er meer uitleg volgen per model, service, repository en controller zoals alles van cyclist bijvoorbeeld. Wat dit allemaal is wordt meer uitgelegd per item. Ook hier een relationeel model van onze database met de verschillende fields.
 
+![alt text](image.png)
 **********************
 
 ### `Models`
@@ -206,7 +220,49 @@ Ook de get all.
 - Jsoup (HTML parsing)
 - PostgreSQL / MySQL (als database)
 - REST API met JSON output
+- Postman
 
+## PostMan
+Dit is een applicatie die kan gebruikt worden maar je kan het ook gewoon uitvoeren in de browser. Dit programma maakt enkel het gebruik fijner. 
+
+Je kan installeren via deze link: 
+
+Als je het hebt geïnstalleerd dan kunnen we de file importeren naar postman.
+
+Je kan in collections normaal gezien in het midden bovenaan een knop vinden import. Als je op deze knop hebt geduwt selecteert u de file : ******* 
+
+Eens dit geimpoteerd is kan je nu via hier de api calls gebruiken. Je selecteert welke je wilt en drukt op send. 
+Tip: Vergeet je applicatie niet aan te zetten `:)`
+----
+# Wat als er data niet meer getoond wordt? 
+## Stap 1
+Dit is een probleem dat zou kunnen voorkomen. Hierbij eerst gaan kijken bij wat het voorkomt stage, renner of een andere. 
+
+## Stap 2
+Als je dit hebt vastgesteld moet je kijken waar dat je data mist. Hiervoor ga je dan in de service van de data en ga je zoeken naar de functie die erbij hoort. 
+
+## Stap 3
+Als je de correcte functie hbet gevonden zal er meestal iets staan van een html pad naar de bepaalde data. Hier kan het misschien verschoven zijn en moeten we dit gaan controleren.
+
+## Stap 4
+Open procyclingstats en ga naar de link of pagina waarbij er wordt gescraped. Hier een lijst per model welke paginas er worden gebruikt. 
+### Team
+- `https://www.procyclingstats.com/rankings/me/teams`
+- `https://www.procyclingstats.com/fill-in-team-name`
+### Cyclist
+- `https://www.procyclingstats.com/fill-in-team-name`
+- `https://www.procyclingstats.com/fill-in-rider-name`
+### Race
+- `https://www.procyclingstats.com/races.php?season=2025&month=&category=1&racelevel=2&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters`
+- `https://www.procyclingstats.com/fill-in-raceName`
+
+## Stap 5
+Als je op de juiste pagina bent geraakt kan je nu gaan zoeken in de html door rechter muisknop te duwen en inspecteren te duwen.
+
+## Stap 6 
+Nu ga je naar de tab elements in bovenste balk. Als
+### Stage
+Stage is getting fetched with the race already
 ----
 ### Annotaties:
 #### Spring Annotaties:
@@ -216,8 +272,8 @@ Hierbij gaan we met @Entity zeggen dat dit een entiteit is die aangemaakt moet w
 `````java
 @Entity
 @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+private Long id;
 `````
 
 
@@ -310,6 +366,8 @@ Ook moeten we zeggen wat hij moet geruiken om de stages te maken. Hierbij gebrui
 #### ManyToMany Races -> Cyclists
 Hierbij zorgen we voor de relatie cyclist kunnen meerdere races hebben en omgekeerd. 
 Hiervoor gebruiken we een tussentabel (work in progress)
+
+Race Model
 ```Java
     @ManyToMany
     @JoinTable(
@@ -318,4 +376,23 @@ Hiervoor gebruiken we een tussentabel (work in progress)
         inverseJoinColumns = @JoinColumn(name = "cyclist_id")
     )
     private List<Cyclist> startList;
+
 ```
+Cyclist Model
+
+Hier doen we nog een @JsonBackReference lees hier voor meer info: [JsonBackReference](#JsonBackReference)
+
+```Java
+@ManyToMany(mappedBy = "startList")
+@JsonBackReference(value = "race-cyclist")
+private List<Race> upcomingRaces;
+```
+
+## JsonBackReference
+Dit zal ervoor zorgen dat er geen loop is in de data. Als je dit niet toepast dan zal je dus een loop creeren. Een voorbeeld hiervan is: Team en cyclist waarbij in een team de cyclists zitten maar in een cyclist ook een team zit. En dan blijft het oz doorgaan tot het oneindige. 
+
+````Java
+@JsonBackReference(value = "Tabel")
+```
+
+
