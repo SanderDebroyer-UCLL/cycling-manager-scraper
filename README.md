@@ -8,9 +8,18 @@ We halen de data op via het scrapen van de website https://www.procyclingstats.c
 # Opstart
 
 ### Stap 1 Installatie nodige software
-Maven:
+Voor maven installatie heb je ook een package installer nodig op je pc zoals: 
 
-Java: 
+Mac: Homebrew
+Linux: APT
+Windows: Chocolatey 
+
+Dit is nodig zodat hij maven kan installeren.
+Maven: https://maven.apache.org/install.html
+
+Java: https://www.java.com/en/download/manual.jsp 
+
+
 ### Stap 1 Installatie van het project
 Ga naar de github waarbij je het kan installeren. 
 Op de groene knop "Code" kan je drukken en vanonder staat Download zip. Download dit naar een correcte locatie die je weet staan. 
