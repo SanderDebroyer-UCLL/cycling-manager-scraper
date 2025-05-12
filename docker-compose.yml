@@ -1,0 +1,10 @@
+services:
+  db:
+    image: postgis/postgis
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: admin
+      POSTGRES_DB: 'cycling_manager_db'
+    ports:
+      - '5428:5432'
