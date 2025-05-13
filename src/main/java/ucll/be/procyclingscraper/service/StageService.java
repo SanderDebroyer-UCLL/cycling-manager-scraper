@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
+import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.repository.RaceRepository;
 import ucll.be.procyclingscraper.repository.StageRepository;
 
@@ -69,7 +70,11 @@ public class StageService {
                                 if (stageUrl.isEmpty() || stageUrl.isBlank()) {
                                     continue;
                                 }
-                                Stage stage = new Stage();
+                                
+                                Stage stage = stageRepository.findByName(stageName);
+                                if (stage == null) {
+                                    stage = new Stage(); 
+                                }
                                 stage.setStageUrl(stageUrl);
                                 System.out.println("stageURL" + stageUrl);
                                 stage.setDate(date);
