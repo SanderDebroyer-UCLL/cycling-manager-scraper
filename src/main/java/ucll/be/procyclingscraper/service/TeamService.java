@@ -55,8 +55,11 @@ public class TeamService {
                         System.err.println("Failed to parse ranking: " + rankingText);
                     }
                 }
-
-                Team team = new Team();
+                Team team = teamRepository.findByName(name);
+                if (team == null) {
+                    team = new Team(); 
+                }
+                
                 team.setName(name);
                 team.setRanking(ranking);
 

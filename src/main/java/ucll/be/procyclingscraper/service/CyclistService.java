@@ -62,6 +62,7 @@ public class CyclistService {
                                 System.out.println(cyclistUrl);
                                 Cyclist cyclist = scrapeCyclistDetails(cyclistUrl);
                                 if (cyclist != null) {
+                                    cyclist.setCyclistUrl(cyclistUrl);
                                     cyclist.setTeam(team);
                                     System.out.println(cyclist);
                                     cyclists.add(cyclist);
@@ -84,7 +85,11 @@ public class CyclistService {
     }
 
     public Cyclist scrapeCyclistDetails(String riderUrl) {
-        Cyclist cyclist = new Cyclist();
+        Cyclist cyclist = cyclistRepository.findByCyclistUrl(riderUrl);
+        if(cyclist == null){
+            cyclist = new Cyclist();
+        }
+        
         try {
             Document doc = Jsoup.connect(riderUrl)
                     .userAgent(USER_AGENT)
