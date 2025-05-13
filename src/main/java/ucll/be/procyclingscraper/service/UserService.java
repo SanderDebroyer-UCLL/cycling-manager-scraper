@@ -1,0 +1,37 @@
+package ucll.be.procyclingscraper.service;
+
+import java.util.List;
+
+import org.hibernate.service.spi.ServiceException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import ucll.be.procyclingscraper.model.User;
+import ucll.be.procyclingscraper.repository.UserRepository;
+
+
+@Service
+public class UserService {
+    
+    private UserRepository userRepo;
+    private PasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepo, PasswordEncoder passwordEncoder) {
+        this.userRepo = userRepo;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public List<User> getAllUsers() {
+        return userRepo.findAll();
+    }
+
+    public User addUser(User userData) throws ServiceException {
+        User existingUser = userRepo.findUserByEmail(userData.getEmail());
+        if (existingUser != null) {
+            throw new ServiceException("Uh, oh! User with email " + existingUser.getEmail() + " already exists.");
+        }
+        userData.setPassword(passwordEncoder.encode(userData.getPassword()));
+        userRepo.save(userData);
+        return userData;
+    }
+}
