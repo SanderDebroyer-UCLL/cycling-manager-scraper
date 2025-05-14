@@ -23,16 +23,21 @@ public class Cyclist {
     private String name;
     private int ranking;
     private int age;
+    private String cyclistUrl; 
     private String country;
     private String cyclistUrl;
     @ManyToOne
     @JoinColumn(name = "team_id")
     @JsonBackReference
     private Team team;
+    
+    private List<String> upcomingRaces;
 
-    private List<String> upcomingRacesNames = new ArrayList<>();
 
-    public void addRace(String race){
-        upcomingRacesNames.add(race);
+    @OneToMany(mappedBy = "cyclist")
+    private List<StageResult> stageResults = new ArrayList<>();
+
+    public void addRace(String raceName){
+        upcomingRaces.add(raceName);
     }
 }
