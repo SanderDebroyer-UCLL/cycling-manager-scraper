@@ -59,8 +59,10 @@ public class RaceService {
                     String raceHref = raceLinkElement.attr("href");
                     String raceLevel = cells.get(2).text();
                     String raceUrl = "https://www.procyclingstats.com/" + raceHref;
-                    Race race = new Race();
-
+                    Race race = raceRepository.findByName(raceName);
+                    if (race == null) {
+                        race = new Race();
+                    }
                     try {
                         Document docRaceInfo = Jsoup.connect(raceUrl).userAgent(USER_AGENT).get();
                         // stages = stageService.scrapeStageDetails(raceUrl);
