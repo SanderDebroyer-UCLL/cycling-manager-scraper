@@ -59,7 +59,10 @@ public class RaceService {
                     String raceHref = raceLinkElement.attr("href");
                     String raceLevel = cells.get(2).text();
                     String raceUrl = "https://www.procyclingstats.com/" + raceHref;
-                    Race race = new Race();
+                    Race race = raceRepository.findByName(raceName);
+                    if(race == null){
+                        race = new Race();
+                    }
 
                     try {
                         Document docRaceInfo = Jsoup.connect(raceUrl).userAgent(USER_AGENT).get();
@@ -96,7 +99,8 @@ public class RaceService {
                         } else {
                             System.err.println("Distance element not found.");
                         }
-                        // scrapeAndSaveStartlist(raceUrl + "/startlist", race);
+                        List <Cyclist> startlist = scrapeAndSaveStartlist(raceUrl + "/startlist", race);
+                        race.setStartList(startlist);
                         race.setStages(stages);
                         races.add(race);
                         raceRepository.save(race);
@@ -114,44 +118,66 @@ public class RaceService {
         return races;
     }
 
-    // public void scrapeAndSaveStartlist(String url, Race race) {
-    //     List<Cyclist> startList = new ArrayList<>();
+        public List<Cyclist> scrapeAndSaveStartlist(String url, Race race) {
+        List<Cyclist> startList = new ArrayList<>();
+        System.out.println(url);
+        System.out.println(race);
 
-    //     try {
-    //         Document doc = Jsoup.connect(url).userAgent("Mozilla/5.0").get();
-    //         Elements teamElements = doc.select("div.shirtCont");
+        try {
+            Document doc = Jsoup.connect(url).userAgent("Mozilla/5.0").get();
+            Elements ridersContainers = doc.select("div.ridersCont");
 
-    //         for (Element teamElement : teamElements) {
-    //             String teamName = teamElement.select("a").attr("href").split("/")[4].replace("-", " ");
-    //             Team team = teamRepository.findByName(teamName);
+            for (Element ridersCont : ridersContainers) {
+                String teamName = ridersCont.select("a.team").text()
+                    .replace("(WT)", "")
+                    .replace("(CT)", "")
+                    .replace("(PRT)", "")
+                    .trim();
 
-    //             if (team != null) {
-    //                 Elements riderElements = teamElement.nextElementSibling().select("li");
+                System.out.println("Scraped Team Name: " + teamName);
 
-    //                 for (Element riderElement : riderElements) {
-    //                     String riderName = riderElement.select("a").text();
-    //                     Cyclist cyclist = cyclistRepository.findByName(riderName);
+                Team team = teamRepository.findByName(teamName);
+                System.out.println("Found Team: " + team);
 
-    //                     if (cyclist != null) {
-    //                         // Assuming the cyclist is already associated with the correct team
-    //                         startList.add(cyclist);
-    //                         cyclist.addRace(race);
-    //                     } else {
-    //                         cyclist = new Cyclist();
-    //                         cyclist.setName(riderName);
-    //                         cyclist.setTeamName(teamName);
-    //                         cyclistRepository.save(cyclist);
-    //                         race.getStartList().add(cyclist);
-    //                     }
-    //                 }
+                if (team != null) {
+                Elements riderElements = ridersCont.select("ul li a");
+                for (Element riderElement : riderElements) {
+                    String riderName = riderElement.text().toLowerCase();
+                    System.out.println("Extracted Rider Name: " + riderName);
+                    String[] nameParts = riderName.split(" ");
+                    String firstName = nameParts[nameParts.length - 1];
+                    StringBuilder lastNameBuilder = new StringBuilder();
+                    for (int i = 0; i < nameParts.length - 1; i++) {
+                        if (i > 0) {
+                            lastNameBuilder.append(" ");
+                        }
+                        lastNameBuilder.append(nameParts[i]);
+                    }
+                    String lastName = lastNameBuilder.toString();
 
-    //                 raceRepository.save(race);
-    //             } else {
-    //                 System.out.println("Team not found in repository: " + teamName);
-    //             }
-    //         }
-    //     } catch (IOException e) {
-    //         e.printStackTrace();
-    //     }
-    // }
+                    String fixedName = firstName + " " + lastName;
+                    System.out.println("Rearranged Rider Name: " + fixedName);
+
+
+                    Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
+                    if (cyclist != null) {  
+                        System.out.println("Found Cyclist: " + cyclist.getName());
+                        startList.add(cyclist);
+                        cyclist.addRace(race.getName());
+                        cyclistRepository.save(cyclist);
+                    } else {
+                        System.out.println("Cyclist not found in repository: " + riderName);
+                    }
+                }
+
+            }
+        }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(startList);
+        return startList;
+    }
+
+
 }
