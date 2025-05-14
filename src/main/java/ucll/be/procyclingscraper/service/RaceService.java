@@ -15,6 +15,9 @@ import ucll.be.procyclingscraper.repository.StageRepository;
 import ucll.be.procyclingscraper.repository.TeamRepository;
 
 import java.io.IOException;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -158,12 +161,18 @@ public class RaceService {
                     String fixedName = firstName + " " + lastName;
                     System.out.println("Rearranged Rider Name: " + fixedName);
 
-
+                    
                     Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
                     if (cyclist != null) {  
                         System.out.println("Found Cyclist: " + cyclist.getName());
+                        LocalDate currentDate = LocalDate.now();
+                        String startDateString = race.getStartDate();
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd"); // Adjust the pattern as needed
+                        LocalDate startDate = LocalDate.parse(startDateString, formatter);
+                        if(startDate.isBefore(currentDate)){
+                            cyclist.addRace(race.getName());
+                        }
                         startList.add(cyclist);
-                        cyclist.addRace(race.getName());
                         cyclistRepository.save(cyclist);
                     } else {
                         System.out.println("Cyclist not found in repository: " + riderName);
