@@ -6,7 +6,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import ucll.be.procyclingscraper.model.Cyclist;
-import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.TeamRepository;
 import ucll.be.procyclingscraper.model.Team;
@@ -39,7 +38,6 @@ public class CyclistService {
         }
         
         List<Cyclist> cyclists = new ArrayList<>();
-        List<Cyclist> cyclistsListTeam = new ArrayList<>();
 
         for (Team team : teams) {
             System.out.println("Accessing URL: " + team.getTeamUrl());

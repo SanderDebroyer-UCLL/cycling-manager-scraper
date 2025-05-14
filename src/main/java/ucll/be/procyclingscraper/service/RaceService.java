@@ -5,14 +5,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
-import ucll.be.procyclingscraper.model.Team;
-import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
-import ucll.be.procyclingscraper.repository.StageRepository;
-import ucll.be.procyclingscraper.repository.TeamRepository;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,20 +17,9 @@ import java.util.List;
 public class RaceService {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3";
 
-    @Autowired
-    private StageService stageService;
-
-    @Autowired
-    private StageRepository stageRepository;
 
     @Autowired
     private RaceRepository raceRepository;
-
-    @Autowired
-    private TeamRepository teamRepository;
-
-    @Autowired
-    private CyclistRepository cyclistRepository;
 
     public List<Race> getRaces() {
         return raceRepository.findAll();
