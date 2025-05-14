@@ -25,12 +25,14 @@ public class Cyclist {
     private int age;
     private String cyclistUrl; 
     private String country;
+    private String cyclistUrl;
     @ManyToOne
     @JoinColumn(name = "team_id")
     @JsonBackReference
     private Team team;
     
     private List<String> upcomingRaces;
+
 
     @OneToMany(mappedBy = "cyclist")
     private List<StageResult> stageResults = new ArrayList<>();
