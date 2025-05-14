@@ -15,5 +15,8 @@ import ucll.be.procyclingscraper.model.Cyclist;
 public interface CyclistRepository extends JpaRepository<Cyclist, Long> {
 
     Cyclist findByName(String riderName);
+    @Query(value = "SELECT c FROM Cyclist c WHERE LOWER(c.name) = LOWER(:name)")
+    Cyclist findByNameIgnoreCase(@Param("name") String name);
+    Cyclist findByCyclistUrl(String riderUrl);
     
 }
