@@ -14,5 +14,5 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PointResult extends Result{
-    private LocalDateTime time;
+    private int point;
 }
