@@ -44,7 +44,6 @@ public class SecurityConfig {
                 .frameOptions(frameOptions -> frameOptions.disable()))
             .authorizeHttpRequests(req -> req
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("*/scrape/**").permitAll()
                 .requestMatchers("/api/auth/*").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest()
@@ -57,9 +56,7 @@ public class SecurityConfig {
             .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();
-
         }
-
         @Bean
         public AuthenticationProvider authenticationProvider() {
             DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
