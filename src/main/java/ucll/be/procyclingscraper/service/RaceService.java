@@ -15,7 +15,6 @@ import ucll.be.procyclingscraper.repository.StageRepository;
 import ucll.be.procyclingscraper.repository.TeamRepository;
 
 import java.io.IOException;
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -66,7 +65,7 @@ public class RaceService {
                     if(race == null){
                         race = new Race();
                     }
-
+                    
 
                     try {
                         Document docRaceInfo = Jsoup.connect(raceUrl).userAgent(USER_AGENT).get();
@@ -167,10 +166,13 @@ public class RaceService {
                     if (cyclist != null) {  
                         System.out.println("Found Cyclist: " + cyclist.getName());
                         LocalDate currentDate = LocalDate.now();
+                        System.out.println("Current Date: " + currentDate);
                         String startDateString = race.getStartDate();
+                        System.out.println("Start Date String: " + startDateString);
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd"); // Adjust the pattern as needed
                         LocalDate startDate = LocalDate.parse(startDateString, formatter);
-                        if(startDate.isBefore(currentDate)){
+                        System.out.println("Parsed Start Date: " + startDate);
+                        if(startDate.isAfter(currentDate)){
                             cyclist.addRace(race.getName());
                         }
                         startList.add(cyclist);
