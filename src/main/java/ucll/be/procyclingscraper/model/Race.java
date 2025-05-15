@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.*;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -37,7 +38,7 @@ public class Race {
     )
     private List<Cyclist> startList;
 
-    @JsonManagedReference
-    @ManyToMany(mappedBy = "races", cascade = CascadeType.ALL)
-    List<Competition> competitions;
+    @JsonManagedReference("competition_race")
+    @ManyToMany(mappedBy = "races")
+    Set<Competition> competitions;
 }

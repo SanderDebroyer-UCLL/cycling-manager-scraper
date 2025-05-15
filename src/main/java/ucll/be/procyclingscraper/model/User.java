@@ -2,6 +2,7 @@ package ucll.be.procyclingscraper.model;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -29,9 +30,9 @@ public class User implements UserDetails {
     private String password;
     private Role role = Role.USER;
 
-    @JsonManagedReference
-    @ManyToMany(mappedBy = "users", cascade = CascadeType.ALL)
-    List<Competition> competitions;
+    @JsonManagedReference("competition_user")
+    @ManyToMany(mappedBy = "users")
+    Set<Competition> competitions;
 
     public User() {
     }
