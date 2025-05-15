@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .frameOptions(frameOptions -> frameOptions.disable()))
             .authorizeHttpRequests(req -> req
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("*/scrape/**").permitAll()
                 .requestMatchers("/api/auth/*").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest()
