@@ -129,11 +129,11 @@ public class StageService {
                         stage.setStartTime(value);
                     } else if ("Distance:".equals(key)) {
                         if (!value.isEmpty()) {
-                        stage.setDistance(Integer.parseInt(value.replaceAll("[^0-9]", "")));
+                        stage.setDistance(Double.parseDouble(value.replaceAll("[^0-9.]", "")));
                         }
                     } else if ("Vertical meters:".equals(key)) {
                         if (!value.isEmpty()) {
-                        stage.setVerticalMeters(Integer.parseInt(value.replaceAll("[^0-9]", "")));
+                        stage.setVerticalMeters(Double.parseDouble(value.replaceAll("[^0-9.]", "")));
                         }
                     } else if ("Departure:".equals(key)) {
                         stage.setDeparture(value);
