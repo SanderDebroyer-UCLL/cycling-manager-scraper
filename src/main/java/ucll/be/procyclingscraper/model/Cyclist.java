@@ -24,7 +24,6 @@ public class Cyclist {
     private int ranking;
     private int age;
     private String country;
-    private String cyclistUrl;
     @ManyToOne
     @JoinColumn(name = "team_id")
     @JsonBackReference

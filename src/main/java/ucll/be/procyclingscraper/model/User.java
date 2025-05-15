@@ -29,7 +29,7 @@ public class User implements UserDetails {
     }
 
     public User(String name, String email, String password) {
-        setName(name);
+        setName(name);  
         setEmail(email);
         setPassword(password);
         this.role = Role.USER;
