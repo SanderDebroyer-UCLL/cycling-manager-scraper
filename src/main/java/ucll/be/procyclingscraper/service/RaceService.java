@@ -66,6 +66,7 @@ public class RaceService {
                         race = new Race();
                     }
                     
+
                     try {
                         Document docRaceInfo = Jsoup.connect(raceUrl).userAgent(USER_AGENT).get();
                         // stages = stageService.scrapeStageDetails(raceUrl);
