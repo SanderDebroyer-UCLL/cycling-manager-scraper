@@ -1,5 +1,7 @@
 package ucll.be.procyclingscraper.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,9 +27,8 @@ public class StageResult {
 
     @ManyToOne
     @JoinColumn(name = "stage_id")
+    @JsonBackReference
     private Stage stage;
 
-    @ManyToOne
-    @JoinColumn(name = "cyclist_id")
-    private Cyclist cyclist;
+    
 }

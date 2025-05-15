@@ -187,13 +187,10 @@ public class StageService {
                                 if (cyclist == null) {
                                     StageResult result = new StageResult();
                                     result.setStage(stage);
-                                    result.setCyclist(cyclist);
+                                    // result.setCyclist(cyclist);
 
                                     String ranking = cells.get(0).text();
-                                    result.setPosition(Integer.parseInt(cells.get(0).text()));
-
-                                    stage.addResult(result);
-                                    
+                                    result.setPosition(Integer.parseInt(cells.get(0).text()));                                    
 
                                 }
                             // }

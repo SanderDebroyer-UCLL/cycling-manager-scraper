@@ -23,7 +23,6 @@ public class Cyclist {
     private String name;
     private int ranking;
     private int age;
-    private String cyclistUrl; 
     private String country;
     private String cyclistUrl;
     @ManyToOne
