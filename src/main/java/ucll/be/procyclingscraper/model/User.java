@@ -7,10 +7,14 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -24,6 +28,10 @@ public class User implements UserDetails {
     private String email;
     private String password;
     private Role role = Role.USER;
+
+    @JsonManagedReference
+    @ManyToMany(mappedBy = "users", cascade = CascadeType.ALL)
+    List<Competition> competitions;
 
     public User() {
     }

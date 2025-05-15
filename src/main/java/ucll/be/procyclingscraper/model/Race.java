@@ -7,6 +7,8 @@ import lombok.Setter;
 import jakarta.persistence.*;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Entity
 @Getter
 @Setter
@@ -34,4 +36,8 @@ public class Race {
         inverseJoinColumns = @JoinColumn(name = "cyclist_id")
     )
     private List<Cyclist> startList;
+
+    @JsonManagedReference
+    @ManyToMany(mappedBy = "races", cascade = CascadeType.ALL)
+    List<Competition> competitions;
 }

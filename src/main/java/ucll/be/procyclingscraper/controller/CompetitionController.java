@@ -1,0 +1,30 @@
+package ucll.be.procyclingscraper.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
+
+import ucll.be.procyclingscraper.model.Competition;
+import ucll.be.procyclingscraper.service.CompetitionService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+
+@Controller
+@CrossOrigin(origins = "*")
+@RequestMapping("/competitions")
+public class CompetitionController {
+
+    @Autowired
+    private CompetitionService competitionService;
+
+    @GetMapping()
+    public List<Competition> getCompetitions() {
+        return competitionService.getAllCompetitions();
+    }
+    
+
+}
