@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 
-@RestRestController
+@RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/competitions")
 public class CompetitionController {

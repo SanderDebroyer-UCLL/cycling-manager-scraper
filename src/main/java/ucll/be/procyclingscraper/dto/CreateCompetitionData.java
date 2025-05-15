@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class CreateCompetitionData {
     
     private String name;
-    private List<String> userIds;
+    private List<String> usernames;
     private List<String> raceIds;
 }
