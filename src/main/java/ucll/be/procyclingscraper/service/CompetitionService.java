@@ -43,6 +43,7 @@ public class CompetitionService {
 
         Competition competition = new Competition(competitionData.getName());
 
+        //TODO FIX FOR LOOP
         for (String name : competitionData.getUsernames()) {
             User user = userRepository.findUserByName(name);
             if (user == null) {
