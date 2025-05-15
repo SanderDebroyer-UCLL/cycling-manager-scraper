@@ -11,7 +11,6 @@ import ucll.be.procyclingscraper.service.CompetitionService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 
@@ -37,8 +36,4 @@ public class CompetitionController {
     public Competition createCompetition(@RequestBody @Valid CreateCompetitionData competition) {
         return competitionService.createCompetition(competition);
     }
-    
-    
-    
-
 }

@@ -37,7 +37,7 @@ public class CompetitionService {
     public Competition createCompetition(CreateCompetitionData competitionData) {
 
         Competition existingComepetition = competitionRepository.findByName(competitionData.getName());
-        if (existingComepetition == null) {
+        if (existingComepetition != null) {
             throw new IllegalArgumentException("Competition with this name already exists");
         }
 
