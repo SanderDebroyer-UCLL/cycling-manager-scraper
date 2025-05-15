@@ -20,7 +20,7 @@ public class Stage {
     private String arrival;
     private String date;
     private String startTime;
-    private Integer distance;
+    private Double distance;
     private String stageUrl;
-    private Integer verticalMeters;
+    private Double verticalMeters;
 }
