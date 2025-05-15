@@ -43,8 +43,8 @@ public class CompetitionService {
 
         Competition competition = new Competition(competitionData.getName());
 
-        for (String userId : competitionData.getUserIds()) {
-            User user = userRepository.findUserById(Integer.parseInt(userId));
+        for (String name : competitionData.getUsernames()) {
+            User user = userRepository.findUserByName(name);
             if (user == null) {
                 throw new IllegalArgumentException("User with this ID already exists in the competition");
             } else {
