@@ -33,7 +33,7 @@ public class Cyclist {
 
 
     @OneToMany(mappedBy = "cyclist")
-    private List<StageResult> stageResults = new ArrayList<>();
+    private List<Result> results = new ArrayList<>();
 
     public void addRace(String raceName){
         upcomingRaces.add(raceName);
