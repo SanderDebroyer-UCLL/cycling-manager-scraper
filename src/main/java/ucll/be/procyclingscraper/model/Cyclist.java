@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -21,16 +23,21 @@ public class Cyclist {
     private String name;
     private int ranking;
     private int age;
+    private String cyclistUrl; 
     private String country;
+    private String cyclistUrl;
     @ManyToOne
     @JoinColumn(name = "team_id")
     @JsonBackReference
     private Team team;
+    
+    private List<String> upcomingRaces;
 
-    @ManyToMany(mappedBy = "startList")
-    private List<Race> upcomingRaces;
 
-    public void addRace(Race race){
-        upcomingRaces.add(race);
+    @OneToMany(mappedBy = "cyclist")
+    private List<StageResult> stageResults = new ArrayList<>();
+
+    public void addRace(String raceName){
+        upcomingRaces.add(raceName);
     }
 }

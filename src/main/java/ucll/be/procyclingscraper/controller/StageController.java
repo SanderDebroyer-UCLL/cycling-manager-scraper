@@ -9,6 +9,8 @@ import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.service.StageService;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/stages")
@@ -29,4 +31,15 @@ public class StageController {
     public List<Stage> getStages() {
         return stageService.getStages();
     }
+
+    @GetMapping("/resultPerStage")
+    public void getResultPerStage() {
+        stageService.scrapeResultsPerStage();
+    }
+
+
+    public String getMethodName(@RequestParam String param) {
+        return new String();
+    }
+    
 }
