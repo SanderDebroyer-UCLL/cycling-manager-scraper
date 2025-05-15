@@ -81,7 +81,7 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/create-user")
+    @PostMapping("/register")
     public User createUser(@RequestBody @Valid User user) throws ServiceException {
         return userService.addUser(user);
     }
@@ -115,7 +115,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    @ExceptionHandler(UsernameNotFoundException.class)
+    @ExceptionHandler(UsernameNotFoundException.class)  
     public ResponseEntity<Map<String, String>> handleUsernameNotFoundException(UsernameNotFoundException ex) {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());
