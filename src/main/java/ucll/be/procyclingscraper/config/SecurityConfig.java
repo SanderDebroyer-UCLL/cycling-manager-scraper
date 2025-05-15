@@ -59,9 +59,7 @@ public class SecurityConfig {
             .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();
-
         }
-
         @Bean
         public AuthenticationProvider authenticationProvider() {
             DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
