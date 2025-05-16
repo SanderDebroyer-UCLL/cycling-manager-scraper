@@ -36,6 +36,7 @@ public class JwtHelper {
         return claimsResolver.apply(claims);
     }
 
+    //TODO: Fix depricated methods
     //for retrieveing any information from token we will need the secret key
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();

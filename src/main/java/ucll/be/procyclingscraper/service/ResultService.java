@@ -5,20 +5,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ucll.be.procyclingscraper.model.Cyclist;
-import ucll.be.procyclingscraper.model.PointResult;
-import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
-import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.repository.*;
 
 import java.io.IOException;
-import java.sql.Date;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.naming.spi.DirStateFactory.Result;

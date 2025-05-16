@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.hibernate.service.spi.ServiceException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpStatus;
@@ -45,9 +43,6 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
-
-    // @Autowired
-    private Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
     @PostMapping("/login")
     public ResponseEntity<JwtRes> login(@RequestBody JwtReq request) throws UsernameNotFoundException {

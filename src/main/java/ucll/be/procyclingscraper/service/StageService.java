@@ -13,23 +13,18 @@ import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.model.StageResult;
-import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
 import ucll.be.procyclingscraper.repository.StageRepository;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Service
 public class StageService {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3";
     private static final Logger logger = LoggerFactory.getLogger(StageService.class);
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     @Autowired
     RaceRepository raceRepository;
@@ -148,17 +143,6 @@ public class StageService {
         }
         return stage;
     }
-    
-    
-    
-    private Date parseDate(String dateString) {
-        try {
-            return dateFormat.parse(dateString);
-        } catch (ParseException e) {
-            logger.error("Error parsing date: {}", dateString, e);
-            return null;
-        }
-    }
 
     public void scrapeResultsPerStage() {
 
@@ -189,7 +173,6 @@ public class StageService {
                                     result.setStage(stage);
                                     result.setCyclist(cyclist);
 
-                                    String ranking = cells.get(0).text();
                                     result.setPosition(Integer.parseInt(cells.get(0).text()));
 
                                     stage.addResult(result);

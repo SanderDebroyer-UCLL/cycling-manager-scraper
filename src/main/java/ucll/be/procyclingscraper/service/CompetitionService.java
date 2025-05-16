@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import jakarta.validation.Valid;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.Race;
@@ -45,7 +44,6 @@ public class CompetitionService {
 
         Competition competition = new Competition(competitionData.getName());
 
-        //TODO FIX FOR LOOP
         for (String email : competitionData.getUserEmails()) {
             User user = userRepository.findUserByEmail(email);
             if (user == null) {
