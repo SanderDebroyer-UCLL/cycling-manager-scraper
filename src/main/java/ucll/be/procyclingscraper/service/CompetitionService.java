@@ -40,6 +40,10 @@ public class CompetitionService {
         return competitions;
     }
 
+    public Competition getCompetitionById(Long id) {
+        return competitionRepository.findById(id).orElse(null);
+    }
+
     public Competition createCompetition(CreateCompetitionData competitionData) {
 
         System.out.println("Received competitionData: " + competitionData);

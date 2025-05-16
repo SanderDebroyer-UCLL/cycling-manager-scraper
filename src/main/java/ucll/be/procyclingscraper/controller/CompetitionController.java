@@ -11,6 +11,7 @@ import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.security.JwtHelper;
 import ucll.be.procyclingscraper.service.CompetitionService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,6 +43,11 @@ public class CompetitionController {
     @PostMapping("/create-competition")
     public Competition createCompetition(@RequestBody @Valid CreateCompetitionData competition) {
         return competitionService.createCompetition(competition);
+    }
+
+    @GetMapping("/{id}")
+    public Competition getCompetition(@RequestHeader(name="Authorization") String token, @PathVariable Long id) {
+        return competitionService.getCompetitionById(id);
     }
 
     @GetMapping()
