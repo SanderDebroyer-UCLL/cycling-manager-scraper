@@ -8,5 +8,4 @@ import ucll.be.procyclingscraper.model.Competition;
 @Repository
 public interface CompetitionRepository extends JpaRepository<Competition, Long> {
     Competition findByName(String name);
-        
 }

@@ -1,12 +1,16 @@
 package ucll.be.procyclingscraper.controller;
 
 import java.util.List;
+import java.util.Set;
 
+import org.hibernate.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.model.Competition;
+import ucll.be.procyclingscraper.security.JwtHelper;
 import ucll.be.procyclingscraper.service.CompetitionService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +20,9 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 
@@ -27,8 +34,11 @@ public class CompetitionController {
     @Autowired
     private CompetitionService competitionService;
 
-    @GetMapping()
-    public List<Competition> getCompetitions() {
+    @Autowired
+    private JwtHelper jwtHelper;
+
+    @GetMapping("/all")
+    public List<Competition> getAllCompetitions() {
         return competitionService.getAllCompetitions();
     }
 
@@ -36,4 +46,11 @@ public class CompetitionController {
     public Competition createCompetition(@RequestBody @Valid CreateCompetitionData competition) {
         return competitionService.createCompetition(competition);
     }
+
+    @GetMapping()
+    public Set<Competition> getCompetitions(@RequestHeader(name="Authorization") String token) {
+        String username = jwtHelper.getUsernameFromToken(token.substring(7));
+        return competitionService.getCompetitions(username);
+    }
+    
 }

@@ -1,6 +1,7 @@
 package ucll.be.procyclingscraper.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,12 @@ public class CompetitionService {
 
     public List<Competition> getAllCompetitions() {
         return competitionRepository.findAll();
+    }
+
+    public Set<Competition> getCompetitions(String username) {
+        User currentUser = userRepository.findUserByUsername(username);
+        Set<Competition> competitions = currentUser.getCompetitions();
+        return competitions;
     }
 
     public Competition createCompetition(CreateCompetitionData competitionData) {
