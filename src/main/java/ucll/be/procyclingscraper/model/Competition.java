@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.model;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -40,7 +41,7 @@ public class Competition {
     @JoinTable(name = "competition_user",
             joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
-public Set<User> users;
+    public Set<User> users = new HashSet<>();
 
     @JsonBackReference("competition_race")
     @ManyToMany
@@ -48,5 +49,4 @@ public Set<User> users;
             joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "race_id", 
             referencedColumnName = "id"))
-    private Set<Race> races;
-}
+    private Set<Race> races = new HashSet<>();}

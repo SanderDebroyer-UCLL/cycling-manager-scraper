@@ -45,8 +45,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(req -> req
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/*").permitAll()
+                .requestMatchers("*/auth/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/competitions").permitAll()
                 .requestMatchers("/competitions/**").permitAll()
                 .requestMatchers("/api/scrape/**").permitAll()
                 .anyRequest()

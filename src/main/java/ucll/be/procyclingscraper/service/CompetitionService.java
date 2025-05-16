@@ -36,6 +36,8 @@ public class CompetitionService {
 
     public Competition createCompetition(CreateCompetitionData competitionData) {
 
+        System.out.println("Received competitionData: " + competitionData);
+
         Competition existingComepetition = competitionRepository.findByName(competitionData.getName());
         if (existingComepetition != null) {
             throw new IllegalArgumentException("Competition with this name already exists");
@@ -44,8 +46,8 @@ public class CompetitionService {
         Competition competition = new Competition(competitionData.getName());
 
         //TODO FIX FOR LOOP
-        for (String name : competitionData.getUsernames()) {
-            User user = userRepository.findUserByName(name);
+        for (String email : competitionData.getUserEmails()) {
+            User user = userRepository.findUserByEmail(email);
             if (user == null) {
                 throw new IllegalArgumentException("User with this ID already exists in the competition");
             } else {
