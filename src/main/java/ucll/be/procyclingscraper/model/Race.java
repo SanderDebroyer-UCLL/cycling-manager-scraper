@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
@@ -38,7 +39,7 @@ public class Race {
     )
     private List<Cyclist> startList;
 
-    @JsonManagedReference("competition_race")
+    @JsonIgnore
     @ManyToMany(mappedBy = "races")
     Set<Competition> competitions;
 }

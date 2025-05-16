@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .requestMatchers("*/auth/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/competitions/**").permitAll()
-                .requestMatchers("/api/scrape/**").permitAll()
+                .requestMatchers("*/scrape/**").permitAll()
                 .anyRequest()
                 .authenticated())
             .exceptionHandling(exception -> exception

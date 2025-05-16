@@ -21,6 +21,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import ucll.be.procyclingscraper.dto.CreateUserData;
 import ucll.be.procyclingscraper.model.JwtReq;
 import ucll.be.procyclingscraper.model.JwtRes;
 import ucll.be.procyclingscraper.model.User;
@@ -77,7 +78,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public User createUser(@RequestBody @Valid User user) throws ServiceException {
+    public User createUser(@RequestBody @Valid CreateUserData user) throws ServiceException {
         return userService.addUser(user);
     }
 

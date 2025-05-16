@@ -34,8 +34,8 @@ public class CompetitionService {
         return competitionRepository.findAll();
     }
 
-    public Set<Competition> getCompetitions(String username) {
-        User currentUser = userRepository.findUserByUsername(username);
+    public Set<Competition> getCompetitions(String email) {
+        User currentUser = userRepository.findUserByEmail(email);
         Set<Competition> competitions = currentUser.getCompetitions();
         return competitions;
     }

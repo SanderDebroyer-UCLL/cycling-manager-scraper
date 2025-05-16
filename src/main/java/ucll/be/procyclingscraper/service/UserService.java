@@ -6,6 +6,8 @@ import org.hibernate.service.spi.ServiceException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.CreateUserData;
+import ucll.be.procyclingscraper.model.Role;
 import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.repository.UserRepository;
 
@@ -25,13 +27,22 @@ public class UserService {
         return userRepo.findAll();
     }
 
-    public User addUser(User userData) throws ServiceException {
+    public User addUser(CreateUserData userData) throws ServiceException {
         User existingUser = userRepo.findUserByEmail(userData.getEmail());
         if (existingUser != null) {
             throw new ServiceException("Uh, oh! User with email " + existingUser.getEmail() + " already exists.");
         }
-        userData.setPassword(passwordEncoder.encode(userData.getPassword()));
-        userRepo.save(userData);
-        return userData;
+
+        User newUser = new User();
+
+        newUser.setFirstName(userData.getFirstName());
+        newUser.setLastName(userData.getLastName());
+        newUser.setEmail(userData.getEmail());
+        newUser.setPassword(passwordEncoder.encode(userData.getPassword()));
+        newUser.setRole(Role.USER);
+        
+        userRepo.save(newUser);
+
+        return newUser;
     }
 }

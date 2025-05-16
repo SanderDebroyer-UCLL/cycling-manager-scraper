@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -35,14 +36,14 @@ public class Competition {
         this.name = name;
     }
 
-    @JsonBackReference("competition_user")
-    @ManyToMany
-    @JoinTable(name = "competition_user",
+        @JsonIgnore
+        @ManyToMany
+        @JoinTable(name = "competition_user",
             joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
-    public Set<User> users = new HashSet<>();
+        public Set<User> users = new HashSet<>();
 
-    @JsonBackReference("competition_race")
+    @JsonIgnore
     @ManyToMany
     @JoinTable(name = "competition_race",
             joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"),
