@@ -40,18 +40,17 @@ public class JwtHelper {
         return claimsResolver.apply(claims);
     }
 
-    //TODO: Fix depricated methods
     //for retrieveing any information from token we will need the secret key
-public Claims getAllClaimsFromToken(String token) {
-    byte[] keyBytes = Decoders.BASE64.decode(secret);
-    Key key = Keys.hmacShaKeyFor(keyBytes);
+    public Claims getAllClaimsFromToken(String token) {
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        Key key = Keys.hmacShaKeyFor(keyBytes);
 
-    return Jwts.parserBuilder()
-        .setSigningKey(key)
-        .build()
-        .parseClaimsJws(token)
-        .getBody();
-}
+        return Jwts.parserBuilder()
+            .setSigningKey(key)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+    }
 
 
 

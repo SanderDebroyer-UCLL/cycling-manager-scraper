@@ -3,9 +3,7 @@ package ucll.be.procyclingscraper.controller;
 import java.util.List;
 import java.util.Set;
 
-import org.hibernate.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties.Jwt;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
@@ -21,7 +19,6 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 

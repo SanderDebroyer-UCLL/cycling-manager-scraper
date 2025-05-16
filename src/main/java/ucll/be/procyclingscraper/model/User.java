@@ -26,7 +26,6 @@ import lombok.Setter;
 @Table(name = "users")
 public class User implements UserDetails {
 
-    //TODO: Password is send to front-end when requesting users should be removed
     @Id 
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
