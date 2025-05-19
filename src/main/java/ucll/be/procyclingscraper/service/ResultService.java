@@ -51,7 +51,6 @@ public class ResultService {
 
                 for (Element row : resultRows) {
                     if (resultCount >= MAX_RESULTS) break;
-                    TimeResult timeResult = new TimeResult();
 
                     Element positionElement = row.selectFirst("td:first-child");
                     String position = positionElement != null ? positionElement.text() : "Unknown";
@@ -72,15 +71,31 @@ public class ResultService {
                         continue;
                     }
 
-                    if (time.contains("-")) {
-                        continue;
-                    }
 
                     LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
                     if (resultTime != null) {
                         cumulativeTime = resultTime;
                     }
                     System.out.println("Parsed Time: " + resultTime);
+
+                      Cyclist cyclist = searchCyclist(riderName);
+                    if (cyclist == null) {
+                        System.out.println("Cyclist not found for name: " + riderName);
+                        continue;
+                    }
+                    TimeResult timeResult = timeResultRepository.findByStageAndCyclist(stage, cyclist);
+                    if (timeResult == null) {
+                        timeResult = new TimeResult();
+                        timeResult.setStage(stage);
+                        timeResult.setCyclist(cyclist);
+                    } else {
+                        // Optionally update existing result fields below
+                        timeResult.setStage(stage);
+                        timeResult.setCyclist(cyclist);
+                    }
+                    if (time.contains("-")) {
+                        checkForDNFAndMore(position, timeResult);
+                    }
                     timeResult = checkForDNFAndMore(position, timeResult);
 
                     timeResult.setPosition(position);
@@ -94,6 +109,7 @@ public class ResultService {
                     resultCount++;
                 }
             }
+        
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -147,16 +163,16 @@ public class ResultService {
 
     
     private TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
-        if (position.equals("DNS")) {
+        if (position.equalsIgnoreCase("DNS")) {
             timeResult.setRaceStatus(RaceStatus.DNS);
         }
-        else if (position.equals("DNF")) {
+        else if (position.equalsIgnoreCase("DNF")) {
             timeResult.setRaceStatus(RaceStatus.DNF);
         }
-        else if (position.equals("DSQ")) {
+        else if (position.equalsIgnoreCase("DSQ")) {
             timeResult.setRaceStatus(RaceStatus.DSQ);
         }
-        else if (position.equals("OTL")) {
+        else if (position.equalsIgnoreCase("OTL")) {
             timeResult.setRaceStatus(RaceStatus.OTL);
         }
         else{

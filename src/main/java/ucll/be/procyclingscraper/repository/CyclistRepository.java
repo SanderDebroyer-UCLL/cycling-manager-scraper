@@ -20,7 +20,8 @@ public interface CyclistRepository extends JpaRepository<Cyclist, Long> {
     Cyclist findByCyclistUrl(String riderUrl);
     
 
-    @Query("SELECT c FROM Cyclist c JOIN c.results r JOIN r.stage s WHERE s.id = :stageId ORDER BY CAST(r.position AS integer)")
+    @Query("SELECT c FROM Cyclist c JOIN c.results r JOIN r.stage s WHERE s.id = :stageId ORDER BY " +
+           "CASE WHEN FUNCTION('regexp', r.position, '^[0-9]+$') = 1 THEN CAST(r.position AS integer) ELSE 9999 END")
     List<Cyclist> findCyclistsByStageId(@Param("stageId") Long stageId);
     
 }   
