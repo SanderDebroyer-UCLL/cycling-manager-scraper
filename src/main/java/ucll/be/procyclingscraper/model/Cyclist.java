@@ -36,7 +36,15 @@ public class Cyclist {
     @OneToMany(mappedBy = "cyclist")
     private List<Result> results = new ArrayList<>();
 
-    public void addRace(String raceName){
-        upcomingRaces.add(raceName);
+    // public void addRace(String raceName){
+    //     upcomingRaces.add(raceName);
+    // }
+
+    public void addRace(String raceName) {
+        if (this.upcomingRaces == null) {
+            this.upcomingRaces = new ArrayList<>();
+        }
+        this.upcomingRaces.add(raceName);
     }
+    
 }
