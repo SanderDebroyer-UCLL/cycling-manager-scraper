@@ -7,7 +7,6 @@ import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.service.RaceService;
 
 import java.util.List;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController

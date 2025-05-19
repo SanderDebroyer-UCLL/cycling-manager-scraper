@@ -11,7 +11,6 @@ import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
-import ucll.be.procyclingscraper.repository.StageRepository;
 import ucll.be.procyclingscraper.repository.TeamRepository;
 
 import java.io.IOException;
