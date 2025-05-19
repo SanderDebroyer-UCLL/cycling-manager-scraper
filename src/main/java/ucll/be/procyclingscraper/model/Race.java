@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.*;
 import java.util.List;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Getter
@@ -34,4 +37,8 @@ public class Race {
         inverseJoinColumns = @JoinColumn(name = "cyclist_id")
     )
     private List<Cyclist> startList;
+
+    @JsonIgnore
+    @ManyToMany(mappedBy = "races")
+    Set<Competition> competitions;
 }

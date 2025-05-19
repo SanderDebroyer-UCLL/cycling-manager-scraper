@@ -14,8 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class TeamService {
-    @Autowired
-    private CyclistService cyclistService;
+
     @Autowired
     private TeamRepository teamRepository;
 

@@ -17,7 +17,7 @@ import ucll.be.procyclingscraper.service.UserService;
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
-public class UserRestController {
+public class UserController {
 
     @Autowired
     private UserService userService;

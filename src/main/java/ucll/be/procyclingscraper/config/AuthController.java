@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.hibernate.service.spi.ServiceException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpStatus;
@@ -23,6 +21,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import ucll.be.procyclingscraper.dto.CreateUserData;
 import ucll.be.procyclingscraper.model.JwtReq;
 import ucll.be.procyclingscraper.model.JwtRes;
 import ucll.be.procyclingscraper.model.User;
@@ -45,9 +44,6 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
-
-    // @Autowired
-    private Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
     @PostMapping("/login")
     public ResponseEntity<JwtRes> login(@RequestBody JwtReq request) throws UsernameNotFoundException {
@@ -82,7 +78,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public User createUser(@RequestBody @Valid User user) throws ServiceException {
+    public User createUser(@RequestBody @Valid CreateUserData user) throws ServiceException {
         return userService.addUser(user);
     }
 
