@@ -35,7 +35,6 @@ public class ResultService {
         List<Stage> stages = stageRepository.findAll();
         List<TimeResult> results = new ArrayList<>();
         System.out.println("Starting scraping...");
-        String oldlocalTime = "";
         int resultCount = 0;
         final int MAX_RESULTS = 140;
         try { 
@@ -47,12 +46,12 @@ public class ResultService {
 
                 Elements resultRows = doc.select("table.results tr");
 
+                // Use a cumulative time field for each stage
+                LocalTime cumulativeTime = LocalTime.MIDNIGHT;
+
                 for (Element row : resultRows) {
                     if (resultCount >= MAX_RESULTS) break;
                     TimeResult timeResult = new TimeResult();
-                    
-
-                    // System.out.println(row);
 
                     Element positionElement = row.selectFirst("td:first-child");
                     String position = positionElement != null ? positionElement.text() : "Unknown";
@@ -73,23 +72,18 @@ public class ResultService {
                         continue;
                     }
 
-                    if(time.contains(",,")){
-                        time = oldlocalTime;
-                    }
-                    else{
-                        oldlocalTime = time;
-                    }
-                    
-                    if(time.contains("-")){
+                    if (time.contains("-")) {
                         continue;
                     }
-                    LocalTime resultTime = timeHandler(time, oldlocalTime);
-                   
+
+                    LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
+                    if (resultTime != null) {
+                        cumulativeTime = resultTime;
+                    }
+                    System.out.println("Parsed Time: " + resultTime);
                     timeResult = checkForDNFAndMore(position, timeResult);
-                  
-                
+
                     timeResult.setPosition(position);
-                    
                     timeResult.setCyclist(searchCyclist(riderName));
                     timeResult.setTime(resultTime);
                     System.out.println(timeResult);
@@ -107,37 +101,49 @@ public class ResultService {
         return results;
     }
 
-    private LocalTime timeHandler(String time, String oldLocalTime) {
+    private LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
         try {
             String cleanedTime = time.trim();
 
-            String[] parts = cleanedTime.split(":");
-            if (parts.length == 3) {
-                // hh:mm:ss
-                int hours = Integer.parseInt(parts[0]);
-                int minutes = Integer.parseInt(parts[1]);
-                int seconds = Integer.parseInt(parts[2]);
-                return LocalTime.of(hours, minutes, seconds);
-            } else if (parts.length == 2) {
-                // mm:ss — interpret as minutes and seconds, no hours
-                int minutes = Integer.parseInt(parts[0]);
-                int seconds = Integer.parseInt(parts[1]);
-                // Return time as 00:mm:ss
-                return LocalTime.of(0, minutes, seconds);
-            } else if (parts.length == 1) {
-                // only seconds?
-                int seconds = Integer.parseInt(parts[0]);
-                return LocalTime.of(0, 0, seconds);
-            } else {
-                System.out.println("Unrecognized time format: " + cleanedTime);
+            if (!cleanedTime.matches("\\d{1,2}:\\d{2}(:\\d{2})?")) {
+                return cumulativeTime;
             }
+
+            LocalTime inputTime = parseToLocalTime(cleanedTime);
+
+            LocalTime newCumulative = cumulativeTime
+                    .plusHours(inputTime.getHour())
+                    .plusMinutes(inputTime.getMinute())
+                    .plusSeconds(inputTime.getSecond());
+
+            System.out.println("Cumulative Time: " + newCumulative);
+
+            return newCumulative;
+
         } catch (Exception e) {
             System.out.println("Failed to parse time: " + time);
             e.printStackTrace();
+            return cumulativeTime;
         }
-        return null;
     }
 
+    private LocalTime parseToLocalTime(String timeStr) {
+        String[] parts = timeStr.split(":");
+        int hours = 0, minutes = 0, seconds = 0;
+
+        if (parts.length == 3) {
+            hours = Integer.parseInt(parts[0]);
+            minutes = Integer.parseInt(parts[1]);
+            seconds = Integer.parseInt(parts[2]);
+        } else if (parts.length == 2) {
+            minutes = Integer.parseInt(parts[0]);
+            seconds = Integer.parseInt(parts[1]);
+        } else if (parts.length == 1) {
+            seconds = Integer.parseInt(parts[0]);
+        }
+        System.out.println("Parsed Time: " + hours + ":" + minutes + ":" + seconds);
+        return LocalTime.of(hours, minutes, seconds);
+    }
 
     
     private TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
