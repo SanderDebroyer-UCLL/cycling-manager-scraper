@@ -139,6 +139,7 @@ public class RaceService {
                 System.out.println("Team Name: " + teamName);
     
                 Team team = teamRepository.findByName(teamName);
+                System.out.println("Found Team: " + team);
                 if (team != null) {
                     isChampionship = false;
                     break; // Zodra we een team herkennen, is het geen Championship
