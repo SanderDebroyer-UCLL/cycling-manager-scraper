@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Getter
@@ -34,6 +35,7 @@ public class Cyclist {
 
 
     @OneToMany(mappedBy = "cyclist")
+    @JsonManagedReference
     private List<Result> results = new ArrayList<>();
 
     public void addRace(String raceName){

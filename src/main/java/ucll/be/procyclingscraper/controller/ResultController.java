@@ -1,11 +1,14 @@
 package ucll.be.procyclingscraper.controller;
 
+import java.util.List;
+
 import javax.naming.spi.DirStateFactory.Result;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.ResultService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,9 +21,13 @@ public class ResultController {
     @Autowired
     private ResultService resultService;
     
-    @GetMapping("/scrap")
-    public Result scrapeResults() {
-        return resultService.scrapeResult();
+    @GetMapping("/scrape")
+    public List<TimeResult> scrapeResults() {
+        return resultService.scrapeTimeResult();
     }
     
+    @GetMapping("")
+    public List<TimeResult> getAllResults() {
+        return resultService.findAllResults();
+    }
 }

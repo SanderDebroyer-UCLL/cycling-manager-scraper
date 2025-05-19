@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
-import ucll.be.procyclingscraper.model.StageResult;
 import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
@@ -160,52 +159,7 @@ public class StageService {
         }
     }
 
-    public void scrapeResultsPerStage() {
-
-        List<Stage> stages = stageRepository.findAll();
-        for (Stage stage : stages) {
-            try {
-                Document doc = Jsoup.connect(stage.getStageUrl())
-                        .userAgent(USER_AGENT)
-                        .get();
-
-                Elements tables = doc.select("table.results.basic");
-                logger.debug("Number of tables found: {}", tables.size());
-
-                for (Element table : tables) {
-                    // if (isResultsTable(table)) {
-                        Elements rows = table.select("tbody > tr");
-                        logger.debug("Number of result rows found: {}", rows.size());
-
-                        for (Element row : rows) {
-                            Elements cells = row.select("td");
-                            // if (cells.size() >= 5) {
-                                String rider = cells.get(6).text();
-                                logger.debug("Logging rider's name: {}", rider);
-                                Cyclist cyclist = cyclistRepository.findCyclistByName(rider);
-
-                                if (cyclist == null) {
-                                    StageResult result = new StageResult();
-                                    result.setStage(stage);
-                                    result.setCyclist(cyclist);
-
-                                    String ranking = cells.get(0).text();
-                                    result.setPosition(Integer.parseInt(cells.get(0).text()));
-
-                                    stage.addResult(result);
-                                    
-
-                                }
-                            // }
-                        }
-                    // }
-                }
-
-                stageRepository.save(stage);
-            } catch (IOException e) {
-                logger.error("Error scraping results for stage: {}", stage.getName(), e);
-            }
-        }
-
+    public List<Cyclist> findCyclistInByStageId(Long stage_id){
+        return cyclistRepository.findCyclistsByStageId(stage_id);
     }
 }

@@ -5,23 +5,21 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import ucll.be.procyclingscraper.model.Cyclist;
-import ucll.be.procyclingscraper.model.PointResult;
-import ucll.be.procyclingscraper.model.Race;
+import ucll.be.procyclingscraper.model.RaceStatus;
 import ucll.be.procyclingscraper.model.Stage;
-import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.repository.*;
 
 import java.io.IOException;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.sql.Time;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
-import javax.naming.spi.DirStateFactory.Result;
 
 @Service
 public class ResultService {
@@ -36,39 +34,158 @@ public class ResultService {
     @Autowired
     CyclistRepository cyclistRepository;
 
-    public Result scrapeResult(){
+    public List<TimeResult> scrapeTimeResult() {
         List<Stage> stages = stageRepository.findAll();
-        try{
-            for(Stage stage: stages){
+        List<TimeResult> results = new ArrayList<>();
+        System.out.println("Starting scraping...");
+        String oldlocalTime = "";
+        int resultCount = 0;
+        final int MAX_RESULTS = 140;
+        try { 
+            for (Stage stage : stages) {
+                if (resultCount >= MAX_RESULTS) break;
                 Document doc = Jsoup.connect(stage.getStageUrl())
                     .userAgent(USER_AGENT)
                     .get();
-                Elements resultRows = doc.select("results basic moblist10");
+
+                Elements resultRows = doc.select("table.results tr");
 
                 for (Element row : resultRows) {
-                    String position = row.selectFirst("td:first-child").text();
+                    if (resultCount >= MAX_RESULTS) break;
+                    TimeResult timeResult = new TimeResult();
+                    
+
+                    // System.out.println(row);
+
+                    Element positionElement = row.selectFirst("td:first-child");
+                    String position = positionElement != null ? positionElement.text() : "Unknown";
+                    System.out.println("Position: " + position);
 
                     Element riderElement = row.selectFirst("td:nth-child(7) a");
                     String riderName = riderElement != null ? riderElement.text() : "Unknown";
+                    System.out.println("Rider Name: " + riderName);
 
                     Element timeElement = row.selectFirst("td.time.ar");
-                    String time = timeElement != null ? timeElement.text() : "Unknown";
+                    String rawTime = timeElement != null ? timeElement.text() : "Unknown";
+                    String[] parts = rawTime.split(" ");
+                    String time = parts[0];
+                    System.out.println("Time: " + time);
 
-                    TimeResult timeResult = new TimeResult();
-                    timeResult.setPosition(Integer.parseInt(position));
-                    timeResult.setCyclist(cyclistRepository.findByName(riderName));
-                    timeResult.setTime(LocalDateTime.parse(time));
+                    if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
+                        System.out.println("Skipping row due to missing data");
+                        continue;
+                    }
 
+                    if(time.contains(",,")){
+                        time = oldlocalTime;
+                    }
+                    else{
+                        oldlocalTime = time;
+                    }
+                    
+                    if(time.contains("-")){
+                        continue;
+                    }
+                    LocalTime resultTime = timeHandler(time, oldlocalTime);
+                   
+                    timeResult = checkForDNFAndMore(position, timeResult);
+                  
+                
+                    timeResult.setPosition(position);
+                    
+                    timeResult.setCyclist(searchCyclist(riderName));
+                    timeResult.setTime(resultTime);
+                    System.out.println(timeResult);
+                    stage.addResult(timeResult);
                     timeResultRepository.save(timeResult);
+                    stageRepository.save(stage);
+                    results.add(timeResult);
+                    resultCount++;
                 }
-
             }
-            
-        } catch (IOException e){
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return results;
+    }
+
+    private LocalTime timeHandler(String time, String oldLocalTime) {
+        try {
+            String cleanedTime = time.trim();
+
+            String[] parts = cleanedTime.split(":");
+            if (parts.length == 3) {
+                // hh:mm:ss
+                int hours = Integer.parseInt(parts[0]);
+                int minutes = Integer.parseInt(parts[1]);
+                int seconds = Integer.parseInt(parts[2]);
+                return LocalTime.of(hours, minutes, seconds);
+            } else if (parts.length == 2) {
+                // mm:ss — interpret as minutes and seconds, no hours
+                int minutes = Integer.parseInt(parts[0]);
+                int seconds = Integer.parseInt(parts[1]);
+                // Return time as 00:mm:ss
+                return LocalTime.of(0, minutes, seconds);
+            } else if (parts.length == 1) {
+                // only seconds?
+                int seconds = Integer.parseInt(parts[0]);
+                return LocalTime.of(0, 0, seconds);
+            } else {
+                System.out.println("Unrecognized time format: " + cleanedTime);
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to parse time: " + time);
             e.printStackTrace();
         }
         return null;
     }
+
+
     
+    private TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
+        if (position.equals("DNS")) {
+            timeResult.setRaceStatus(RaceStatus.DNS);
+        }
+        else if (position.equals("DNF")) {
+            timeResult.setRaceStatus(RaceStatus.DNF);
+        }
+        else if (position.equals("DSQ")) {
+            timeResult.setRaceStatus(RaceStatus.DSQ);
+        }
+        else if (position.equals("OTL")) {
+            timeResult.setRaceStatus(RaceStatus.OTL);
+        }
+        else{
+            timeResult.setRaceStatus(RaceStatus.FINISHED);
+        }
+        return timeResult;
+    }
+
+    private Cyclist searchCyclist(String riderName) {
+        System.out.println("Extracted Rider Name: " + riderName);
+
+        String[] nameParts = riderName.trim().split("\\s+");
+
+        for (int i = 1; i < nameParts.length; i++) {
+            String firstName = String.join(" ", Arrays.copyOfRange(nameParts, i, nameParts.length));
+            String lastName = String.join(" ", Arrays.copyOfRange(nameParts, 0, i));
+            String fixedName = firstName + " " + lastName;
+
+            System.out.println("Trying rearranged name: " + fixedName);
+
+            Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
+            if (cyclist != null) {
+                System.out.println("Found cyclist: " + fixedName);
+                return cyclist;
+            }
+        }
+
+        System.out.println("No cyclist found for name: " + riderName);
+        return null;
+    }
+    public List<TimeResult> findAllResults() {
+        return timeResultRepository.findAll();
+    }
 
 }

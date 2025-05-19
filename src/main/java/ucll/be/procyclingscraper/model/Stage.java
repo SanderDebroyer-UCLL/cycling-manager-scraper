@@ -8,6 +8,8 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -29,9 +31,10 @@ public class Stage {
     private Double verticalMeters;
 
     @OneToMany(mappedBy = "stage", cascade = CascadeType.ALL)
-    private List<StageResult> results = new ArrayList<>();
+    @JsonManagedReference
+    private List<Result> results = new ArrayList<>();
 
-    public void addResult(StageResult result) {
+    public void addResult(Result result) {
         result.setStage(this);
         results.add(result);
     }

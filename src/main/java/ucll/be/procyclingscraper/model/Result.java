@@ -20,7 +20,10 @@ public abstract class Result {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int position;
+    private String position;
+
+    @Enumerated(EnumType.STRING)
+    private RaceStatus raceStatus;  
 
     @ManyToOne
     @JsonBackReference

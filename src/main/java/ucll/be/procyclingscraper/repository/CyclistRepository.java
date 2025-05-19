@@ -1,5 +1,7 @@
 package ucll.be.procyclingscraper.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,4 +19,8 @@ public interface CyclistRepository extends JpaRepository<Cyclist, Long> {
     Cyclist findCyclistByName(String rider);
     Cyclist findByCyclistUrl(String riderUrl);
     
-}
+
+    @Query("SELECT c FROM Cyclist c JOIN c.results r JOIN r.stage s WHERE s.id = :stageId ORDER BY CAST(r.position AS integer)")
+    List<Cyclist> findCyclistsByStageId(@Param("stageId") Long stageId);
+    
+}   
