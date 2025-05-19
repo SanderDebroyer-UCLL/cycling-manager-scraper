@@ -1,6 +1,7 @@
 package ucll.be.procyclingscraper.model;
 
-import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 import jakarta.persistence.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,5 +14,5 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TimeResult extends Result{
-    private LocalDateTime time;
+    private LocalTime time;
 }

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -168,22 +169,24 @@ public class RaceService {
                 }
     
                 Elements riderElements = ridersCont.select("ul li a");
+                
                 for (Element riderElement : riderElements) {
                     String riderName = riderElement.text().toLowerCase();
                     System.out.println("Extracted Rider Name: " + riderName);
-    
-                    String[] nameParts = riderName.split(" ");
-                    String firstName = nameParts[nameParts.length - 1];
-                    StringBuilder lastNameBuilder = new StringBuilder();
-                    for (int i = 0; i < nameParts.length - 1; i++) {
-                        if (i > 0) lastNameBuilder.append(" ");
-                        lastNameBuilder.append(nameParts[i]);
+
+                    String[] nameParts = riderName.trim().split("\\s+");
+                    String fixedName = "";
+                    for (int i = 1; i < nameParts.length; i++) {
+                        String firstName = String.join(" ", Arrays.copyOfRange(nameParts, i, nameParts.length));
+                        String lastName = String.join(" ", Arrays.copyOfRange(nameParts, 0, i));
+                        fixedName = firstName + " " + lastName;
+
+                        System.out.println("Trying rearranged name: " + fixedName);
                     }
-                    String lastName = lastNameBuilder.toString();
-                    String fixedName = firstName + " " + lastName;
     
-                    System.out.println("Rearranged Rider Name: " + fixedName);
-    
+
+
+                    
                     Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
                     if (cyclist != null) {
                         System.out.println("Found Cyclist: " + cyclist.getName());
