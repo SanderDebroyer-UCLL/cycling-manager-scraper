@@ -114,75 +114,106 @@ public class RaceService {
         return races;
     }
 
-        public List<Cyclist> scrapeAndSaveStartlist(String url, Race race) {
+    public List<Cyclist> scrapeAndSaveStartlist(String url, Race race) {
         List<Cyclist> startList = new ArrayList<>();
         System.out.println(url);
         System.out.println(race);
-
+    
         try {
             Document doc = Jsoup.connect(url).userAgent("Mozilla/5.0").get();
             Elements ridersContainers = doc.select("div.ridersCont");
-
+    
+            if (ridersContainers.isEmpty()) {
+                System.out.println("Geen rennerscontainers gevonden op de pagina. Scraping gestopt.");
+                return startList;
+            }
+    
+            // Bepalen of we met een WK te maken hebben
+            boolean isChampionship = true;
             for (Element ridersCont : ridersContainers) {
                 String teamName = ridersCont.select("a.team").text()
                     .replace("(WT)", "")
                     .replace("(CT)", "")
                     .replace("(PRT)", "")
                     .trim();
-
-                System.out.println("Scraped Team Name: " + teamName);
-
+                System.out.println("Team Name: " + teamName);
+    
                 Team team = teamRepository.findByName(teamName);
                 System.out.println("Found Team: " + team);
-
                 if (team != null) {
+                    isChampionship = false;
+                    break; // Zodra we een team herkennen, is het geen Championship
+                }
+            }
+    
+            System.out.println(" Is Championship (WK/EK): " + isChampionship);
+    
+            for (Element ridersCont : ridersContainers) {
+                // Team-naam nog steeds uitlezen, puur voor logging
+                String teamName = ridersCont.select("a.team").text()
+                    .replace("(WT)", "")
+                    .replace("(CT)", "")
+                    .replace("(PRT)", "")
+                    .trim();
+    
+                if (!isChampionship) {
+                    Team team = teamRepository.findByName(teamName);
+                    if (team == null) {
+                        System.out.println("Team niet herkend, overslaan: " + teamName);
+                        continue; // We verwerken deze groep niet
+                    }
+                    System.out.println("Verwerk team: " + teamName);
+                } else {
+                    System.out.println("Verwerk nationale selectie: " + teamName);
+                }
+    
                 Elements riderElements = ridersCont.select("ul li a");
                 for (Element riderElement : riderElements) {
                     String riderName = riderElement.text().toLowerCase();
                     System.out.println("Extracted Rider Name: " + riderName);
+    
                     String[] nameParts = riderName.split(" ");
                     String firstName = nameParts[nameParts.length - 1];
                     StringBuilder lastNameBuilder = new StringBuilder();
                     for (int i = 0; i < nameParts.length - 1; i++) {
-                        if (i > 0) {
-                            lastNameBuilder.append(" ");
-                        }
+                        if (i > 0) lastNameBuilder.append(" ");
                         lastNameBuilder.append(nameParts[i]);
                     }
                     String lastName = lastNameBuilder.toString();
-
                     String fixedName = firstName + " " + lastName;
+    
                     System.out.println("Rearranged Rider Name: " + fixedName);
-
-                    
+    
                     Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
-                    if (cyclist != null) {  
+                    if (cyclist != null) {
                         System.out.println("Found Cyclist: " + cyclist.getName());
+    
                         LocalDate currentDate = LocalDate.now();
-                        System.out.println("Current Date: " + currentDate);
-                        String startDateString = race.getStartDate();
-                        System.out.println("Start Date String: " + startDateString);
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd"); // Adjust the pattern as needed
-                        LocalDate startDate = LocalDate.parse(startDateString, formatter);
-                        System.out.println("Parsed Start Date: " + startDate);
-                        if(startDate.isAfter(currentDate)){
+                        LocalDate startDate = LocalDate.parse(race.getStartDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                        
+                        startList.add(cyclist);
+                        System.out.println("Startlist" + startList.get(0).getName());
+                        cyclistRepository.save(cyclist);
+
+                        if (startDate.isAfter(currentDate)) {
                             cyclist.addRace(race.getName());
                         }
-                        startList.add(cyclist);
-                        cyclistRepository.save(cyclist);
+    
+                        
                     } else {
                         System.out.println("Cyclist not found in repository: " + riderName);
                     }
                 }
-
             }
-        }
+    
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println(startList);
+    
+        System.out.println("Verwerkte startlijst: " + startList);
         return startList;
     }
+    
 
 
 }
