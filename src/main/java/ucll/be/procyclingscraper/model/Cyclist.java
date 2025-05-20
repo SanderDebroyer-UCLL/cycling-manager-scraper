@@ -31,7 +31,7 @@ public class Cyclist {
     @JsonBackReference
     private Team team;
     
-    private List<String> upcomingRaces;
+    private List<String> upcomingRaces = new ArrayList<>();
 
 
     @OneToMany(mappedBy = "cyclist")
