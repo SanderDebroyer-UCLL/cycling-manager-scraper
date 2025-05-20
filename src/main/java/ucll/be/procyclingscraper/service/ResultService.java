@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.RaceStatus;
+import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.repository.*;
@@ -31,7 +32,7 @@ public class ResultService {
     @Autowired
     CyclistRepository cyclistRepository;
 
-    public List<TimeResult> scrapeTimeResult() {
+    public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) {
         List<Stage> stages = stageRepository.findAll();
         List<TimeResult> results = new ArrayList<>();
         System.out.println("Starting scraping...");
@@ -46,7 +47,6 @@ public class ResultService {
 
                 Elements resultRows = doc.select("table.results tr");
 
-                // Use a cumulative time field for each stage
                 LocalTime cumulativeTime = LocalTime.MIDNIGHT;
 
                 for (Element row : resultRows) {
@@ -78,34 +78,23 @@ public class ResultService {
                     }
                     System.out.println("Parsed Time: " + resultTime);
 
-                      Cyclist cyclist = searchCyclist(riderName);
+                    Cyclist cyclist = searchCyclist(riderName);
                     if (cyclist == null) {
                         System.out.println("Cyclist not found for name: " + riderName);
                         continue;
                     }
-                    TimeResult timeResult = timeResultRepository.findByStageAndCyclist(stage, cyclist);
-                    if (timeResult == null) {
-                        timeResult = new TimeResult();
-                        timeResult.setStage(stage);
-                        timeResult.setCyclist(cyclist);
-                    } else {
-                        // Optionally update existing result fields below
-                        timeResult.setStage(stage);
-                        timeResult.setCyclist(cyclist);
-                    }
+
+                    TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
+                   
+
                     if (time.contains("-")) {
                         checkForDNFAndMore(position, timeResult);
                     }
                     timeResult = checkForDNFAndMore(position, timeResult);
 
-                    timeResult.setPosition(position);
-                    timeResult.setCyclist(searchCyclist(riderName));
-                    timeResult.setTime(resultTime);
-                    System.out.println(timeResult);
-                    stage.addResult(timeResult);
-                    timeResultRepository.save(timeResult);
-                    stageRepository.save(stage);
-                    results.add(timeResult);
+                    fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
+
+                    saveResult(stage, timeResult, results);
                     resultCount++;
                 }
             }
@@ -115,6 +104,28 @@ public class ResultService {
         }
 
         return results;
+    }
+
+    private TimeResult getOrCreateTimeResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
+        TimeResult timeResult = timeResultRepository.findByStageAndCyclistAndScrapeResultType(stage, cyclist, scrapeResultType);
+        if (timeResult == null) {
+            System.out.println("Creating new TimeResult for Stage: " + stage.getName());
+            timeResult = new TimeResult();
+            timeResult.setStage(stage);
+            timeResult.setCyclist(cyclist);
+        }
+        return timeResult;
+    }
+
+    private void fillTimeResultFields(TimeResult timeResult, String position, LocalTime resultTime, ScrapeResultType scrapeResultType) {
+        timeResult.setPosition(position);
+        timeResult.setTime(resultTime);
+        timeResult.setScrapeResultType(scrapeResultType);
+    }
+
+    private void saveResult(Stage stage, TimeResult timeResult, List<TimeResult> results) {
+        timeResultRepository.save(timeResult);
+        results.add(timeResult);
     }
 
     private LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
