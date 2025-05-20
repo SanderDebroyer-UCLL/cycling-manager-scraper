@@ -199,7 +199,9 @@ public class RaceService {
                         cyclistRepository.save(cyclist);
 
                         if (startDate.isAfter(currentDate)) {
-                            cyclist.addRace(race.getName());
+                            if (!cyclist.getUpcomingRaces().contains(race.getName())) {
+                                cyclist.addRace(race.getName());
+                            }
                         }
     
                         
