@@ -25,6 +25,9 @@ public abstract class Result {
     @Enumerated(EnumType.STRING)
     private RaceStatus raceStatus;  
 
+    @Enumerated(EnumType.STRING)
+    private ScrapeResultType scrapeResultType;
+    
     @ManyToOne
     @JsonBackReference
     private Cyclist cyclist;

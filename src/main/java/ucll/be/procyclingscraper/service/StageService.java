@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
+import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
@@ -143,7 +144,7 @@ public class StageService {
         return stage;
     }
 
-    public List<Cyclist> findCyclistInByStageId(Long stage_id){
-        return cyclistRepository.findCyclistsByStageId(stage_id);
+    public List<Cyclist> findCyclistInByStageId(Long stage_id, String type) {
+        return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
     }
 }
