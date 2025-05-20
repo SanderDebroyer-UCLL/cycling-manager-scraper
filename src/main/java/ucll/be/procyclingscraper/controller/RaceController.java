@@ -9,6 +9,7 @@ import ucll.be.procyclingscraper.service.RaceService;
 
 import java.util.List;
 
+
 @RestController
 @CrossOrigin(origins = "*") 
 @RequestMapping("/races")

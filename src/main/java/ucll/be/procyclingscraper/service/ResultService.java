@@ -5,15 +5,18 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.RaceStatus;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.repository.*;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
-import javax.naming.spi.DirStateFactory.Result;
 
 @Service
 public class ResultService {
@@ -28,39 +31,180 @@ public class ResultService {
     @Autowired
     CyclistRepository cyclistRepository;
 
-    public Result scrapeResult(){
+    public List<TimeResult> scrapeTimeResult() {
         List<Stage> stages = stageRepository.findAll();
-        try{
-            for(Stage stage: stages){
+        List<TimeResult> results = new ArrayList<>();
+        System.out.println("Starting scraping...");
+        int resultCount = 0;
+        final int MAX_RESULTS = 140;
+        try { 
+            for (Stage stage : stages) {
+                if (resultCount >= MAX_RESULTS) break;
                 Document doc = Jsoup.connect(stage.getStageUrl())
                     .userAgent(USER_AGENT)
                     .get();
-                Elements resultRows = doc.select("results basic moblist10");
+
+                Elements resultRows = doc.select("table.results tr");
+
+                // Use a cumulative time field for each stage
+                LocalTime cumulativeTime = LocalTime.MIDNIGHT;
 
                 for (Element row : resultRows) {
-                    String position = row.selectFirst("td:first-child").text();
+                    if (resultCount >= MAX_RESULTS) break;
+
+                    Element positionElement = row.selectFirst("td:first-child");
+                    String position = positionElement != null ? positionElement.text() : "Unknown";
+                    System.out.println("Position: " + position);
 
                     Element riderElement = row.selectFirst("td:nth-child(7) a");
                     String riderName = riderElement != null ? riderElement.text() : "Unknown";
+                    System.out.println("Rider Name: " + riderName);
 
                     Element timeElement = row.selectFirst("td.time.ar");
-                    String time = timeElement != null ? timeElement.text() : "Unknown";
+                    String rawTime = timeElement != null ? timeElement.text() : "Unknown";
+                    String[] parts = rawTime.split(" ");
+                    String time = parts[0];
+                    System.out.println("Time: " + time);
 
-                    TimeResult timeResult = new TimeResult();
-                    timeResult.setPosition(Integer.parseInt(position));
-                    timeResult.setCyclist(cyclistRepository.findByName(riderName));
-                    timeResult.setTime(LocalDateTime.parse(time));
+                    if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
+                        System.out.println("Skipping row due to missing data");
+                        continue;
+                    }
 
+
+                    LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
+                    if (resultTime != null) {
+                        cumulativeTime = resultTime;
+                    }
+                    System.out.println("Parsed Time: " + resultTime);
+
+                      Cyclist cyclist = searchCyclist(riderName);
+                    if (cyclist == null) {
+                        System.out.println("Cyclist not found for name: " + riderName);
+                        continue;
+                    }
+                    TimeResult timeResult = timeResultRepository.findByStageAndCyclist(stage, cyclist);
+                    if (timeResult == null) {
+                        timeResult = new TimeResult();
+                        timeResult.setStage(stage);
+                        timeResult.setCyclist(cyclist);
+                    } else {
+                        // Optionally update existing result fields below
+                        timeResult.setStage(stage);
+                        timeResult.setCyclist(cyclist);
+                    }
+                    if (time.contains("-")) {
+                        checkForDNFAndMore(position, timeResult);
+                    }
+                    timeResult = checkForDNFAndMore(position, timeResult);
+
+                    timeResult.setPosition(position);
+                    timeResult.setCyclist(searchCyclist(riderName));
+                    timeResult.setTime(resultTime);
+                    System.out.println(timeResult);
+                    stage.addResult(timeResult);
                     timeResultRepository.save(timeResult);
+                    stageRepository.save(stage);
+                    results.add(timeResult);
+                    resultCount++;
                 }
-
             }
-            
-        } catch (IOException e){
+        
+        } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return results;
+    }
+
+    private LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
+        try {
+            String cleanedTime = time.trim();
+
+            if (!cleanedTime.matches("\\d{1,2}:\\d{2}(:\\d{2})?")) {
+                return cumulativeTime;
+            }
+
+            LocalTime inputTime = parseToLocalTime(cleanedTime);
+
+            LocalTime newCumulative = cumulativeTime
+                    .plusHours(inputTime.getHour())
+                    .plusMinutes(inputTime.getMinute())
+                    .plusSeconds(inputTime.getSecond());
+
+            System.out.println("Cumulative Time: " + newCumulative);
+
+            return newCumulative;
+
+        } catch (Exception e) {
+            System.out.println("Failed to parse time: " + time);
+            e.printStackTrace();
+            return cumulativeTime;
+        }
+    }
+
+    private LocalTime parseToLocalTime(String timeStr) {
+        String[] parts = timeStr.split(":");
+        int hours = 0, minutes = 0, seconds = 0;
+
+        if (parts.length == 3) {
+            hours = Integer.parseInt(parts[0]);
+            minutes = Integer.parseInt(parts[1]);
+            seconds = Integer.parseInt(parts[2]);
+        } else if (parts.length == 2) {
+            minutes = Integer.parseInt(parts[0]);
+            seconds = Integer.parseInt(parts[1]);
+        } else if (parts.length == 1) {
+            seconds = Integer.parseInt(parts[0]);
+        }
+        System.out.println("Parsed Time: " + hours + ":" + minutes + ":" + seconds);
+        return LocalTime.of(hours, minutes, seconds);
+    }
+
+    
+    private TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
+        if (position.equalsIgnoreCase("DNS")) {
+            timeResult.setRaceStatus(RaceStatus.DNS);
+        }
+        else if (position.equalsIgnoreCase("DNF")) {
+            timeResult.setRaceStatus(RaceStatus.DNF);
+        }
+        else if (position.equalsIgnoreCase("DSQ")) {
+            timeResult.setRaceStatus(RaceStatus.DSQ);
+        }
+        else if (position.equalsIgnoreCase("OTL")) {
+            timeResult.setRaceStatus(RaceStatus.OTL);
+        }
+        else{
+            timeResult.setRaceStatus(RaceStatus.FINISHED);
+        }
+        return timeResult;
+    }
+
+    private Cyclist searchCyclist(String riderName) {
+        System.out.println("Extracted Rider Name: " + riderName);
+
+        String[] nameParts = riderName.trim().split("\\s+");
+
+        for (int i = 1; i < nameParts.length; i++) {
+            String firstName = String.join(" ", Arrays.copyOfRange(nameParts, i, nameParts.length));
+            String lastName = String.join(" ", Arrays.copyOfRange(nameParts, 0, i));
+            String fixedName = firstName + " " + lastName;
+
+            System.out.println("Trying rearranged name: " + fixedName);
+
+            Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
+            if (cyclist != null) {
+                System.out.println("Found cyclist: " + fixedName);
+                return cyclist;
+            }
+        }
+
+        System.out.println("No cyclist found for name: " + riderName);
         return null;
     }
-    
+    public List<TimeResult> findAllResults() {
+        return timeResultRepository.findAll();
+    }
 
 }
