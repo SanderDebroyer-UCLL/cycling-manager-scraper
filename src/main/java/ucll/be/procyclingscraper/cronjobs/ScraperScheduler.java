@@ -37,7 +37,7 @@ public class ScraperScheduler {
 
         stageService.scrapeStages();
 
-        resultService.scrapeResult();
+        resultService.scrapeTimeResult();
         
     }
 }
