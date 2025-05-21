@@ -82,6 +82,10 @@ public class UserTeamService {
             }
         }
 
+        if (userTeam.getCyclists().size() == 20) {
+            // Check if the user has already picked a cyclist in this competition
+            throw new RuntimeException("User has already picked a cyclist in this competition");
+        }
         // Add cyclist to the user's team
         userTeam.getCyclists().add(cyclist);
         userTeamRepository.save(userTeam);
