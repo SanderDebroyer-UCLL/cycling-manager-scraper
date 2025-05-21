@@ -9,7 +9,6 @@ import ucll.be.procyclingscraper.service.RaceService;
 
 import java.util.List;
 
-
 @RestController
 @CrossOrigin(origins = "*") 
 @RequestMapping("/races")
@@ -29,5 +28,9 @@ public class RaceController {
     public List<Race> getRaces() {
         return raceService.getRaces();
     }
-    
+
+    @GetMapping("/one_day")
+    public List<Race> fetchOneDayRaces() {
+        return raceService.fetchOneDayRaces();
+    }
 }

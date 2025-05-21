@@ -71,7 +71,6 @@ public class ResultService {
                         continue;
                     }
 
-
                     LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
                     if (resultTime != null) {
                         cumulativeTime = resultTime;
@@ -86,7 +85,6 @@ public class ResultService {
 
                     TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
                    
-
                     if (time.contains("-")) {
                         checkForDNFAndMore(position, timeResult);
                     }
@@ -106,7 +104,7 @@ public class ResultService {
         return results;
     }
 
-    private TimeResult getOrCreateTimeResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
+    public TimeResult getOrCreateTimeResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
         TimeResult timeResult = timeResultRepository.findByStageAndCyclistAndScrapeResultType(stage, cyclist, scrapeResultType);
         if (timeResult == null) {
             System.out.println("Creating new TimeResult for Stage: " + stage.getName());
@@ -117,18 +115,18 @@ public class ResultService {
         return timeResult;
     }
 
-    private void fillTimeResultFields(TimeResult timeResult, String position, LocalTime resultTime, ScrapeResultType scrapeResultType) {
+    public void fillTimeResultFields(TimeResult timeResult, String position, LocalTime resultTime, ScrapeResultType scrapeResultType) {
         timeResult.setPosition(position);
         timeResult.setTime(resultTime);
         timeResult.setScrapeResultType(scrapeResultType);
     }
 
-    private void saveResult(Stage stage, TimeResult timeResult, List<TimeResult> results) {
+    public void saveResult(Stage stage, TimeResult timeResult, List<TimeResult> results) {
         timeResultRepository.save(timeResult);
         results.add(timeResult);
     }
 
-    private LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
+    public LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
         try {
             String cleanedTime = time.trim();
 
@@ -154,7 +152,7 @@ public class ResultService {
         }
     }
 
-    private LocalTime parseToLocalTime(String timeStr) {
+    public LocalTime parseToLocalTime(String timeStr) {
         String[] parts = timeStr.split(":");
         int hours = 0, minutes = 0, seconds = 0;
 
@@ -173,7 +171,7 @@ public class ResultService {
     }
 
     
-    private TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
+    public TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
         if (position.equalsIgnoreCase("DNS")) {
             timeResult.setRaceStatus(RaceStatus.DNS);
         }
@@ -192,7 +190,7 @@ public class ResultService {
         return timeResult;
     }
 
-    private Cyclist searchCyclist(String riderName) {
+    public Cyclist searchCyclist(String riderName) {
         System.out.println("Extracted Rider Name: " + riderName);
 
         String[] nameParts = riderName.trim().split("\\s+");
