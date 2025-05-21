@@ -37,6 +37,10 @@ public class RaceService {
         return raceRepository.findAll();
     }
 
+    public List<Race> fetchOneDayRaces() {
+        return raceRepository.findRaceByStagesIsEmpty();
+    }
+
     public List<Race> scrapeRaces() {
         List<Race> races = new ArrayList<>();
         List<Stage> stages = new ArrayList<>();

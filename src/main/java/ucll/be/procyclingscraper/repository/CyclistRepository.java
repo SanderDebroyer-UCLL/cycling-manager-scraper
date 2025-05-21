@@ -38,5 +38,6 @@ public interface CyclistRepository extends JpaRepository<Cyclist, Long> {
                    "CASE WHEN r.position ~ '^[0-9]+$' THEN CAST(r.position AS integer) ELSE 9999 END",
            nativeQuery = true)
     List<Cyclist> findCyclistsByStageIdAndResultType(@Param("stageId") Long stageId, @Param("scrapeResultType") String scrapeResultType);
+    Cyclist findCyclistById(int int1);
     
 }   

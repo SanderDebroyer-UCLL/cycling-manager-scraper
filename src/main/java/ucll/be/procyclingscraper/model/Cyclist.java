@@ -44,5 +44,13 @@ public class Cyclist {
         }
         this.upcomingRaces.add(raceName);
     }
+
+    @OneToMany(mappedBy = "cyclist")
+    @JsonManagedReference
+    private List<RaceResult> raceResults = new ArrayList<>();
+
+    public void addRaceResult(RaceResult raceResult) {
+        this.raceResults.add(raceResult);
+    }
     
 }
