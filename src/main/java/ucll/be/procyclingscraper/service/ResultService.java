@@ -45,9 +45,28 @@ public class ResultService {
                     .userAgent(USER_AGENT)
                     .get();
 
-                Elements resultRows = doc.select("table.results tr");
+            Elements tables = doc.select("table.results");
+            System.out.println("Number of tables found: " + tables.size()); // Debugging statement
 
-                LocalTime cumulativeTime = LocalTime.MIDNIGHT;
+            if (tables.isEmpty()) {
+                System.out.println("No tables found with class 'results'.");
+                continue;
+            }
+
+            Elements resultRows;
+
+            if (scrapeResultType.equals(ScrapeResultType.GC) && tables.size() > 1) {
+                resultRows = tables.get(1).select("tr");
+            } else {
+                resultRows = tables.get(0).select("tr");
+            }
+
+            if (resultRows.isEmpty()) {
+                System.out.println("No rows found in the selected table.");
+                continue;
+            }
+
+            LocalTime cumulativeTime = LocalTime.MIDNIGHT;
 
                 for (Element row : resultRows) {
                     if (resultCount >= MAX_RESULTS) break;
