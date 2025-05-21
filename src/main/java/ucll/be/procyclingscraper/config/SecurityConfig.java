@@ -45,10 +45,8 @@ public class SecurityConfig {
         //     .authorizeHttpRequests(req -> req
         //         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
         //         .requestMatchers("/api/auth/*").permitAll()
-        //         .requestMatchers("*/auth/**").permitAll()
         //         .requestMatchers("/h2-console/**").permitAll()
-        //         .requestMatchers("/competitions/**").permitAll()
-        //         .requestMatchers("*/scrape/**").permitAll()
+                
         //         .anyRequest()
         //         .authenticated())
         //     .exceptionHandling(exception -> exception
@@ -59,6 +57,7 @@ public class SecurityConfig {
         //     .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
         //     return http.build();
+
         // }
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

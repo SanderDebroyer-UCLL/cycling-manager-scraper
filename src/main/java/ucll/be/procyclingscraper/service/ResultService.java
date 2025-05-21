@@ -41,9 +41,7 @@ public class ResultService {
         try { 
             for (Stage stage : stages) {
                 if (resultCount >= MAX_RESULTS) break;
-                Document doc = Jsoup.connect(stage.getStageUrl())
-                    .userAgent(USER_AGENT)
-                    .get();
+                Document doc = fetchStageDocument(stage, scrapeResultType);
 
             Elements tables = doc.select("table.results");
             System.out.println("Number of tables found: " + tables.size()); // Debugging statement
@@ -55,7 +53,7 @@ public class ResultService {
 
             Elements resultRows;
 
-            if (scrapeResultType.equals(ScrapeResultType.GC) && tables.size() > 1) {
+            if (scrapeResultType.equals(ScrapeResultType.GC)) {
                 resultRows = tables.get(1).select("tr");
             } else {
                 resultRows = tables.get(0).select("tr");
@@ -68,61 +66,79 @@ public class ResultService {
 
             LocalTime cumulativeTime = LocalTime.MIDNIGHT;
 
-                for (Element row : resultRows) {
-                    if (resultCount >= MAX_RESULTS) break;
+            for (Element row : resultRows) {
+                if (resultCount >= MAX_RESULTS) break;
+                String position;
+                String rawTime = "Unknown";
+                Element positionElement = row.selectFirst("td:first-child");
+                position = positionElement != null ? positionElement.text() : "Unknown";
 
-                    Element positionElement = row.selectFirst("td:first-child");
-                    String position = positionElement != null ? positionElement.text() : "Unknown";
-                    System.out.println("Position: " + position);
+                Element timeElement = row.selectFirst("td.time.ar");
+                rawTime = timeElement != null ? timeElement.text() : "Unknown";
 
-                    Element riderElement = row.selectFirst("td:nth-child(7) a");
-                    String riderName = riderElement != null ? riderElement.text() : "Unknown";
-                    System.out.println("Rider Name: " + riderName);
+                Element riderElement = row.selectFirst("td:nth-child(7) a");
+                String riderName = riderElement != null ? riderElement.text() : "Unknown";
+                // System.out.println("Rider Name: " + riderName);
 
-                    Element timeElement = row.selectFirst("td.time.ar");
-                    String rawTime = timeElement != null ? timeElement.text() : "Unknown";
-                    String[] parts = rawTime.split(" ");
-                    String time = parts[0];
-                    System.out.println("Time: " + time);
+                String[] parts = rawTime.split(" ");
+                String time = parts[0];
+                // System.out.println("Time: " + time);
 
-                    if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
-                        System.out.println("Skipping row due to missing data");
-                        continue;
-                    }
-
-
-                    LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
-                    if (resultTime != null) {
-                        cumulativeTime = resultTime;
-                    }
-                    System.out.println("Parsed Time: " + resultTime);
-
-                    Cyclist cyclist = searchCyclist(riderName);
-                    if (cyclist == null) {
-                        System.out.println("Cyclist not found for name: " + riderName);
-                        continue;
-                    }
-
-                    TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
-                   
-
-                    if (time.contains("-")) {
-                        checkForDNFAndMore(position, timeResult);
-                    }
-                    timeResult = checkForDNFAndMore(position, timeResult);
-
-                    fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
-
-                    saveResult(stage, timeResult, results);
-                    resultCount++;
+                if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
+                    System.out.println("Skipping row due to missing data");
+                    continue;
                 }
+
+                LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
+                if (resultTime != null) {
+                    cumulativeTime = resultTime;
+                }
+                System.out.println("Parsed Time: " + resultTime);
+
+                Cyclist cyclist = searchCyclist(riderName);
+                if (cyclist == null) {
+                    System.out.println("Cyclist not found for name: " + riderName);
+                    continue;
+                }
+
+                TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
+
+                if (time.contains("-")) {
+                    checkForDNFAndMore(position, timeResult);
+                }
+                timeResult = checkForDNFAndMore(position, timeResult);
+
+                fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
+
+                saveResult(stage, timeResult, results);
+                resultCount++;
             }
-        
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+
         return results;
+    }
+
+    private Document fetchStageDocument(Stage stage, ScrapeResultType scrapeResultType) throws IOException {
+        String stageUrl = stage.getStageUrl();
+        if (scrapeResultType.equals(ScrapeResultType.GC)) {
+            System.out.println("Scraping GC results for stage: " + stage.getName());
+            stageUrl = stageUrl + "-gc";
+        }
+        
+        System.out.println("Final URL: " + stageUrl);
+
+        try {
+            return Jsoup.connect(stageUrl)
+                    .userAgent(USER_AGENT)
+                    .get();
+        } catch (IOException e) {
+            System.err.println("Failed to fetch document from URL: " + stageUrl);
+            throw e;
+        }
     }
 
     private TimeResult getOrCreateTimeResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
@@ -212,7 +228,7 @@ public class ResultService {
     }
 
     private Cyclist searchCyclist(String riderName) {
-        System.out.println("Extracted Rider Name: " + riderName);
+        // System.out.println("Extracted Rider Name: " + riderName);
 
         String[] nameParts = riderName.trim().split("\\s+");
 
@@ -221,7 +237,7 @@ public class ResultService {
             String lastName = String.join(" ", Arrays.copyOfRange(nameParts, 0, i));
             String fixedName = firstName + " " + lastName;
 
-            System.out.println("Trying rearranged name: " + fixedName);
+            // System.out.println("Trying rearranged name: " + fixedName);
 
             Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
             if (cyclist != null) {
@@ -237,4 +253,7 @@ public class ResultService {
         return timeResultRepository.findAll();
     }
 
+    public void deleteAllResults() {
+        timeResultRepository.deleteAll();
+    }
 }
