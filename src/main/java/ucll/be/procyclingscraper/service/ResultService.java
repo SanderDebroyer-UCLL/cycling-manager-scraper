@@ -54,7 +54,11 @@ public class ResultService {
             Elements resultRows;
 
             if (scrapeResultType.equals(ScrapeResultType.GC)) {
-                resultRows = tables.get(1).select("tr");
+                if (tables.size() > 1) {
+                    resultRows = tables.get(1).select("tr");
+                } else {
+                    resultRows = tables.get(0).select("tr");
+                }
             } else {
                 resultRows = tables.get(0).select("tr");
             }
