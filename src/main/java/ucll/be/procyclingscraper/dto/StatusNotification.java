@@ -1,17 +1,16 @@
 package ucll.be.procyclingscraper.dto;
 
-import java.util.Set;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import ucll.be.procyclingscraper.model.CompetitionPick;
+import ucll.be.procyclingscraper.model.CompetitionStatus;
+
 
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderNotification {
-    private Set<CompetitionPick> competitionPicks;
+public class StatusNotification {
+    private CompetitionStatus status;
 }

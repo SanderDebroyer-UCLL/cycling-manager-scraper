@@ -17,14 +17,12 @@ public class CompetitionPick {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "competition_id", nullable = false)
     @JsonBackReference // prevents recursion
     private Competition competition;
 
-
-
     private Long userId;
 
-    private int pickOrder;
+    private Long pickOrder;
 }

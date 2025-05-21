@@ -9,6 +9,8 @@ import ucll.be.procyclingscraper.dto.OrderMessage;
 import ucll.be.procyclingscraper.dto.OrderNotification;
 import ucll.be.procyclingscraper.dto.PickMessage;
 import ucll.be.procyclingscraper.dto.PickNotification;
+import ucll.be.procyclingscraper.dto.StatusMessage;
+import ucll.be.procyclingscraper.dto.StatusNotification;
 import ucll.be.procyclingscraper.service.CompetitionService;
 import ucll.be.procyclingscraper.service.UserTeamService;
 
@@ -20,6 +22,12 @@ public class SocketController {
 
     @Autowired
     private CompetitionService competitionService;
+
+    @MessageMapping("/status")
+    @SendTo("/topic/status")
+    public StatusNotification handleStatus(StatusMessage statusMessage) {
+        return competitionService.updateCompetitionStatus(statusMessage.getStatus(), statusMessage.getCompetitionId());
+    }
 
     @MessageMapping("/order")
     @SendTo("/topic/order")

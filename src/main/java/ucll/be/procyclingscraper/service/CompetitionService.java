@@ -1,9 +1,7 @@
 package ucll.be.procyclingscraper.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.dto.OrderNotification;
+import ucll.be.procyclingscraper.dto.StatusNotification;
 import ucll.be.procyclingscraper.dto.UserDTO;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.CompetitionPick;
+import ucll.be.procyclingscraper.model.CompetitionStatus;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.model.UserTeam;
@@ -57,18 +57,33 @@ public class CompetitionService {
     }
 
     @Transactional
+    public StatusNotification updateCompetitionStatus(CompetitionStatus status, Long competitionId) {
+        Competition competition = competitionRepository.findById(competitionId)
+            .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+
+        competition.setCompetitionStatus(status);
+        competitionRepository.save(competition);
+        StatusNotification notification = new StatusNotification();
+        notification.setStatus(status);
+        return notification;
+    }
+
+    @Transactional
     public OrderNotification updateOrderToCompetition(List<UserDTO> users, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
             .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
 
+        // Clear existing picks if you want to replace them
+        competition.getCompetitionPicks().clear();
+
         // Assign pick order starting from 1
-        long pickOrder = 1L;
+        Long pickOrder = 1L;
         for (UserDTO user : users) {
             CompetitionPick pick = new CompetitionPick();
             pick.setCompetition(competition);
             pick.setUserId(user.getId());
-            pick.setPickOrder((int) pickOrder++);
-            competition.setUserOrder(pick);
+            pick.setPickOrder(pickOrder++);
+            competition.getCompetitionPicks().add(pick);
         }
 
         // Persist the competition with updated pick order
@@ -76,55 +91,66 @@ public class CompetitionService {
 
         // Notify frontend/system (if needed)
         OrderNotification notification = new OrderNotification();
-        notification.setCompetitionPick(competition.getUserOrder());
+        notification.setCompetitionPicks(new java.util.HashSet<>(competition.getCompetitionPicks())); // assuming it accepts a set
         return notification;
     }
 
-    public Competition createCompetition(CreateCompetitionData competitionData) {
+public Competition createCompetition(CreateCompetitionData competitionData) {
 
-        System.out.println("Received competitionData: " + competitionData);
+    System.out.println("Received competitionData: " + competitionData);
 
-        Competition existingCompetition = competitionRepository.findByName(competitionData.getName());
-        if (existingCompetition != null) {
-            throw new IllegalArgumentException("Competition with this name already exists");
-        }
-
-        Competition competition = new Competition(competitionData.getName());
-
-        // First save the competition (to get its ID if needed)
-        competition = competitionRepository.save(competition);
-
-        for (String email : competitionData.getUserEmails()) {
-            User user = userRepository.findUserByEmail(email);
-            if (user == null) {
-                throw new IllegalArgumentException("User with email " + email + " not found.");
-            } else {
-                competition.getUsers().add(user);
-
-                // Create a user team for this user
-                UserTeam userTeam = UserTeam.builder()
-                    .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
-                    .competitionId(competition.getId())
-                    .user(user)
-                    .cyclists(new ArrayList<>())      // Empty initial list
-                    .build();
-
-                userTeamRepository.save(userTeam);
-            }
-        }
-
-        for (String raceId : competitionData.getRaceIds()) {
-            Race race = raceRepository.findRaceById(Integer.parseInt(raceId));
-
-            if (race == null) {
-                throw new IllegalArgumentException("Race with ID " + raceId + " not found.");
-            } else {
-                competition.getRaces().add(race);
-            }
-        }
-
-        // Save updated competition with users and races
-        return competitionRepository.save(competition);
+    Competition existingCompetition = competitionRepository.findByName(competitionData.getName());
+    if (existingCompetition != null) {
+        throw new IllegalArgumentException("Competition with this name already exists");
     }
-    
+
+    Competition competition = new Competition(competitionData.getName());
+
+    // First save the competition (to get its ID if needed)
+    competition = competitionRepository.save(competition);
+
+    competition.setCompetitionStatus(CompetitionStatus.SORTING);
+    competition.setCurrentPick(1L);
+
+    Long pickOrder = 1L; // initialize pick order for users
+
+    for (String email : competitionData.getUserEmails()) {
+        User user = userRepository.findUserByEmail(email);
+        if (user == null) {
+            throw new IllegalArgumentException("User with email " + email + " not found.");
+        } else {
+            competition.getUsers().add(user);
+
+            // Create a CompetitionPick for the user
+            CompetitionPick pick = new CompetitionPick();
+            pick.setCompetition(competition);
+            pick.setUserId(user.getId());
+            pick.setPickOrder(pickOrder++);
+            competition.getCompetitionPicks().add(pick);
+
+            // Create a user team for this user
+            UserTeam userTeam = UserTeam.builder()
+                .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
+                .competitionId(competition.getId())
+                .user(user)
+                .cyclists(new ArrayList<>())      // Empty initial list
+                .build();
+
+            userTeamRepository.save(userTeam);
+        }
+    }
+
+    for (String raceId : competitionData.getRaceIds()) {
+        Race race = raceRepository.findRaceById(Integer.parseInt(raceId));
+
+        if (race == null) {
+            throw new IllegalArgumentException("Race with ID " + raceId + " not found.");
+        } else {
+            competition.getRaces().add(race);
+        }
+    }
+
+    // Save updated competition with users, races, and picks
+    return competitionRepository.save(competition);
+}
 }
