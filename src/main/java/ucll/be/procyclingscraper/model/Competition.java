@@ -6,6 +6,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,6 +38,11 @@ public class Competition {
         this.name = name;
     }
 
+    @OneToOne(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference // allows serialization
+    private CompetitionPick userOrder;
+
+
     @JsonBackReference("competition_user")
     @ManyToMany
     @JoinTable(name = "competition_user",
@@ -49,4 +56,5 @@ public class Competition {
             joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "race_id", 
             referencedColumnName = "id"))
-    private Set<Race> races = new HashSet<>();}
+    private Set<Race> races = new HashSet<>();
+}
