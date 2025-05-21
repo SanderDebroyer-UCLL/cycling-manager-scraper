@@ -5,10 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Getter
@@ -41,4 +44,12 @@ public class Race {
     @JsonIgnore
     @ManyToMany(mappedBy = "races")
     Set<Competition> competitions;
+
+    @OneToMany(mappedBy = "race")
+    @JsonManagedReference
+    private List<RaceResult> raceResult = new ArrayList<>();
+
+    public void addRaceResult(RaceResult raceResult) {
+        this.raceResult.add(raceResult);
+    }
 }

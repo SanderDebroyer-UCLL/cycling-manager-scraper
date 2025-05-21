@@ -33,8 +33,16 @@ public class RaceService {
     @Autowired
     private CyclistRepository cyclistRepository;
 
+    @Autowired
+    private CyclistService cyclistService;
+
+
     public List<Race> getRaces() {
         return raceRepository.findAll();
+    }
+
+    public List<Race> fetchOneDayRaces() {
+        return raceRepository.findRaceByStagesIsEmpty();
     }
 
     public List<Race> scrapeRaces() {
@@ -158,12 +166,18 @@ public class RaceService {
                     .trim();
     
                 if (!isChampionship) {
-                    Team team = teamRepository.findByName(teamName);
-                    if (team == null) {
-                        System.out.println("Team niet herkend, overslaan: " + teamName);
-                        continue; // We verwerken deze groep niet
+                    if (teamName.contains("(NAT)")) {
+                        System.out.println("Nationaal team gevonden: " + teamName);                    
                     }
-                    System.out.println("Verwerk team: " + teamName);
+                    else{
+                        Team team = teamRepository.findByName(teamName);
+                        if (team == null) {
+                           System.out.println("Team niet herkend, overslaan: " + teamName);
+                           continue; // We verwerken deze groep niet
+                        }   
+                        System.out.println("Verwerk team: " + teamName);
+                    }
+                    
                 } else {
                     System.out.println("Verwerk nationale selectie: " + teamName);
                 }
@@ -199,13 +213,44 @@ public class RaceService {
                         cyclistRepository.save(cyclist);
 
                         if (startDate.isAfter(currentDate)) {
-                            cyclist.addRace(race.getName());
+                            if (!cyclist.getUpcomingRaces().contains(race.getName())) {
+                                cyclist.addRace(race.getName());
+                            }
                         }
     
                         
-                    } else {
-                        System.out.println("Cyclist not found in repository: " + riderName);
                     }
+                    else {
+                        System.out.println("Cyclist not found in repository: " + riderName);
+                    
+                        if (!isChampionship && teamName.contains("(NAT)")) {
+                            String riderUrl = riderElement.attr("href");
+                            if (riderUrl != null && !riderUrl.isEmpty()) {
+                                riderUrl = "https://www.procyclingstats.com/" + riderUrl;
+                                System.out.println("Scraping details from: " + riderUrl);
+                    
+                                Cyclist newCyclist = cyclistService.scrapeCyclistDetails(riderUrl);
+                                newCyclist.setCyclistUrl(riderUrl);
+                    
+                                if (newCyclist.getName() == null || newCyclist.getName().isEmpty()) {
+                                    newCyclist.setName(riderName);
+                                }
+                    
+                                cyclistRepository.save(newCyclist);
+                                startList.add(newCyclist);
+                                System.out.println("Nieuwe nationale Renner toegevoegd: " + newCyclist.getName());
+                    
+                                LocalDate currentDate = LocalDate.now();
+                                LocalDate startDate = LocalDate.parse(race.getStartDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                                if (startDate.isAfter(currentDate)) {
+                                    newCyclist.addRace(race.getName());
+                                }
+                            } else {
+                                System.err.println("Geen URL gevonden voor renner: " + riderName);
+                            }
+                        }
+                    }
+                    
                 }
             }
     

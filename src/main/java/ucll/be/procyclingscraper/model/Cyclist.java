@@ -31,7 +31,7 @@ public class Cyclist {
     @JsonBackReference
     private Team team;
     
-    private List<String> upcomingRaces;
+    private List<String> upcomingRaces = new ArrayList<>();
 
 
     @OneToMany(mappedBy = "cyclist")
@@ -43,6 +43,14 @@ public class Cyclist {
             this.upcomingRaces = new ArrayList<>();
         }
         this.upcomingRaces.add(raceName);
+    }
+
+    @OneToMany(mappedBy = "cyclist")
+    @JsonManagedReference
+    private List<RaceResult> raceResults = new ArrayList<>();
+
+    public void addRaceResult(RaceResult raceResult) {
+        this.raceResults.add(raceResult);
     }
     
 }

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.RaceStatus;
+import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.repository.*;
@@ -31,7 +32,7 @@ public class ResultService {
     @Autowired
     CyclistRepository cyclistRepository;
 
-    public List<TimeResult> scrapeTimeResult() {
+    public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) {
         List<Stage> stages = stageRepository.findAll();
         List<TimeResult> results = new ArrayList<>();
         System.out.println("Starting scraping...");
@@ -46,7 +47,6 @@ public class ResultService {
 
                 Elements resultRows = doc.select("table.results tr");
 
-                // Use a cumulative time field for each stage
                 LocalTime cumulativeTime = LocalTime.MIDNIGHT;
 
                 for (Element row : resultRows) {
@@ -71,41 +71,28 @@ public class ResultService {
                         continue;
                     }
 
-
                     LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
                     if (resultTime != null) {
                         cumulativeTime = resultTime;
                     }
                     System.out.println("Parsed Time: " + resultTime);
 
-                      Cyclist cyclist = searchCyclist(riderName);
+                    Cyclist cyclist = searchCyclist(riderName);
                     if (cyclist == null) {
                         System.out.println("Cyclist not found for name: " + riderName);
                         continue;
                     }
-                    TimeResult timeResult = timeResultRepository.findByStageAndCyclist(stage, cyclist);
-                    if (timeResult == null) {
-                        timeResult = new TimeResult();
-                        timeResult.setStage(stage);
-                        timeResult.setCyclist(cyclist);
-                    } else {
-                        // Optionally update existing result fields below
-                        timeResult.setStage(stage);
-                        timeResult.setCyclist(cyclist);
-                    }
+
+                    TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
+                   
                     if (time.contains("-")) {
                         checkForDNFAndMore(position, timeResult);
                     }
                     timeResult = checkForDNFAndMore(position, timeResult);
 
-                    timeResult.setPosition(position);
-                    timeResult.setCyclist(searchCyclist(riderName));
-                    timeResult.setTime(resultTime);
-                    System.out.println(timeResult);
-                    stage.addResult(timeResult);
-                    timeResultRepository.save(timeResult);
-                    stageRepository.save(stage);
-                    results.add(timeResult);
+                    fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
+
+                    saveResult(stage, timeResult, results);
                     resultCount++;
                 }
             }
@@ -117,7 +104,29 @@ public class ResultService {
         return results;
     }
 
-    private LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
+    public TimeResult getOrCreateTimeResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
+        TimeResult timeResult = timeResultRepository.findByStageAndCyclistAndScrapeResultType(stage, cyclist, scrapeResultType);
+        if (timeResult == null) {
+            System.out.println("Creating new TimeResult for Stage: " + stage.getName());
+            timeResult = new TimeResult();
+            timeResult.setStage(stage);
+            timeResult.setCyclist(cyclist);
+        }
+        return timeResult;
+    }
+
+    public void fillTimeResultFields(TimeResult timeResult, String position, LocalTime resultTime, ScrapeResultType scrapeResultType) {
+        timeResult.setPosition(position);
+        timeResult.setTime(resultTime);
+        timeResult.setScrapeResultType(scrapeResultType);
+    }
+
+    public void saveResult(Stage stage, TimeResult timeResult, List<TimeResult> results) {
+        timeResultRepository.save(timeResult);
+        results.add(timeResult);
+    }
+
+    public LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
         try {
             String cleanedTime = time.trim();
 
@@ -143,7 +152,7 @@ public class ResultService {
         }
     }
 
-    private LocalTime parseToLocalTime(String timeStr) {
+    public LocalTime parseToLocalTime(String timeStr) {
         String[] parts = timeStr.split(":");
         int hours = 0, minutes = 0, seconds = 0;
 
@@ -162,7 +171,7 @@ public class ResultService {
     }
 
     
-    private TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
+    public TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
         if (position.equalsIgnoreCase("DNS")) {
             timeResult.setRaceStatus(RaceStatus.DNS);
         }
@@ -181,7 +190,7 @@ public class ResultService {
         return timeResult;
     }
 
-    private Cyclist searchCyclist(String riderName) {
+    public Cyclist searchCyclist(String riderName) {
         System.out.println("Extracted Rider Name: " + riderName);
 
         String[] nameParts = riderName.trim().split("\\s+");

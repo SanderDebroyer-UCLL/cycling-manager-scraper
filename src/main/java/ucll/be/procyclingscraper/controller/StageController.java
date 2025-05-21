@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.service.CyclistService;
 import ucll.be.procyclingscraper.service.StageService;
@@ -34,9 +35,14 @@ public class StageController {
         return stageService.getStages();
     }
     
-    @GetMapping("/ridersResult")
-    public List<Cyclist> getCyclistresultFromStageId(@RequestParam Long id) {
-        return stageService.findCyclistInByStageId(id);
+    @GetMapping("/stageResult/stage")
+    public List<Cyclist> getStageResultFromStageId(@RequestParam Long id) {
+        return stageService.findCyclistInByStageId(id, "STAGE");
     }
-    
+
+    @GetMapping("/stageResult/gc")
+    public List<Cyclist> getStageGcFromStageId(@RequestParam Long id) {
+        return stageService.findCyclistInByStageId(id, "GC");
+    }
+
 }
