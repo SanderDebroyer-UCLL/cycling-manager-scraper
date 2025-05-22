@@ -3,14 +3,16 @@ package ucll.be.procyclingscraper.dto;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+
+@Setter
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateCompetitionData {
-    private String name;
-    private List<String> userEmails;
-    private List<String> raceIds;
+public class OrderMessage {
+    private List<UserDTO> users;
+    private Long competitionId;
 }

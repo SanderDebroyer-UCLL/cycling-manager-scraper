@@ -8,7 +8,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Entity;
@@ -16,6 +18,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,11 +40,16 @@ public class User implements UserDetails {
     private String password;
     private Role role = Role.USER;
 
-    @JsonManagedReference("competition_user")
+
     @ManyToMany(mappedBy = "users")
+    @JsonManagedReference("competition_user")
     Set<Competition> competitions;
     public User() {
     }
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnoreProperties("user")  // ignore user inside userTeams when serializing User
+    private List<UserTeam> userTeams;
 
     public User(String firstName, String lastName, String email, String password) {
         setFirstName(firstName);
