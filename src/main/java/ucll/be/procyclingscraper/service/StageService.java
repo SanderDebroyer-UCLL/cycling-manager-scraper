@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.ParcoursType;
 import ucll.be.procyclingscraper.model.Race;
-import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
@@ -76,12 +76,10 @@ public class StageService {
                                     stage = new Stage(); 
                                 }
                                 stage.setStageUrl(stageUrl);
-                                System.out.println("stageURL" + stageUrl);
                                 stage.setDate(date);
                                 stage.setName(stageName);
                                 logger.info("Scraped stage URL: {}", stageUrl);
                                 stagesList.add(scrapeStageDetails(stage));
-                                logger.info("Added stage: {}", stage);
                             }
                         }
     
@@ -119,12 +117,20 @@ public class StageService {
                 if (cells.size() >= 2) {
                     String key = cells.get(0).text().trim();
                     String value = cells.get(1).text().trim();
-    
+                   
                     if ("Start time:".equals(key)) {
                         stage.setStartTime(value);
                     } else if ("Distance:".equals(key)) {
                         if (!value.isEmpty()) {
                         stage.setDistance(Double.parseDouble(value.replaceAll("[^0-9.]", "")));
+                        }
+                    } else if ("Parcours type:".equals(key)) {
+                        System.out.println("In de if statement");
+                        Element span = cells.get(1).selectFirst("span");
+                        if (span != null) {
+                            String className = span.className();
+                            System.out.println("Class name: " + className);
+                            checkParcoursType(stage, className);
                         }
                     } else if ("Vertical meters:".equals(key)) {
                         if (!value.isEmpty()) {
@@ -146,5 +152,27 @@ public class StageService {
 
     public List<Cyclist> findCyclistInByStageId(Long stage_id, String type) {
         return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
+    }
+
+    private void checkParcoursType(Stage stage, String value) {
+        switch (value) {
+            case "icon profile p1":
+                stage.setParcoursType(ParcoursType.FLAT);
+                break;
+            case "icon profile p2":
+                stage.setParcoursType(ParcoursType.HILLY);
+                break;
+            case "icon profile p3":
+                stage.setParcoursType(ParcoursType.HILLY_HILL_FINISH);
+                break;
+            case "icon profile p4":
+                stage.setParcoursType(ParcoursType.MOUNTAIN);
+                break;
+            case "icon profile p5":
+                stage.setParcoursType(ParcoursType.MOUNTAIN_HILL_FINISH);
+                break;
+            default:
+                stage.setParcoursType(null);
+        }
     }
 }
