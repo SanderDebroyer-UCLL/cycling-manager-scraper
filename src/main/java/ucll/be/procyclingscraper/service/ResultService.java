@@ -52,7 +52,7 @@ public class ResultService {
 
 
                     Elements resultRows = resultRows(doc, stage, scrapeResultType);
-                    LocalTime cumulativeTime = LocalTime.MIDNIGHT;
+                    LocalTime cumulativeTime = LocalTime.MIDNIGHT; 
 
                     for (Element row : resultRows) {
                         if (resultCount >= MAX_RESULTS) break;
@@ -67,7 +67,7 @@ public class ResultService {
 
                         Element riderElement = row.selectFirst("td:nth-child(7) a");
                         String riderName = riderElement != null ? riderElement.text() : "Unknown";
-                        
+
                         String[] parts = rawTime.split(" ");
                         String time = parts[0];
 
@@ -89,7 +89,7 @@ public class ResultService {
                         
                             System.out.println("Boni seconds: " + boniSeconds);
                             resultTime = subtractFromCumulative(resultTime, boniSeconds);
-                            cumulativeTime = resultTime;
+                            // cumulativeTime = resultTime;
                         }
 
                         System.out.println("Parsed Time: " + resultTime);
