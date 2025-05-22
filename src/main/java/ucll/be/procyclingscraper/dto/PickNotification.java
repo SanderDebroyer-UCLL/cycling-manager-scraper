@@ -12,4 +12,5 @@ import lombok.Setter;
 public class PickNotification {
     private String cyclistName;
     private String email;
+    private Long currentPick;
 }

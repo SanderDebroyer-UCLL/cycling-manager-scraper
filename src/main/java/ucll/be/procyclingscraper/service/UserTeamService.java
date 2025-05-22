@@ -97,6 +97,7 @@ public class UserTeamService {
 
         // Return pick notification
         PickNotification notification = new PickNotification();
+        notification.setCurrentPick(competition.getCurrentPick());
         notification.setCyclistName(cyclist.getName());
         notification.setEmail(email);
         return notification;

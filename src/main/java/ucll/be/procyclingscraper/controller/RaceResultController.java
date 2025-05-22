@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,9 +33,9 @@ public class RaceResultController {
         return raceResultService.getRaceResults();
     }
 
-    @GetMapping("/race")
-    public List<RaceResult> getRaceResultByRaceId(@RequestParam String raceId) {
-        return raceResultService.getRaceResultByRaceId(raceId);
+    @GetMapping("/race/{id}")
+    public List<RaceResult> getRaceResultByRaceId(@PathVariable String id) {
+        return raceResultService.getRaceResultByRaceId(id);
     }
 
     @GetMapping("/cyclist")
