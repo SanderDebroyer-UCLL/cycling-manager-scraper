@@ -129,6 +129,7 @@ public class RaceService {
     }
 
     public Race scrapeRaceByUrl(String name) {
+        
         try {
             
             Document docRaceInfo = Jsoup.connect(getRaceUrlByName(name)).userAgent(USER_AGENT).get();
