@@ -27,6 +27,10 @@ public class UserService {
         return userRepo.findAll();
     }
 
+    public User getLoggedInUser(String email) {
+        return userRepo.findUserByEmail(email);
+    }
+
     public User addUser(CreateUserData userData) throws ServiceException {
         User existingUser = userRepo.findUserByEmail(userData.getEmail());
         if (existingUser != null) {

@@ -52,8 +52,6 @@ public class JwtHelper {
             .getBody();
     }
 
-
-
     //check if the token has expired
     private Boolean isTokenExpired(String token) {
         final Date expiration = getExpirationDateFromToken(token);
