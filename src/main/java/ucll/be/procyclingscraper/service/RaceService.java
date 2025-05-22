@@ -37,6 +37,15 @@ public class RaceService {
         return raceRepository.findAll();
     }
 
+    public String getRaceUrlByName(String name) {
+        Race race = raceRepository.findByName(name.trim());
+        if (race == null) {
+            throw new IllegalArgumentException("Race with name '" + name + "' not found in the database.");
+        }
+        return race.getRaceUrl();
+    }
+    
+
     public List<Race> scrapeRaces() {
         List<Race> races = new ArrayList<>();
         List<Stage> stages = new ArrayList<>();
@@ -114,6 +123,58 @@ public class RaceService {
 
         return races;
     }
+
+    public Race scrapeRaceByUrl(String name) {
+        try {
+            
+            Document docRaceInfo = Jsoup.connect(getRaceUrlByName(name)).userAgent(USER_AGENT).get();
+    
+            String raceName = docRaceInfo.select("h1").text(); // Of haal het uit URL of elders op pagina
+            Race race = raceRepository.findByName(raceName);
+            if (race == null) {
+                race = new Race();
+            }
+    
+            race.setName(raceName);
+            race.setRaceUrl(getRaceUrlByName(name));
+    
+            Element raceLevelElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Category:) div:last-child").first();
+            if (raceLevelElement != null) {
+                race.setNiveau(raceLevelElement.text());
+            }
+    
+            Element startDateElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Startdate:) div:last-child").first();
+            if (startDateElement != null) {
+                race.setStartDate(startDateElement.text());
+            }
+    
+            Element endDateElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Enddate:) div:last-child").first();
+            if (endDateElement != null) {
+                race.setEndDate(endDateElement.text());
+            }
+    
+            Element distanceElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Total distance:) div:last-child").first();
+            if (distanceElement != null) {
+                try {
+                    race.setDistance(Integer.parseInt(distanceElement.text().replaceAll("[^0-9]", "")));
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid distance format: " + distanceElement.text());
+                }
+            }
+    
+            List<Cyclist> startlist = scrapeAndSaveStartlist(getRaceUrlByName(name) + "/startlist", race);
+            race.setStartList(startlist);
+    
+            raceRepository.save(race);
+            return race;
+    
+        } catch (IOException e) {
+            System.err.println("Fout bij het scrapen van de race: " + getRaceUrlByName(name));
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
 
     public List<Cyclist> scrapeAndSaveStartlist(String url, Race race) {
         List<Cyclist> startList = new ArrayList<>();

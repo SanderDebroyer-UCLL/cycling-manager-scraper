@@ -41,4 +41,8 @@ public class Race {
     @JsonIgnore
     @ManyToMany(mappedBy = "races")
     Set<Competition> competitions;
+
+    public String getRaceUrl() {
+        return raceUrl;
+    }
 }
