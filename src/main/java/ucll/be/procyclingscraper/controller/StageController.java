@@ -6,9 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.model.Cyclist;
-import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
-import ucll.be.procyclingscraper.service.CyclistService;
 import ucll.be.procyclingscraper.service.StageService;
 
 import java.util.List;
@@ -18,9 +16,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RestController
 @RequestMapping("/stages")
 public class StageController {
-
-    @Autowired
-    private CyclistService cyclistService;
 
     @Autowired
     private StageService stageService;

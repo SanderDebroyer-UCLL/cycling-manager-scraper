@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 
 import ucll.be.procyclingscraper.model.Cyclist;
-import ucll.be.procyclingscraper.model.ScrapeResultType;
 
 @Repository
 public interface CyclistRepository extends JpaRepository<Cyclist, Long> {

@@ -10,6 +10,7 @@ import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.RaceStatus;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
+import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.repository.*;
 
@@ -31,93 +32,96 @@ public class ResultService {
 
     @Autowired
     CyclistRepository cyclistRepository;
-
+    @Autowired
+    RaceRepository raceRepository;
+    
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) {
-        List<Stage> stages = stageRepository.findAll();
+        // List<Stage> stages = stageRepository.findAll();
         List<TimeResult> results = new ArrayList<>();
         System.out.println("Starting scraping...");
         int resultCount = 0;
-        final int MAX_RESULTS = 140;
+        final int MAX_RESULTS = 1000;
         try { 
-            for (Stage stage : stages) {
+            List<Race> races = raceRepository.findAll();
+            for (Race race : races) {
+                List<Stage> stages = race.getStages();
+                for (Stage stage : stages) {
+                System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
                 if (resultCount >= MAX_RESULTS) break;
-                Document doc = fetchStageDocument(stage, scrapeResultType);
+                Document doc = fetchStageDocument(race, stage, scrapeResultType);
 
-            Elements tables = doc.select("table.results");
-            System.out.println("Number of tables found: " + tables.size()); // Debugging statement
+                Elements tables = doc.select("table.results");
+                System.out.println("Number of tables found: " + tables.size());
 
-            if (tables.isEmpty()) {
-                System.out.println("No tables found with class 'results'.");
-                continue;
-            }
-
-            Elements resultRows;
-
-            if (scrapeResultType.equals(ScrapeResultType.GC)) {
-                if (tables.size() > 1) {
-                    resultRows = tables.get(1).select("tr");
-                } else {
-                    resultRows = tables.get(0).select("tr");
+                if (tables.isEmpty()) {
+                    System.out.println("No tables found with class 'results' for stage: " + stage.getName());
+                    continue;
                 }
-            } else {
-                resultRows = tables.get(0).select("tr");
-            }
 
-            if (resultRows.isEmpty()) {
-                System.out.println("No rows found in the selected table.");
-                continue;
-            }
+                Elements resultRows;
 
-            LocalTime cumulativeTime = LocalTime.MIDNIGHT;
+                if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
+                    resultRows = tables.get(0).select("tbody > tr");
+                } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
+                    resultRows = tables.get(1).select("tbody > tr");
+                } else {
+                    resultRows = tables.get(0).select("tbody > tr");
+                }
 
-            for (Element row : resultRows) {
-                if (resultCount >= MAX_RESULTS) break;
-                String position;
-                String rawTime = "Unknown";
-                Element positionElement = row.selectFirst("td:first-child");
-                position = positionElement != null ? positionElement.text() : "Unknown";
+                if (resultRows.isEmpty()) {
+                    System.out.println("No rows found in the selected table.");
+                }
 
-                Element timeElement = row.selectFirst("td.time.ar");
-                rawTime = timeElement != null ? timeElement.text() : "Unknown";
+                LocalTime cumulativeTime = LocalTime.MIDNIGHT;
 
-                Element riderElement = row.selectFirst("td:nth-child(7) a");
-                String riderName = riderElement != null ? riderElement.text() : "Unknown";
-                // System.out.println("Rider Name: " + riderName);
+                for (Element row : resultRows) {
+                    if (resultCount >= MAX_RESULTS) break;
+                    String position;
+                    String rawTime = "Unknown";
+                    Element positionElement = row.selectFirst("td:first-child");
+                    position = positionElement != null ? positionElement.text() : "Unknown";
 
-                String[] parts = rawTime.split(" ");
-                String time = parts[0];
-                // System.out.println("Time: " + time);
+                    Element timeElement = row.selectFirst("td.time.ar");
+                    rawTime = timeElement != null ? timeElement.text() : "Unknown";
 
-                if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
+                    Element riderElement = row.selectFirst("td:nth-child(7) a");
+                    String riderName = riderElement != null ? riderElement.text() : "Unknown";
+
+                    String[] parts = rawTime.split(" ");
+                    String time = parts[0];
+
+                    if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
                     System.out.println("Skipping row due to missing data");
                     continue;
-                }
+                    }
 
-                LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
-                if (resultTime != null) {
+                    LocalTime resultTime = timeHandlerWithCumulative(time, cumulativeTime);
+                    if (resultTime != null) {
                     cumulativeTime = resultTime;
-                }
-                System.out.println("Parsed Time: " + resultTime);
+                    }
+                    System.out.println("Parsed Time: " + resultTime);
 
-                Cyclist cyclist = searchCyclist(riderName);
-                if (cyclist == null) {
+                    Cyclist cyclist = searchCyclist(riderName);
+                    if (cyclist == null) {
                     System.out.println("Cyclist not found for name: " + riderName);
                     continue;
-                }
+                    }
 
-                TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
+                    TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
 
-                if (time.contains("-")) {
+                    if (time.contains("-")) {
                     checkForDNFAndMore(position, timeResult);
+                    }
+                    timeResult = checkForDNFAndMore(position, timeResult);
+
+                    fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
+
+                    saveResult(stage, timeResult, results);
+                    resultCount++;
                 }
-                timeResult = checkForDNFAndMore(position, timeResult);
-
-                fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
-
-                saveResult(stage, timeResult, results);
-                resultCount++;
+                }
+                if (resultCount >= MAX_RESULTS) break;
             }
-        }
 
     } catch (IOException e) {
         e.printStackTrace();
@@ -126,13 +130,19 @@ public class ResultService {
         return results;
     }
 
-    private Document fetchStageDocument(Stage stage, ScrapeResultType scrapeResultType) throws IOException {
+    private Document fetchStageDocument(Race race, Stage stage, ScrapeResultType scrapeResultType) throws IOException {
         String stageUrl = stage.getStageUrl();
         if (scrapeResultType.equals(ScrapeResultType.GC)) {
             System.out.println("Scraping GC results for stage: " + stage.getName());
             stageUrl = stageUrl + "-gc";
         }
-        
+
+        List<Stage> stages = race.getStages();
+        if (!stages.isEmpty() && stage.equals(stages.get(stages.size() - 1)) && scrapeResultType.equals(ScrapeResultType.GC)) {
+            System.out.println("Last stage in the GC results: " + stage.getName());
+            stageUrl = modifyUrl(stageUrl);
+            stageUrl = stageUrl + "/gc";
+        }
         System.out.println("Final URL: " + stageUrl);
 
         try {
@@ -143,6 +153,16 @@ public class ResultService {
             System.err.println("Failed to fetch document from URL: " + stageUrl);
             throw e;
         }
+    }
+
+    public static String modifyUrl(String url) {
+        // Remove the last part of the URL
+        int lastSlashIndex = url.lastIndexOf('/');
+        if (lastSlashIndex != -1) {
+            url = url.substring(0, lastSlashIndex);
+        }
+
+        return url;
     }
 
     private TimeResult getOrCreateTimeResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
