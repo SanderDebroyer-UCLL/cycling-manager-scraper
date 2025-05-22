@@ -29,7 +29,7 @@ public class Stage {
     private Double distance;
     private String stageUrl;
     private Double verticalMeters;
-
+    private Enum<ParcoursType> parcoursType;
     @OneToMany(mappedBy = "stage", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Result> results = new ArrayList<>();

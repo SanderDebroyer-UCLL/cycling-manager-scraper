@@ -123,6 +123,15 @@ public class ResultService {
         return results;
     }
 
+    private static String modifyUrl(String url) {
+        int lastSlashIndex = url.lastIndexOf('/');
+        if (lastSlashIndex != -1) {
+            url = url.substring(0, lastSlashIndex);
+        }
+
+        return url;
+    }
+
     private Document fetchStageDocument(Race race, Stage stage, ScrapeResultType scrapeResultType) throws IOException {
         String stageUrl = stage.getStageUrl();
         if (scrapeResultType.equals(ScrapeResultType.GC)) {
@@ -148,16 +157,7 @@ public class ResultService {
         }
     }
 
-    public static String modifyUrl(String url) {
-        int lastSlashIndex = url.lastIndexOf('/');
-        if (lastSlashIndex != -1) {
-            url = url.substring(0, lastSlashIndex);
-        }
-
-        return url;
-    }
-
-    private TimeResult getOrCreateTimeResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
+    public TimeResult getOrCreateTimeResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
         TimeResult timeResult = timeResultRepository.findByStageAndCyclistAndScrapeResultType(stage, cyclist, scrapeResultType);
         if (timeResult == null) {
             System.out.println("Creating new TimeResult for Stage: " + stage.getName());
@@ -168,18 +168,18 @@ public class ResultService {
         return timeResult;
     }
 
-    private void fillTimeResultFields(TimeResult timeResult, String position, LocalTime resultTime, ScrapeResultType scrapeResultType) {
+    public void fillTimeResultFields(TimeResult timeResult, String position, LocalTime resultTime, ScrapeResultType scrapeResultType) {
         timeResult.setPosition(position);
         timeResult.setTime(resultTime);
         timeResult.setScrapeResultType(scrapeResultType);
     }
 
-    private void saveResult(Stage stage, TimeResult timeResult, List<TimeResult> results) {
+    public void saveResult(Stage stage, TimeResult timeResult, List<TimeResult> results) {
         timeResultRepository.save(timeResult);
         results.add(timeResult);
     }
 
-    private LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
+    public LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
         try {
             String cleanedTime = time.trim();
 
@@ -207,7 +207,7 @@ public class ResultService {
         }
     }
 
-    private LocalTime parseToLocalTime(String timeStr) {
+    public LocalTime parseToLocalTime(String timeStr) {
         String[] parts = timeStr.split(":");
         int hours = 0, minutes = 0, seconds = 0;
 
@@ -244,8 +244,9 @@ public class ResultService {
         return timeResult;
     }
 
-    private Cyclist searchCyclist(String riderName) {
-        // System.out.println("Extracted Rider Name: " + riderName);
+
+    public Cyclist searchCyclist(String riderName) {
+        System.out.println("Extracted Rider Name: " + riderName);
 
         String[] nameParts = riderName.trim().split("\\s+");
 

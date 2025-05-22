@@ -13,7 +13,6 @@ import ucll.be.procyclingscraper.service.ResultService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
-
 @RestController
 @RequestMapping("/results")
 public class ResultController {

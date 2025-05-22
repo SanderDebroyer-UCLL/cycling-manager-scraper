@@ -6,5 +6,4 @@ public enum RaceStatus {
     DNF,
     DSQ,
     OTL
-
 }
