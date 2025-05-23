@@ -45,6 +45,10 @@ public class Race {
     @ManyToMany(mappedBy = "races")
     Set<Competition> competitions;
 
+    public String getRaceUrl() {
+        return raceUrl;
+    }
+
     @OneToMany(mappedBy = "race")
     @JsonManagedReference
     private List<RaceResult> raceResult = new ArrayList<>();

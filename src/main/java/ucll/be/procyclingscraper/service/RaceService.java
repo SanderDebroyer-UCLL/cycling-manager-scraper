@@ -41,6 +41,15 @@ public class RaceService {
         return raceRepository.findAll();
     }
 
+    public String getRaceUrlByName(String name) {
+        Race race = raceRepository.findByName(name.trim());
+        if (race == null) {
+            throw new IllegalArgumentException("Race with name '" + name + "' not found in the database.");
+        }
+        return race.getRaceUrl();
+    }
+    
+
     public List<Race> fetchOneDayRaces() {
         return raceRepository.findRaceByStagesIsEmpty();
     }
@@ -121,6 +130,37 @@ public class RaceService {
 
         return races;
     }
+
+    public Race scrapeRaceByUrl(String name) {
+        
+        try {
+            
+            Document docRaceInfo = Jsoup.connect(getRaceUrlByName(name)).userAgent(USER_AGENT).get();
+    
+            String raceName = docRaceInfo.select("h1").text(); // Of haal het uit URL of elders op pagina
+            Race race = raceRepository.findByName(raceName);
+            if (race == null) {
+                race = new Race();
+            }
+    
+            race.setName(raceName);
+            race.setRaceUrl(getRaceUrlByName(name));
+    
+    
+            
+            List<Cyclist> startlist = scrapeAndSaveStartlist(getRaceUrlByName(name) + "/startlist", race);
+            race.setStartList(startlist);
+    
+            raceRepository.save(race);
+            return race;
+    
+        } catch (IOException e) {
+            System.err.println("Fout bij het scrapen van de race: " + getRaceUrlByName(name));
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
 
     public List<Cyclist> scrapeAndSaveStartlist(String url, Race race) {
         List<Cyclist> startList = new ArrayList<>();
