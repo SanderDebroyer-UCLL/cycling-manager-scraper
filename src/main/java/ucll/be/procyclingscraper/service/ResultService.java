@@ -1,4 +1,5 @@
 package ucll.be.procyclingscraper.service;
+import org.hibernate.validator.constraints.br.TituloEleitoral;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.RaceStatus;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
@@ -25,6 +27,9 @@ public class ResultService {
 
     @Autowired
     TimeResultRepository timeResultRepository;
+
+    @Autowired
+    PointResultRepository pointResultRepository;
 
     @Autowired
     StageRepository stageRepository;
@@ -108,7 +113,7 @@ public class ResultService {
 
                         fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
 
-                        saveResult(stage, timeResult, results);
+                        saveTimeResult(stage, timeResult, results);
                         resultCount++;
                     }
                 }
@@ -122,6 +127,73 @@ public class ResultService {
         return results;
     }
 
+    public List<PointResult> scrapePointResult(ScrapeResultType scrapeResultType) {
+        List<PointResult> results = new ArrayList<>();
+        int resultCount = 0;
+        //Change this for higher or lower amount of results
+        // final int MAX_RESULTS = 1000;
+        try { 
+            List<Race> races = raceRepository.findAll();
+            
+            for (Race race : races) {
+                List<Stage> stages = race.getStages();
+                for (Stage stage : stages) {
+                    System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
+                    // if (resultCount >= MAX_RESULTS) break;
+                    Document doc = fetchStageDocument(race, stage, scrapeResultType);
+                    Elements resultRows = resultRows(doc, stage, scrapeResultType);
+                    if (resultRows == null || resultRows.isEmpty()) {
+                        System.out.println("No rows found in the selected table.");
+                        continue;
+                    }
+
+                    for (Element row : resultRows) {
+                        // if (resultCount >= MAX_RESULTS) break;
+                        String position;
+
+                        Element positionElement = row.selectFirst("td:first-child");
+                        position = positionElement != null ? positionElement.text() : "Unknown";
+
+                        Element riderElement = row.selectFirst("td:nth-child(7) a");
+                        String riderName = riderElement != null ? riderElement.text() : "Unknown";
+
+                        Element pointElement = row.selectFirst("td:nth-child(10) a");
+                        String point = pointElement != null ? pointElement.text() : "Unknown";
+                        //remove all non-digit characters from point
+                        point = point.replaceAll("[^\\d]", "");
+                        if (point.isEmpty()) {
+                            continue;
+                        }
+                        System.out.println("Point: " + point);
+                        if (position.equals("Unknown") || riderName.equals("Unknown") || point.equals("Unknown")) {
+                            System.out.println("Skipping row due to missing data");
+                            continue;
+                        }
+
+                        Cyclist cyclist = cyclistService.searchCyclist(riderName);
+                        if (cyclist == null) {
+                            System.out.println("Cyclist not found for name: " + riderName);
+                            continue;
+                        }
+
+                        PointResult pointResult = getOrCreatePointResult(stage, cyclist, scrapeResultType);
+
+                        checkForDNFAndMore(position, pointResult);
+                        fillPointResultFields(pointResult, position, Integer.parseInt(point), scrapeResultType);
+
+                        savePointResult(stage, pointResult, results);
+                        resultCount++;
+                    }
+                }
+                // if (resultCount >= MAX_RESULTS) break;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return results;
+    }
     private static String modifyUrl(String url) {
         int lastSlashIndex = url.lastIndexOf('/');
         if (lastSlashIndex != -1) {
@@ -136,14 +208,26 @@ public class ResultService {
         if (scrapeResultType.equals(ScrapeResultType.GC)) {
             System.out.println("Scraping GC results for stage: " + stage.getName());
             stageUrl = stageUrl + "-gc";
+        }else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
+            System.out.println("Scraping POINTS results for stage: " + stage.getName());
+            stageUrl = stageUrl + "-points";
         }
 
         List<Stage> stages = race.getStages();
-        if (!stages.isEmpty() && stage.equals(stages.get(stages.size() - 1)) && scrapeResultType.equals(ScrapeResultType.GC)) {
-            System.out.println("Last stage in the GC results: " + stage.getName());
-            stageUrl = modifyUrl(stageUrl);
-            stageUrl = stageUrl + "/gc";
+        if (!stages.isEmpty() && stage.equals(stages.get(stages.size() - 1))) {
+            if (scrapeResultType.equals(ScrapeResultType.GC)) {
+                System.out.println("Last stage in the GC results: " + stage.getName());
+                stageUrl = modifyUrl(stageUrl);
+                stageUrl = stageUrl + "/gc";
+            }
+            else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
+                System.out.println("Last stage in the POINTS results: " + stage.getName());
+                stageUrl = modifyUrl(stageUrl);
+                stageUrl = stageUrl + "/points";
+            }
+          
         }
+
         System.out.println("Final URL: " + stageUrl);
 
         try {
@@ -167,15 +251,36 @@ public class ResultService {
         return timeResult;
     }
 
+    public PointResult getOrCreatePointResult(Stage stage, Cyclist cyclist, ScrapeResultType scrapeResultType) {
+        PointResult pointResult = pointResultRepository.findByStageAndCyclistAndScrapeResultType(stage, cyclist, scrapeResultType);
+        if (pointResult == null) {
+            System.out.println("Creating new PointResult for Stage: " + stage.getName());
+            pointResult = new PointResult();
+            pointResult.setStage(stage);
+            pointResult.setCyclist(cyclist);
+        }
+        return pointResult;
+    }
     public void fillTimeResultFields(TimeResult timeResult, String position, LocalTime resultTime, ScrapeResultType scrapeResultType) {
         timeResult.setPosition(position);
         timeResult.setTime(resultTime);
         timeResult.setScrapeResultType(scrapeResultType);
     }
 
-    public void saveResult(Stage stage, TimeResult timeResult, List<TimeResult> results) {
+    public void fillPointResultFields(PointResult pointResult, String position, Integer point, ScrapeResultType scrapeResultType) {
+        pointResult.setPosition(position);
+        pointResult.setPoint(point);
+        pointResult.setScrapeResultType(scrapeResultType);
+    }
+
+    public void saveTimeResult(Stage stage, TimeResult timeResult, List<TimeResult> results) {
         timeResultRepository.save(timeResult);
         results.add(timeResult);
+    }
+
+    public void savePointResult(Stage stage,  PointResult pointResult, List<PointResult> results) {
+        pointResultRepository.save(pointResult);
+        results.add(pointResult);
     }
 
     public LocalTime timeHandlerWithCumulative(String time, LocalTime cumulativeTime) {
@@ -224,24 +329,30 @@ public class ResultService {
         return LocalTime.of(hours, minutes, seconds);
     }
 
-    private TimeResult checkForDNFAndMore(String position, TimeResult timeResult){
+    // Generic method to set RaceStatus for both TimeResult and PointResult
+    private <T> T checkForDNFAndMore(String position, T result) {
+        RaceStatus status;
         if (position.equalsIgnoreCase("DNS")) {
-            timeResult.setRaceStatus(RaceStatus.DNS);
+            status = RaceStatus.DNS;
+        } else if (position.equalsIgnoreCase("DNF")) {
+            status = RaceStatus.DNF;
+        } else if (position.equalsIgnoreCase("DSQ")) {
+            status = RaceStatus.DSQ;
+        } else if (position.equalsIgnoreCase("OTL")) {
+            status = RaceStatus.OTL;
+        } else {
+            status = RaceStatus.FINISHED;
         }
-        else if (position.equalsIgnoreCase("DNF")) {
-            timeResult.setRaceStatus(RaceStatus.DNF);
+
+        // Set status if result has setRaceStatus method
+        if (result instanceof TimeResult) {
+            ((TimeResult) result).setRaceStatus(status);
+        } else if (result instanceof PointResult) {
+            ((PointResult) result).setRaceStatus(status);
         }
-        else if (position.equalsIgnoreCase("DSQ")) {
-            timeResult.setRaceStatus(RaceStatus.DSQ);
-        }
-        else if (position.equalsIgnoreCase("OTL")) {
-            timeResult.setRaceStatus(RaceStatus.OTL);
-        }
-        else{
-            timeResult.setRaceStatus(RaceStatus.FINISHED);
-        }
-        return timeResult;
+        return result;
     }
+      
 
     public List<TimeResult> findAllResults() {
         return timeResultRepository.findAll();
@@ -274,18 +385,37 @@ public class ResultService {
         Elements tables = doc.select("table.results");
         System.out.println("Number of tables found: " + tables.size());
 
-        Elements resultRows;
-
-        if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
-            resultRows = tables.get(0).select("tbody > tr");
-        } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
-            resultRows = tables.get(1).select("tbody > tr");
-        } else {
-            resultRows = tables.get(0).select("tbody > tr");
+        Elements resultRows = null;
+        if (tables.isEmpty()) {
+            System.out.println("No tables found in the document.");
+            return null;
         }
 
-        if (resultRows.isEmpty()) {
+        if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
+            if (tables.size() > 0) {
+                resultRows = tables.get(0).select("tbody > tr");
+            }
+        } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
+            if (tables.size() > 1) {
+                resultRows = tables.get(1).select("tbody > tr");
+            }
+        } else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
+            if (tables.size() > 2) {
+                resultRows = tables.get(2).select("tbody > tr");
+            } else if (tables.size() > 0) {
+                // fallback: use the first table if only one exists
+                System.out.println("POINTS table not found at index 2, using first table as fallback.");
+                resultRows = tables.get(0).select("tbody > tr");
+            }
+        } else {
+            if (tables.size() > 0) {
+                resultRows = tables.get(0).select("tbody > tr");
+            }
+        }
+
+        if (resultRows == null || resultRows.isEmpty()) {
             System.out.println("No rows found in the selected table.");
+            return null;
         }
         return resultRows;
     }

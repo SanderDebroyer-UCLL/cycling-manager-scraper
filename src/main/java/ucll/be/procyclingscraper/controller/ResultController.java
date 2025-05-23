@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.ResultService;
@@ -27,6 +28,11 @@ public class ResultController {
     @GetMapping("/scrape/stageResults/gc")
     public List<TimeResult> scrapeGcPerStage() {
         return resultService.scrapeTimeResult(ScrapeResultType.GC);
+    }
+
+    @GetMapping("/scrape/stageResults/points")
+    public List<PointResult> scrapePointsPerStage() {
+        return resultService.scrapePointResult(ScrapeResultType.POINTS);
     }
     
     @GetMapping("")
