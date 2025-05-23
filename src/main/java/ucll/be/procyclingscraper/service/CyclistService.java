@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -156,10 +157,6 @@ public class CyclistService {
     }
 
     private Element getUciRanking(Document doc) {
-        // Log the entire document or relevant parts to diagnose issues
-        //System.out.println("Document: " + doc.html());
-
-        // Attempt to find the title element using the known selectors
         Element titleElement = doc.select("ul.list.horizontal.rdr-rankings li:nth-child(1) .title a").first();
         if (titleElement == null) {
             titleElement = doc.select("ul.list.horizontal.rdr-rankings li:nth-child(1) .title a").first();
@@ -177,8 +174,30 @@ public class CyclistService {
                 return doc.select("ul.list.horizontal.rdr-rankings li:nth-child(1) .rnk").first();
             }
         }
-        // Log a message if the ranking element is not found
         System.err.println("Ranking element not found. Please check the CSS selector.");
+        return null;
+    }
+
+    public Cyclist searchCyclist(String riderName) {
+        System.out.println("Extracted Rider Name: " + riderName);
+
+        String[] nameParts = riderName.trim().split("\\s+");
+
+        for (int i = 1; i < nameParts.length; i++) {
+            String firstName = String.join(" ", Arrays.copyOfRange(nameParts, i, nameParts.length));
+            String lastName = String.join(" ", Arrays.copyOfRange(nameParts, 0, i));
+            String fixedName = firstName + " " + lastName;
+
+            // System.out.println("Trying rearranged name: " + fixedName);
+
+            Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
+            if (cyclist != null) {
+                System.out.println("Found cyclist: " + fixedName);
+                return cyclist;
+            }
+        }
+
+        System.out.println("No cyclist found for name: " + riderName);
         return null;
     }
     

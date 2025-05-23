@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.ResultService;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
@@ -30,5 +32,10 @@ public class ResultController {
     @GetMapping("")
     public List<TimeResult> getAllResults() {
         return resultService.findAllResults();
+    }
+
+    @DeleteMapping("/delete")
+    public void deleteAllResults() {
+        resultService.deleteAllResults();
     }
 }
