@@ -28,6 +28,7 @@ import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.security.JwtHelper;
 import ucll.be.procyclingscraper.service.UserService;
 
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
@@ -44,6 +45,13 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @GetMapping("/user")
+    public User getLoggedInUser(@RequestHeader(name="Authorization") String token) {
+        String email = jwtHelper.getUsernameFromToken(token.substring(7));
+        return userService.getLoggedInUser(email);
+    }
+    
 
     @PostMapping("/login")
     public ResponseEntity<JwtRes> login(@RequestBody JwtReq request) throws UsernameNotFoundException {

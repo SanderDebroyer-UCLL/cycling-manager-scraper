@@ -38,8 +38,8 @@ public class StageController {
         return stageService.findCyclistInByStageId(id, "STAGE");
     }
 
-    @GetMapping("/stageResult/gc")
-    public List<Cyclist> getStageGcFromStageId(@RequestParam Long id) {
+    @GetMapping("/stageResult/gc/{id}")
+    public List<Cyclist> getStageGcFromStageId(@PathVariable Long id) {
         return stageService.findCyclistInByStageId(id, "GC");
     }
 
