@@ -36,13 +36,13 @@ public class TeamService {
 
             for (Element row : rows) {
                 if (teams.size() >= TEAM_LIMIT) {
-                    break; // Stop processing if the limit is reached
+                    break;
                 }
 
                 String name = row.select("td a").first().text();
                 String rankingText = row.select("td").get(1).text();
 
-                int ranking = 0; // Default ranking value is mandatory because not all teams have a ranking
+                int ranking = 0;
                 if (!rankingText.isEmpty()) {
                     try {
                         ranking = Integer.parseInt(rankingText);

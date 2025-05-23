@@ -17,7 +17,6 @@ import ucll.be.procyclingscraper.repository.*;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -32,14 +31,19 @@ public class ResultService {
 
     @Autowired
     CyclistRepository cyclistRepository;
+
     @Autowired
     RaceRepository raceRepository;
     
+    @Autowired
+    CyclistService cyclistService;
+
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) {
         List<TimeResult> results = new ArrayList<>();
         System.out.println("Starting scraping...");
         int resultCount = 0;
-        final int MAX_RESULTS = 10;
+        //Change this for higher or lower amount of results
+        final int MAX_RESULTS = 1000;
         try { 
             List<Race> races = raceRepository.findAll();
             
@@ -82,19 +86,14 @@ public class ResultService {
                         }
 
                         if (stage.getName().startsWith("Stage 1 |")) {
-                            System.out.println("IN DE BONIIIIIIIIIIIII " + stage.getName());
                             String boniSeconds = "0";
                             Element boniSecondsElement = row.selectFirst("td.bonis.ar.fs11.cu600 > div > a");
                             boniSeconds = boniSecondsElement != null ? boniSecondsElement.text() : "0";
-                        
-                            System.out.println("Boni seconds: " + boniSeconds);
                             resultTime = subtractFromCumulative(resultTime, boniSeconds);
-                            // cumulativeTime = resultTime;
                         }
 
-                        System.out.println("Parsed Time: " + resultTime);
 
-                        Cyclist cyclist = searchCyclist(riderName);
+                        Cyclist cyclist = cyclistService.searchCyclist(riderName);
                         if (cyclist == null) {
                             System.out.println("Cyclist not found for name: " + riderName);
                             continue;
@@ -244,29 +243,6 @@ public class ResultService {
         return timeResult;
     }
 
-
-    public Cyclist searchCyclist(String riderName) {
-        System.out.println("Extracted Rider Name: " + riderName);
-
-        String[] nameParts = riderName.trim().split("\\s+");
-
-        for (int i = 1; i < nameParts.length; i++) {
-            String firstName = String.join(" ", Arrays.copyOfRange(nameParts, i, nameParts.length));
-            String lastName = String.join(" ", Arrays.copyOfRange(nameParts, 0, i));
-            String fixedName = firstName + " " + lastName;
-
-            // System.out.println("Trying rearranged name: " + fixedName);
-
-            Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
-            if (cyclist != null) {
-                System.out.println("Found cyclist: " + fixedName);
-                return cyclist;
-            }
-        }
-
-        System.out.println("No cyclist found for name: " + riderName);
-        return null;
-    }
     public List<TimeResult> findAllResults() {
         return timeResultRepository.findAll();
     }
@@ -278,7 +254,6 @@ public class ResultService {
     public LocalTime subtractFromCumulative(LocalTime cumulativeTime, String boniSeconds) {
         try {
             int secondsToSubtract = 0;
-            // Remove any non-digit characters (e.g., "10?")
             String cleaned = boniSeconds.replaceAll("[^\\d]", "");
             if (!cleaned.isEmpty()) {
                 secondsToSubtract = Integer.parseInt(cleaned);

@@ -7,7 +7,5 @@ import ucll.be.procyclingscraper.model.Stage;
 
 @Repository
 public interface StageRepository extends JpaRepository<Stage,Long> {
-
     Stage findByName(String stageName);
-    
 }

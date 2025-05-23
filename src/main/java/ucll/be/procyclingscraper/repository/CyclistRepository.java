@@ -18,8 +18,6 @@ public interface CyclistRepository extends JpaRepository<Cyclist, Long> {
     Cyclist findByNameIgnoreCase(@Param("name") String name);
     Cyclist findCyclistByName(String rider);
     Cyclist findByCyclistUrl(String riderUrl);
-    
-
     @Query(value = "SELECT c.* FROM cyclist c " +
                    "JOIN result r ON c.id = r.cyclist_id " +
                    "JOIN stage s ON s.id = r.stage_id " +

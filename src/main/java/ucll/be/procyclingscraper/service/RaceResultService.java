@@ -29,16 +29,16 @@ public class RaceResultService {
 
     private final RaceResultRepository raceResultRepository;
     private final ResultService resultService;
-    private final RaceService raceService;
     private final RaceRepository raceRepository;
     private final CyclistRepository cyclistRepository;
+    private final CyclistService cyclistService;
 
-    public RaceResultService(RaceResultRepository raceResultRepository, ResultService resultService, RaceService raceService, RaceRepository raceRepository, CyclistRepository cyclistRepository) {
+    public RaceResultService(RaceResultRepository raceResultRepository, ResultService resultService, RaceRepository raceRepository, CyclistRepository cyclistRepository, CyclistService cyclistService) {
         this.raceResultRepository = raceResultRepository;
         this.resultService = resultService;
-        this.raceService = raceService;
         this.raceRepository = raceRepository;
         this.cyclistRepository = cyclistRepository;
+        this.cyclistService = cyclistService;
     }
 
     public HashMap<String, String> getResultsTableData(Element tableRow) {
@@ -104,8 +104,8 @@ public class RaceResultService {
                         continue;
                     }
 
-                    Cyclist cyclist = resultService.searchCyclist(riderName);
-                    
+                    Cyclist cyclist = cyclistService.searchCyclist(riderName);
+
                     if (cyclist == null) {
                         System.out.println("Cyclist not found for name: " + riderName);
                         continue;
@@ -173,7 +173,5 @@ public class RaceResultService {
         Cyclist cyclist = cyclistRepository.findCyclistById(Integer.parseInt(cyclistId));
         RaceResult raceResult = raceResultRepository.findRaceResultByRaceAndCyclist(race, cyclist);
         return raceResult;
-
-
     }
 }
