@@ -143,30 +143,8 @@ public class RaceService {
             race.setName(raceName);
             race.setRaceUrl(getRaceUrlByName(name));
     
-            Element raceLevelElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Category:) div:last-child").first();
-            if (raceLevelElement != null) {
-                race.setNiveau(raceLevelElement.text());
-            }
     
-            Element startDateElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Startdate:) div:last-child").first();
-            if (startDateElement != null) {
-                race.setStartDate(startDateElement.text());
-            }
-    
-            Element endDateElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Enddate:) div:last-child").first();
-            if (endDateElement != null) {
-                race.setEndDate(endDateElement.text());
-            }
-    
-            Element distanceElement = docRaceInfo.select("ul.infolist.fs13 li:contains(Total distance:) div:last-child").first();
-            if (distanceElement != null) {
-                try {
-                    race.setDistance(Integer.parseInt(distanceElement.text().replaceAll("[^0-9]", "")));
-                } catch (NumberFormatException e) {
-                    System.err.println("Invalid distance format: " + distanceElement.text());
-                }
-            }
-    
+            
             List<Cyclist> startlist = scrapeAndSaveStartlist(getRaceUrlByName(name) + "/startlist", race);
             race.setStartList(startlist);
     
