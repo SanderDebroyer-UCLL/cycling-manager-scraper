@@ -35,6 +35,7 @@ public class Race {
 
     @JsonManagedReference
     @ManyToMany
+    @JsonManagedReference
     @JoinTable(
         name = "race_cyclist",
         joinColumns = @JoinColumn(name = "race_id"),
