@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/results")
-@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
+@CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
 public class ResultController {
     
     @Autowired

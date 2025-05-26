@@ -12,7 +12,7 @@ import ucll.be.procyclingscraper.model.UserTeam;
 import ucll.be.procyclingscraper.service.UserTeamService;
 
 @RestController
-@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
+@CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
 @RequestMapping("/user-teams")
 public class UserTeamController {
 

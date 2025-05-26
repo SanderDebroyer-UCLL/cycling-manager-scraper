@@ -16,7 +16,7 @@ import ucll.be.procyclingscraper.service.CompetitionService;
 import ucll.be.procyclingscraper.service.UserTeamService;
 
 @Controller
-@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
+@CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
 public class SocketController {
 
     @Autowired
