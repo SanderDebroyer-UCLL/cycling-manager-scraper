@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.TimeResult;
@@ -44,8 +45,8 @@ public class StageResultController {
     }
 
     @GetMapping("/result/{id}")
-    public List<Cyclist> getStageResultFromStageId(@PathVariable Long id) {
-        return stageResultService.findCyclistInByStageId(id, "STAGE");
+    public List<StageResultWithCyclistDTO> getStageResultFromStageId(@PathVariable Long id) {
+        return stageResultService.getStageResultByStageId(id);
     }
 
     @GetMapping("/gc/{id}")
