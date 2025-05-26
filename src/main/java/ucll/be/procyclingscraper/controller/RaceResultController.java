@@ -11,12 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.service.RaceResultService;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/raceResults")
 @CrossOrigin(origins = "*")
+@RequestMapping("/raceResults")
 public class RaceResultController {
     
     @Autowired 
