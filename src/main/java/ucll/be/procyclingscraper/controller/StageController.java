@@ -12,7 +12,6 @@ import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.service.StageService;
 
 import java.util.List;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
@@ -38,9 +37,8 @@ public class StageController {
         return stageService.findCyclistInByStageId(id, "STAGE");
     }
 
-    @GetMapping("/stageResult/gc/{id}")
+    @GetMapping("/      /gc/{id}")
     public List<Cyclist> getStageGcFromStageId(@PathVariable Long id) {
         return stageService.findCyclistInByStageId(id, "GC");
     }
-
 }
