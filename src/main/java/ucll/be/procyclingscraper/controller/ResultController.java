@@ -12,6 +12,9 @@ import ucll.be.procyclingscraper.service.ResultService;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/results")
@@ -28,11 +31,27 @@ public class ResultController {
     public List<TimeResult> scrapeGcPerStage() {
         return resultService.scrapeTimeResult(ScrapeResultType.GC);
     }
+
+    // @GetMapping("/scrape/stageResults/youth")
+    // public List<TimeResult> scrapeYouthPerStage() {
+    //     return resultService.calculateYouthResults();
+    // }
     
     @GetMapping("")
     public List<TimeResult> getAllResults() {
         return resultService.findAllResults();
     }
+
+    @GetMapping("/gc/timeResult/{cyclistId}/{stageId}")
+    public TimeResult getGCTimeResultByCyclistIdAndRaceId(@PathVariable Long cyclistId, @PathVariable Long stageId) {
+        return resultService.findGCTimeResultByCyclistIdAndStageId(cyclistId, stageId);
+    }
+
+    @GetMapping("/gc/timeResult/{stageId}/cylistUnderAge24")
+    public List<TimeResult> getGCTimeResultsByStageIdAndCylistUnderAge24(@PathVariable String stageId) {
+        return resultService.findGCTimeResultsByStageIdAndCylistUnderAge24(stageId);
+    }
+    
 
     @DeleteMapping("/delete")
     public void deleteAllResults() {

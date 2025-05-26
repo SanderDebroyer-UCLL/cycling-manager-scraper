@@ -43,7 +43,7 @@ public class ResultService {
         System.out.println("Starting scraping...");
         int resultCount = 0;
         //Change this for higher or lower amount of results
-        final int MAX_RESULTS = 1000;
+        final int MAX_RESULTS = 278;
         try { 
             List<Race> races = raceRepository.findAll();
             
@@ -85,7 +85,7 @@ public class ResultService {
                             cumulativeTime = resultTime;
                         }
 
-                        if (stage.getName().startsWith("Stage 1 |")) {
+                        if (stage.getName().startsWith("Stage 1 |") && scrapeResultType.equals(ScrapeResultType.GC)) {
                             String boniSeconds = "0";
                             Element boniSecondsElement = row.selectFirst("td.bonis.ar.fs11.cu600 > div > a");
                             boniSeconds = boniSecondsElement != null ? boniSecondsElement.text() : "0";
@@ -138,12 +138,25 @@ public class ResultService {
             stageUrl = stageUrl + "-gc";
         }
 
+        // // Logic for youth results added
+        // if (scrapeResultType.equals(ScrapeResultType.YOUTH)) {
+        //     System.out.println("Scraping Youth results for stage: " + stage.getName());
+        //     stageUrl = stageUrl + "-youth";
+        // }
+
         List<Stage> stages = race.getStages();
         if (!stages.isEmpty() && stage.equals(stages.get(stages.size() - 1)) && scrapeResultType.equals(ScrapeResultType.GC)) {
             System.out.println("Last stage in the GC results: " + stage.getName());
             stageUrl = modifyUrl(stageUrl);
             stageUrl = stageUrl + "/gc";
         }
+
+        // if (!stages.isEmpty() && stage.equals(stages.get(stages.size() - 1)) && scrapeResultType.equals(ScrapeResultType.YOUTH)) {
+        //     System.out.println("Last stage in the Youth results: " + stage.getName());
+        //     stageUrl = modifyUrl(stageUrl);
+        //     stageUrl = stageUrl + "/youth";
+        // }
+
         System.out.println("Final URL: " + stageUrl);
 
         try {
@@ -288,5 +301,49 @@ public class ResultService {
             System.out.println("No rows found in the selected table.");
         }
         return resultRows;
+    }
+
+    public TimeResult findGCTimeResultByCyclistIdAndStageId(Long cyclistId, Long stageId) {
+        
+        TimeResult timeResult = timeResultRepository.findTimeResultByCyclistIdAndStageIdAndScrapeResultType(cyclistId, stageId, ScrapeResultType.GC);
+        return timeResult;
+        
+    }
+
+    // public List<TimeResult> calculateYouthResults() {
+        
+    //     try {
+
+    //         List<Race> races = raceRepository.findAll();
+            
+    //         for (Race race: races) {
+    //             List<Cyclist> raceStartList = race.getStartList();
+    //             List<Cyclist> cyclistsWithAgerUnder24 = new ArrayList<>();
+
+    //             for (Cyclist cyclist : raceStartList) {
+    //                 if (cyclist.getAge() < 24) {
+    //                     cyclistsWithAgerUnder24.add(cyclist);
+    //                 }
+    //             }
+    //             List<Stage> raceStages = race.getStages();
+
+    //             for (Stage stage : raceStages) {
+                    
+    //             }
+                
+
+    //         }
+
+
+    //     } catch (Exception e) {
+    //         System.out.println("Failed to calculate youth results.");
+    //         e.printStackTrace();
+    //     }
+
+    // }
+
+    public List<TimeResult> findGCTimeResultsByStageIdAndCylistUnderAge24(String stageId) {
+        List<TimeResult> stageTimeResultsGC = timeResultRepository.findTimeResultsByStageIdAndScrapeResultTypeAndCyclistAgeLessThan(1, ScrapeResultType.GC, 24);
+        return stageTimeResultsGC;
     }
 }
