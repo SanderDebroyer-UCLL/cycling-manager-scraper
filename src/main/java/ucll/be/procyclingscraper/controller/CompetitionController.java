@@ -38,7 +38,7 @@ public class CompetitionController {
         return competitionService.getAllCompetitions();
     }
 
-    @PostMapping("/create-competition")
+    @PostMapping()
     public Competition createCompetition(@RequestBody @Valid CreateCompetitionData competition) {
         return competitionService.createCompetition(competition);
     }

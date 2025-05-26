@@ -16,17 +16,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
-@RequestMapping("/results")
+@RequestMapping("/stageResults")
 public class StageResultController {
     
     @Autowired
     private StageResultService stageResultService;
     
-    @GetMapping("/scrape/stageResults/stage")
+    @GetMapping("/scrape/stage")
     public List<TimeResult> scrapeResults() {
         return stageResultService.scrapeTimeResult(ScrapeResultType.STAGE);
     }
-    @GetMapping("/scrape/stageResults/gc")
+    @GetMapping("/scrape/gc")
     public List<TimeResult> scrapeGcPerStage() {
         return stageResultService.scrapeTimeResult(ScrapeResultType.GC);
     }
@@ -46,7 +46,7 @@ public class StageResultController {
         return stageResultService.findCyclistInByStageId(id, "STAGE");
     }
 
-    @GetMapping("/stageResult/gc/{id}")
+    @GetMapping("/gc/{id}")
     public List<Cyclist> getStageGcFromStageId(@PathVariable Long id) {
         return stageResultService.findCyclistInByStageId(id, "GC");
     }
