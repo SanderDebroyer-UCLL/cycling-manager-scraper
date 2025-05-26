@@ -38,6 +38,10 @@ public class StageResultService {
     @Autowired
     CyclistService cyclistService;
 
+    public List<Cyclist> findCyclistInByStageId(Long stage_id, String type) {
+        return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
+    }
+
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) {
         List<TimeResult> results = new ArrayList<>();
         System.out.println("Starting scraping...");

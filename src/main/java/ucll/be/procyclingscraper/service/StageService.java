@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.StageModel;
-import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.ParcoursType;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
@@ -149,10 +148,6 @@ public class StageService {
             e.printStackTrace();
         }
         return stage;
-    }
-
-    public List<Cyclist> findCyclistInByStageId(Long stage_id, String type) {
-        return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
     }
 
     private void checkParcoursType(Stage stage, String value) {
