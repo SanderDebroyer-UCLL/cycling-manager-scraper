@@ -165,6 +165,7 @@ public class ResultService {
                                 continue;
                             }
                             for (PointResult pointResultstage1 : pointResults) {
+                                System.out.println("Processing PointResult for Stage 1: " + pointResultstage1);
                                 savePointResult(stage, pointResultstage1, results);
                             }
 
@@ -436,123 +437,65 @@ public class ResultService {
         }
         return resultRows;
     }
-
-    
-    // private PointResult getPointResultFromStage1(String stageUrl, int targetRowIndex) {
-    //     try {
-    //         Document doc = Jsoup.connect("https://www.procyclingstats.com/race/tour-down-under/2025/stage-1/info/complementary-results").get();
-    //         Elements h3Elements = doc.select("h3");
-    //         Elements tables = doc.select("table.basic");
-
-    //         // Ensure h3Elements and tables have the same size and are paired
-    //         for (int i = 0; i < h3Elements.size() && i < tables.size(); i++) {
-    //             Element h3Element = h3Elements.get(i);
-    //             Element table = tables.get(i);
-    //             String captionText = h3Element.text();
-    //             System.out.println("Caption Text: " + captionText);
-    //             if (captionText.startsWith("Sprint |")) {
-    //                 Element header = table.selectFirst("thead tr th");
-    //                 // Only process if header exists and is a Sprint (not KOM or other)
-    //                 if (header == null || !header.text().startsWith("Sprint |")) {
-    //                     continue;
-    //                 }
-    //                     Elements rows = table.select("tbody > tr");
-
-    //                     int currentRow = 0;
-    //                     for (Element row : rows) {
-    //                         if (currentRow == targetRowIndex) {
-    //                             Element pointElement = row.selectFirst("td:nth-child(4)");
-    //                             String point = pointElement != null ? pointElement.text() : "0";
-
-    //                             Element positionElement = row.selectFirst("td:first-child");
-    //                             String position = positionElement != null ? positionElement.text() : "Unknown";
-
-    //                             Element riderElement = row.selectFirst("td:nth-child(2) a");
-    //                             String riderName = riderElement != null ? riderElement.text() : "Unknown";
-
-    //                             PointResult pointResult = new PointResult();
-    //                             Cyclist cyclist = cyclistService.searchCyclist(riderName);
-    //                             System.out.println("IN DE NIEUWE FUNCTIE");
-    //                             System.out.println("Rider Name: " + riderName);
-    //                             System.out.println("point: " + point);
-    //                             System.out.println("position: " + position);
-    //                             if (cyclist == null) {
-    //                                 System.out.println("Cyclist not found for name: " + riderName);
-    //                                 return null;
-    //                             }
-    //                             pointResult.setCyclist(cyclist);
-    //                             checkForDNFAndMore(position, pointResult);
-    //                             fillPointResultFields(pointResult, position, Integer.parseInt(point), ScrapeResultType.POINTS);
-    //                             return pointResult;
-    //                         }
-    //                         currentRow++;
-    //                     }
-    //                 }
-    //             // }
-    //         }
-    //     } catch (Exception e) {
-    //         System.out.println("Failed to retrieve point result from Stage 1");
-    //         e.printStackTrace();
-    //         return null;
-    //     }
-    //     return null;
-    // }
-
    
     private List<PointResult> getPointResultsFromStage1(String stageUrl, int targetRowIndex) {
         List<PointResult> results = new ArrayList<>();
-        // Map to sum points per rider for the specific sprint/intermediate table (targetRowIndex)
         java.util.Map<String, PointResult> riderResultMap = new java.util.HashMap<>();
 
         try {
-            // Use the provided stageUrl to fetch the correct complementary results page
-            Document doc = Jsoup.connect(stageUrl.replaceAll("/[^/]+$", "") + "/info/complementary-results").get();
+            // Hardcoded URL as before
+            Document doc = Jsoup.connect("https://www.procyclingstats.com/race/tour-down-under/2025/stage-1/info/complementary-results").get();
             Elements h3Elements = doc.select("h3");
             Elements tables = doc.select("table.basic");
 
             int sprintTableCount = 0;
             for (int i = 0; i < h3Elements.size() && i < tables.size(); i++) {
-                Element h3Element = h3Elements.get(i);
-                Element table = tables.get(i);
-                String captionText = h3Element.text();
-                if (captionText.startsWith("Sprint |") || captionText.startsWith("Points at finish")) {
-                    if (sprintTableCount == targetRowIndex) {
-                        Elements rows = table.select("tbody > tr");
-                        for (Element row : rows) {
-                            Element pointElement = row.selectFirst("td:nth-child(4)");
-                            String point = pointElement != null ? pointElement.text() : "0";
+            Element h3Element = h3Elements.get(i);
+            Element table = tables.get(i);
+            String captionText = h3Element.text();
+            System.out.println("Caption Text: " + captionText);
+            if (captionText.startsWith("Sprint |") || captionText.startsWith("Points at finish")) {
+                if (sprintTableCount == targetRowIndex) {
+                Elements rows = table.select("tbody > tr");
+                for (Element row : rows) {
+                    Element pointElement = row.selectFirst("td:nth-child(4)");
+                    String point = pointElement != null ? pointElement.text() : "0";
 
-                            Element positionElement = row.selectFirst("td:first-child");
-                            String position = positionElement != null ? positionElement.text() : "Unknown";
+                    Element positionElement = row.selectFirst("td:first-child");
+                    String position = positionElement != null ? positionElement.text() : "Unknown";
 
-                            Element riderElement = row.selectFirst("td:nth-child(2) a");
-                            String riderName = riderElement != null ? riderElement.text() : "Unknown";
+                    Element riderElement = row.selectFirst("td:nth-child(2) a");
+                    String riderName = riderElement != null ? riderElement.text() : "Unknown";
 
-                            Cyclist cyclist = cyclistService.searchCyclist(riderName);
-                            if (cyclist != null) {
-                                int pointValue = 0;
-                                try {
-                                    pointValue = Integer.parseInt(point);
-                                } catch (NumberFormatException e) {
-                                    // ignore, keep as 0
-                                }
-                                PointResult existing = riderResultMap.get(riderName);
-                                if (existing == null) {
-                                    PointResult pointResult = new PointResult();
-                                    pointResult.setCyclist(cyclist);
-                                    checkForDNFAndMore(position, pointResult);
-                                    fillPointResultFields(pointResult, position, pointValue, ScrapeResultType.POINTS);
-                                    riderResultMap.put(riderName, pointResult);
-                                } else {
-                                    // Sum up the points for this rider in this specific sprint/intermediate
-                                    existing.setPoint(existing.getPoint() + pointValue);
-                                }
-                            }
-                        }
-                        break; // Only process the specific sprint/intermediate table
+                    Cyclist cyclist = cyclistService.searchCyclist(riderName);
+                    if (cyclist != null) {
+                    int pointValue = 0;
+                    try {
+                        pointValue = Integer.parseInt(point);
+                    } catch (NumberFormatException e) {
+                        // ignore, keep as 0
                     }
-                    sprintTableCount++;
+                    // Sum points for this rider across all relevant tables for this stage
+                    PointResult existing = riderResultMap.get(riderName);
+                    // System.out.println("Rider Name: " + riderName);
+                    // System.out.println("Point Value: " + pointValue);
+                    // System.out.println("Position: " + position);
+                    System.out.println("Existing PointResult: " + existing);
+                    if (existing == null) {
+                        PointResult pointResult = new PointResult();
+                        pointResult.setCyclist(cyclist);
+                        checkForDNFAndMore(position, pointResult);
+                        fillPointResultFields(pointResult, position, pointValue, ScrapeResultType.POINTS);
+                        riderResultMap.put(riderName, pointResult);
+                    } else {
+                        existing.setPoint(existing.getPoint() + pointValue);
+                    }
+                    }
                 }
+                // Do NOT break here; process all relevant tables for this stage
+                }
+                sprintTableCount++;
+            }
             }
         } catch (Exception e) {
             System.out.println("Failed to retrieve point results from Stage 1");
