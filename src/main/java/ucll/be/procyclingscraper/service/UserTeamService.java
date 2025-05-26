@@ -82,9 +82,9 @@ public class UserTeamService {
             }
         }
 
-        if (userTeam.getMainCyclists().size() >= competition.getMaxMainCyclists() + competition.getMaxReserveCyclists()) {
+        if (userTeam.getMainCyclists().size() + userTeam.getReserveCyclists().size() >= competition.getMaxMainCyclists() + competition.getMaxReserveCyclists()) {
             // Check if the user has already picked a cyclist in this competition
-            throw new RuntimeException("User has already has " + competition.getMaxMainCyclists() + competition.getMaxReserveCyclists()+ " cyclists in his team");
+            throw new RuntimeException("User already has " + (competition.getMaxMainCyclists() + competition.getMaxReserveCyclists()) + " cyclists in their team");
         }
         // Add cyclist to the user's team
         if (userTeam.getMainCyclists().size() < competition.getMaxMainCyclists()) {
