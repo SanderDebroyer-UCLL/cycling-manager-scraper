@@ -6,6 +6,8 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
+import ucll.be.procyclingscraper.dto.CountMessage;
+import ucll.be.procyclingscraper.dto.CountNotification;
 import ucll.be.procyclingscraper.dto.OrderMessage;
 import ucll.be.procyclingscraper.dto.OrderNotification;
 import ucll.be.procyclingscraper.dto.PickMessage;
@@ -39,8 +41,14 @@ public class SocketController {
 
     @MessageMapping("/pick")    
     @SendTo("/topic/picks")
-    public PickNotification handlePick(PickMessage message) {
-        return userTeamService.addCyclistToUserTeam(message.getEmail(), message.getCyclistId() ,message.getCompetitionId());
+    public PickNotification handlePick(PickMessage pickMessage) {
+        return userTeamService.addCyclistToUserTeam(pickMessage.getEmail(), pickMessage.getCyclistId() ,pickMessage.getCompetitionId());
+    }
+
+    @MessageMapping("/count")
+    @SendTo("/topic/count")
+    public CountNotification handleCount(CountMessage countMessage) {
+        return competitionService.handleCyclistCount(countMessage.getMaxMainCyclists(), countMessage.getMaxReserveCyclists(), countMessage.getCompetitionId());
     }
 }
 

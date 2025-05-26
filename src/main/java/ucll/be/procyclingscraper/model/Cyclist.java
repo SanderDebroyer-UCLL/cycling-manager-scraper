@@ -46,7 +46,7 @@ public class Cyclist {
     }
 
     @OneToMany(mappedBy = "cyclist")
-    @JsonManagedReference
+    @JsonBackReference
     private List<RaceResult> raceResults = new ArrayList<>();
 
     public void addRaceResult(RaceResult raceResult) {
