@@ -20,8 +20,10 @@ public class Team {
     private Long id;
     private String name;
     private int ranking;
+    private String teamUrl;
+    
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Cyclist> cyclists;
-    private String teamUrl;
+    
 }

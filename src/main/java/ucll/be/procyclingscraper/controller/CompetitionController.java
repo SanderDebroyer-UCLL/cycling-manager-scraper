@@ -6,6 +6,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
+import ucll.be.procyclingscraper.dto.CompetitionModel;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.security.JwtHelper;
@@ -20,9 +21,6 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
-
-
-
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -55,5 +53,11 @@ public class CompetitionController {
         String username = jwtHelper.getUsernameFromToken(token.substring(7));
         return competitionService.getCompetitions(username);
     }
+
+    @GetMapping("/competitionDTOs")
+    public List<CompetitionModel> getCompetionDTOs() {
+        return competitionService.getCompetitionDTOs();
+    }
+    
     
 }

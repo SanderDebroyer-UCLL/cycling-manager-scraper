@@ -5,6 +5,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import ucll.be.procyclingscraper.dto.RaceModel;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
@@ -227,7 +229,7 @@ public class RaceService {
                     String riderName = riderElement.text().toLowerCase();
                     System.out.println("Extracted Rider Name: " + riderName);
 
-                    String[] nameParts = riderName.trim().split("\\s+");
+                    String[] nameParts = riderName.trim().split("\s+");
                     String fixedName = "";
                     for (int i = 1; i < nameParts.length; i++) {
                         String firstName = String.join(" ", Arrays.copyOfRange(nameParts, i, nameParts.length));
@@ -299,6 +301,20 @@ public class RaceService {
     
         System.out.println("Verwerkte startlijst: " + startList);
         return startList;
+    }
+
+    public List<RaceModel> getRaceDTOs() {
+        List<Race> races = raceRepository.findAll();
+        List<RaceModel> raceDTOs = new ArrayList<>();
+
+        for (Race race: races) {
+            RaceModel raceModel = new RaceModel();
+            raceModel.setId(race.getId());
+            raceModel.setName(race.getName());
+            raceModel.setRaceUrl(race.getRaceUrl());
+            raceDTOs.add(raceModel);
+        }
+        return raceDTOs;
     }
     
 
