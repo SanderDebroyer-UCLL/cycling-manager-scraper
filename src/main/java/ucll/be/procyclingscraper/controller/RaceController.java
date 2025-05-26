@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import ucll.be.procyclingscraper.dto.RaceModel;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.service.RaceService;
 
@@ -46,4 +48,10 @@ public class RaceController {
     public List<Race> fetchOneDayRaces() {
         return raceService.fetchOneDayRaces();
     }
+
+    @GetMapping("/raceDTOs")
+    public List<RaceModel> getRaceDTOs() {
+        return raceService.getRaceDTOs();
+    }
+    
 }

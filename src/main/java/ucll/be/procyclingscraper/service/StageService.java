@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.StageModel;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.ParcoursType;
 import ucll.be.procyclingscraper.model.Race;
@@ -174,5 +175,19 @@ public class StageService {
             default:
                 stage.setParcoursType(null);
         }
+    }
+
+    public List<StageModel> getStageDTOs() {
+        List<Stage> stages = stageRepository.findAll();
+        List<StageModel> stageDTOs = new ArrayList<>();
+        for (Stage stage: stages) {
+            StageModel stageModel = new StageModel();
+            stageModel.setId(stage.getId());
+            stageModel.setName(stage.getName());
+            stageModel.setStageUrl(stage.getStageUrl());
+            stageDTOs.add(stageModel);
+        }
+
+        return stageDTOs;
     }
 }

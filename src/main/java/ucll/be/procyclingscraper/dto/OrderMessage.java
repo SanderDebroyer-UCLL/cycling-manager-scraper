@@ -13,6 +13,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderMessage {
-    private List<UserDTO> users;
+    private List<UserModel> users;
     private Long competitionId;
 }

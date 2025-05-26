@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.dto.StageModel;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.service.StageService;
@@ -37,8 +38,15 @@ public class StageController {
         return stageService.findCyclistInByStageId(id, "STAGE");
     }
 
-    @GetMapping("/      /gc/{id}")
+    @GetMapping("/stageResult/gc/{id}")
     public List<Cyclist> getStageGcFromStageId(@PathVariable Long id) {
         return stageService.findCyclistInByStageId(id, "GC");
     }
+
+    @GetMapping("/stageDTOs")
+    public List<StageModel> getStageDTOs() {
+        return stageService.getStageDTOs();
+    }
+    
+
 }

@@ -4,10 +4,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.dto.TeamModel;
 import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.service.TeamService;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/teams")
@@ -28,4 +31,10 @@ public class TeamController {
     public List<Team> getTeams() {
         return teamService.getTeams();
     }
+
+    @GetMapping("/teamDTOs")
+    public List<TeamModel> getTeamDTOs() {
+        return teamService.getTeamDTOs();
+    }
+    
 }
