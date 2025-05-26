@@ -38,13 +38,13 @@ public class RaceResultController {
         return raceResultService.getRaceResultByRaceId(id);
     }
 
-    @GetMapping("/cyclist")
-    public List<RaceResult> getRaceResultsByCyclistId(@RequestParam String cyclistId) {
-        return raceResultService.getRaceResultsByCyclistId(cyclistId);
+    @GetMapping("/cyclist/{id}")
+    public List<RaceResult> getRaceResultsByCyclistId(@PathVariable String id) {
+        return raceResultService.getRaceResultsByCyclistId(id);
     }
 
-    @GetMapping("/raceAndCyclist")
-    public RaceResult getRaceResultByRaceIdAndCyclistId(@RequestParam String raceId, @RequestParam String cyclistId) {
+    @GetMapping("/raceAndCyclist/{raceId}/{cyclistId}")
+    public RaceResult getRaceResultByRaceIdAndCyclistId(@PathVariable String raceId, @PathVariable String cyclistId) {
         return raceResultService.getRaceResultByRaceIdAndCyclistId(raceId, cyclistId);
     }
 }
