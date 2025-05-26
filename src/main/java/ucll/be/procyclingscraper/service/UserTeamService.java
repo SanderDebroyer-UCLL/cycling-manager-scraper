@@ -76,18 +76,24 @@ public class UserTeamService {
         for (User otherUser : competition.getUsers()) {
             for (UserTeam otherTeam : otherUser.getUserTeams()) {
                 if (otherTeam.getCompetitionId().equals(competitionId) &&
-                    otherTeam.getCyclists().contains(cyclist)) {
+                    otherTeam.getMainCyclists().contains(cyclist)) {
                     throw new RuntimeException("Cyclist is already in a team in this competition");
                 }
             }
         }
 
-        if (userTeam.getCyclists().size() >= 20) {
+        if (userTeam.getMainCyclists().size() + userTeam.getReserveCyclists().size() >= competition.getMaxMainCyclists() + competition.getMaxReserveCyclists()) {
             // Check if the user has already picked a cyclist in this competition
-            throw new RuntimeException("User has already has 20 cyclists in his team");
+            throw new RuntimeException("User already has " + (competition.getMaxMainCyclists() + competition.getMaxReserveCyclists()) + " cyclists in their team");
         }
         // Add cyclist to the user's team
-        userTeam.getCyclists().add(cyclist);
+        if (userTeam.getMainCyclists().size() < competition.getMaxMainCyclists()) {
+            // Add to main cyclists if space is available
+            userTeam.getMainCyclists().add(cyclist);
+        } else if (userTeam.getReserveCyclists().size() < competition.getMaxReserveCyclists()) {
+            // Otherwise, add to reserve cyclists
+            userTeam.getReserveCyclists().add(cyclist);
+        }
         userTeamRepository.save(userTeam);
 
         // Update current pick

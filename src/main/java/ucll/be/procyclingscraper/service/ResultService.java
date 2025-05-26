@@ -111,6 +111,18 @@ public class ResultService {
                         saveResult(stage, timeResult, results);
                         resultCount++;
                     }
+                    if (scrapeResultType == ScrapeResultType.GC) {
+                        results.sort((r1, r2) -> r1.getTime().compareTo(r2.getTime()));
+    
+                        int positionCounter = 1;
+                        for (TimeResult r : results) {
+                            if (r.getRaceStatus() == RaceStatus.FINISHED) {
+                                r.setPosition(String.valueOf(positionCounter));
+                                positionCounter++;
+                            }
+                            timeResultRepository.save(r);
+                        }
+                    }
                 }
                 if (resultCount >= MAX_RESULTS) break;
             }

@@ -34,6 +34,7 @@ public class Race {
     private List<Stage> stages;
 
     @ManyToMany
+    @JsonManagedReference
     @JoinTable(
         name = "race_cyclist",
         joinColumns = @JoinColumn(name = "race_id"),

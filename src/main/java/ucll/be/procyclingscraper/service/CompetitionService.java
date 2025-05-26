@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ucll.be.procyclingscraper.dto.CompetitionModel;
+import ucll.be.procyclingscraper.dto.CountNotification;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.dto.OrderNotification;
 import ucll.be.procyclingscraper.dto.StatusNotification;
@@ -55,6 +56,25 @@ public class CompetitionService {
 
     public Competition getCompetitionById(Long id) {
         return competitionRepository.findById(id).orElse(null);
+    }
+
+    @Transactional
+    public CountNotification handleCyclistCount(int maxMainCyclists, int maxReserveCyclists, Long competitionId) {
+        Competition competition = competitionRepository.findById(competitionId)
+            .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+        if (maxMainCyclists < 0 || maxReserveCyclists < 0) {
+            throw new IllegalArgumentException("Cyclist counts must be non-negative");
+        }
+
+        competition.setMaxMainCyclists(maxMainCyclists);
+        competition.setMaxReserveCyclists(maxReserveCyclists);
+
+        competitionRepository.save(competition);
+
+        CountNotification notification = new CountNotification();
+        notification.setMaxMainCyclists(maxMainCyclists);
+        notification.setMaxReserveCyclists(maxReserveCyclists);
+        return notification;
     }
 
     @Transactional
@@ -112,6 +132,8 @@ public Competition createCompetition(CreateCompetitionData competitionData) {
 
     competition.setCompetitionStatus(CompetitionStatus.SORTING);
     competition.setCurrentPick(1L);
+    competition.setMaxMainCyclists(15);
+    competition.setMaxReserveCyclists(5);
 
     Long pickOrder = 1L; // initialize pick order for users
 
@@ -134,7 +156,8 @@ public Competition createCompetition(CreateCompetitionData competitionData) {
                 .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
                 .competitionId(competition.getId())
                 .user(user)
-                .cyclists(new ArrayList<>())      // Empty initial list
+                .mainCyclists(new ArrayList<>())      // Empty initial list
+                .reserveCyclists(new ArrayList<>())    // Empty initial list
                 .build();
 
             userTeamRepository.save(userTeam);
