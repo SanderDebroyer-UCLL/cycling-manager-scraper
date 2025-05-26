@@ -22,7 +22,7 @@ public class RaceResultController {
     @Autowired 
     private RaceResultService raceResultService;
 
-    @GetMapping("/scrape/oneDayRaceResults")
+    @GetMapping("/scrape")
     public List<RaceResult> getOneDayRaceResult() throws IOException {
         System.out.println("I entered the controller");
         return raceResultService.scrapeOneDayRaceResults();
