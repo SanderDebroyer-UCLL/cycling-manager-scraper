@@ -34,6 +34,11 @@ public class ResultController {
     public List<PointResult> scrapePointsPerStage() {
         return resultService.scrapePointResult(ScrapeResultType.POINTS);
     }
+
+    @GetMapping("/scrape/stageResults/kom")
+    public List<PointResult> scrapeKomPerStage() {
+        return resultService.scrapePointResult(ScrapeResultType.KOM);
+    }
     
     @GetMapping("")
     public List<TimeResult> getAllResults() {
@@ -44,4 +49,6 @@ public class ResultController {
     public void deleteAllResults() {
         resultService.deleteAllResults();
     }
+
+
 }

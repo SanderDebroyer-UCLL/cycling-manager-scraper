@@ -48,4 +48,9 @@ public class StageController {
         return stageService.findCyclistInByStageId(id, "POINTS");
     }
 
+    @GetMapping("/stageResult/kom/{id}")
+    public List<Cyclist> getStageKomFromStageId(@PathVariable Long id) {
+        return stageService.findCyclistInByStageId(id, "KOM");
+    }
+
 }
