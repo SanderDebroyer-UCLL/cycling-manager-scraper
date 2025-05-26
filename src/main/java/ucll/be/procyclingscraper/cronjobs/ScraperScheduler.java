@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 import ucll.be.procyclingscraper.service.CyclistService;
 import ucll.be.procyclingscraper.service.RaceService;
-import ucll.be.procyclingscraper.service.ResultService;
+import ucll.be.procyclingscraper.service.StageResultService;
 import ucll.be.procyclingscraper.service.StageService;
 import ucll.be.procyclingscraper.service.TeamService;
 
@@ -25,7 +25,7 @@ public class ScraperScheduler {
     private StageService stageService;
     
     @Autowired
-    private ResultService resultService;
+    private StageResultService resultService;
 
     @Scheduled(cron = "0 * 1 * * *")
     public void runRaceScraper() {

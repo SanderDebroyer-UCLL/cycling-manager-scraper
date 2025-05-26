@@ -28,12 +28,12 @@ public class RaceResultService {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3";
 
     private final RaceResultRepository raceResultRepository;
-    private final ResultService resultService;
+    private final StageResultService resultService;
     private final RaceRepository raceRepository;
     private final CyclistRepository cyclistRepository;
     private final CyclistService cyclistService;
 
-    public RaceResultService(RaceResultRepository raceResultRepository, ResultService resultService, RaceRepository raceRepository, CyclistRepository cyclistRepository, CyclistService cyclistService) {
+    public RaceResultService(RaceResultRepository raceResultRepository, StageResultService resultService, RaceRepository raceRepository, CyclistRepository cyclistRepository, CyclistService cyclistService) {
         this.raceResultRepository = raceResultRepository;
         this.resultService = resultService;
         this.raceRepository = raceRepository;

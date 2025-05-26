@@ -8,17 +8,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.TimeResult;
-import ucll.be.procyclingscraper.service.ResultService;
+import ucll.be.procyclingscraper.service.StageResultService;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/results")
-public class ResultController {
+public class StageResultController {
     
     @Autowired
-    private ResultService resultService;
+    private StageResultService resultService;
     
     @GetMapping("/scrape/stageResults/stage")
     public List<TimeResult> scrapeResults() {
