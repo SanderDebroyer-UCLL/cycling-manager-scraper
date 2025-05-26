@@ -133,7 +133,6 @@ public class ResultService {
     public List<PointResult> scrapePointResult(ScrapeResultType scrapeResultType) {
         List<PointResult> results = new ArrayList<>();
         int resultCount = 0;
-        //Change this for higher or lower amount of results
         final int MAX_RESULTS = 20;
         try { 
             List<Race> races = raceRepository.findAll();
@@ -158,19 +157,22 @@ public class ResultService {
                         PointResult pointResult = null;
 
                         if (stage.getName().contains("Stage 1 |")) {
-                            List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), targetRowIndex);
+                            List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), targetRowIndex, scrapeResultType);
                             if (pointResults == null || pointResults.isEmpty()) {
                                 System.out.println("PointResult is null for targetRowIndex: " + targetRowIndex + " in stage: " + stage.getName());
                                 targetRowIndex++;
-                                continue;
+                            } else {
+                                for (PointResult pointResultstage1 : pointResults) {
+                                    pointResultstage1.setStage(stage);
+                                    pointResultstage1.setScrapeResultType(scrapeResultType);
+                                    System.out.println("Processing PointResult for Stage 1: " + pointResultstage1);
+                                    savePointResult(stage, pointResultstage1, results);
+                                    resultCount++;
+                                }
+                                targetRowIndex++;
                             }
-                            for (PointResult pointResultstage1 : pointResults) {
-                                System.out.println("Processing PointResult for Stage 1: " + pointResultstage1);
-                                savePointResult(stage, pointResultstage1, results);
-                            }
-
-                            targetRowIndex++;
-                        }else{
+                            continue;
+                        } else {
                             Element pointElement = row.selectFirst("td:nth-child(10) a");
                             point = pointElement != null ? pointElement.text() : "Unknown";
 
@@ -185,7 +187,6 @@ public class ResultService {
                                 continue;
                             }
                             
-
                             Cyclist cyclist = cyclistService.searchCyclist(riderName);
                             if (cyclist == null) {
                                 System.out.println("Cyclist not found for name: " + riderName);
@@ -229,6 +230,9 @@ public class ResultService {
         }else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
             System.out.println("Scraping POINTS results for stage: " + stage.getName());
             stageUrl = stageUrl + "-points";
+        }else if (scrapeResultType.equals(ScrapeResultType.KOM)) {
+            System.out.println("Scraping KOM results for stage: " + stage.getName());
+            stageUrl = stageUrl + "-kom";
         }
 
         List<Stage> stages = race.getStages();
@@ -242,8 +246,11 @@ public class ResultService {
                 System.out.println("Last stage in the POINTS results: " + stage.getName());
                 stageUrl = modifyUrl(stageUrl);
                 stageUrl = stageUrl + "/points";
+            } else if (scrapeResultType.equals(ScrapeResultType.KOM)) {
+                System.out.println("Last stage in the KOM results: " + stage.getName());
+                stageUrl = modifyUrl(stageUrl);
+                stageUrl = stageUrl + "/kom";
             }
-          
         }
 
         System.out.println("Final URL: " + stageUrl);
@@ -347,7 +354,6 @@ public class ResultService {
         return LocalTime.of(hours, minutes, seconds);
     }
 
-    // Generic method to set RaceStatus for both TimeResult and PointResult
     private <T> T checkForDNFAndMore(String position, T result) {
         RaceStatus status;
         if (position.equalsIgnoreCase("DNS")) {
@@ -362,7 +368,6 @@ public class ResultService {
             status = RaceStatus.FINISHED;
         }
 
-        // Set status if result has setRaceStatus method
         if (result instanceof TimeResult) {
             ((TimeResult) result).setRaceStatus(status);
         } else if (result instanceof PointResult) {
@@ -438,12 +443,11 @@ public class ResultService {
         return resultRows;
     }
    
-    private List<PointResult> getPointResultsFromStage1(String stageUrl, int targetRowIndex) {
+    private List<PointResult> getPointResultsFromStage1(String stageUrl, int targetRowIndex, ScrapeResultType scrapeResultType) {
         List<PointResult> results = new ArrayList<>();
         java.util.Map<String, PointResult> riderResultMap = new java.util.HashMap<>();
 
         try {
-            // Hardcoded URL as before
             Document doc = Jsoup.connect("https://www.procyclingstats.com/race/tour-down-under/2025/stage-1/info/complementary-results").get();
             Elements h3Elements = doc.select("h3");
             Elements tables = doc.select("table.basic");
@@ -454,7 +458,7 @@ public class ResultService {
             Element table = tables.get(i);
             String captionText = h3Element.text();
             System.out.println("Caption Text: " + captionText);
-            if (captionText.startsWith("Sprint |") || captionText.startsWith("Points at finish")) {
+            if (captionText.startsWith("Sprint |") || captionText.startsWith("Points at finish") || captionText.startsWith("KOM Sprint")) {
                 if (sprintTableCount == targetRowIndex) {
                 Elements rows = table.select("tbody > tr");
                 for (Element row : rows) {
@@ -485,14 +489,13 @@ public class ResultService {
                         PointResult pointResult = new PointResult();
                         pointResult.setCyclist(cyclist);
                         checkForDNFAndMore(position, pointResult);
-                        fillPointResultFields(pointResult, position, pointValue, ScrapeResultType.POINTS);
+                        fillPointResultFields(pointResult, position, pointValue, scrapeResultType);
                         riderResultMap.put(riderName, pointResult);
                     } else {
                         existing.setPoint(existing.getPoint() + pointValue);
                     }
                     }
                 }
-                // Do NOT break here; process all relevant tables for this stage
                 }
                 sprintTableCount++;
             }
