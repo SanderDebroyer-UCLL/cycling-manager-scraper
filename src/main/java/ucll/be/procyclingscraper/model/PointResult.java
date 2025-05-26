@@ -11,6 +11,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PointResult extends Result{
+public class PointResult extends StageResult{
     private int point;
 }

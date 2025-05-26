@@ -5,6 +5,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+
+import ucll.be.procyclingscraper.dto.TeamModel;
 import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.repository.TeamRepository;
 import java.io.IOException;
@@ -68,6 +70,18 @@ public class TeamService {
         }
 
         return teams;
+    }
+    public List<TeamModel> getTeamDTOs() {
+        List<Team> teams = teamRepository.findAll();
+        List<TeamModel> teamDTOs = new ArrayList<>();
+        for (Team team : teams) {
+            TeamModel teamModel = new TeamModel();
+            teamModel.setId(team.getId());
+            teamModel.setName(team.getName());
+            teamModel.setTeamUrl(team.getTeamUrl());
+            teamDTOs.add(teamModel);
+        }
+        return teamDTOs;
     }
 
 

@@ -8,11 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ucll.be.procyclingscraper.dto.CompetitionModel;
 import ucll.be.procyclingscraper.dto.CountNotification;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.dto.OrderNotification;
 import ucll.be.procyclingscraper.dto.StatusNotification;
-import ucll.be.procyclingscraper.dto.UserDTO;
+import ucll.be.procyclingscraper.dto.UserModel;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.CompetitionPick;
 import ucll.be.procyclingscraper.model.CompetitionStatus;
@@ -89,7 +90,7 @@ public class CompetitionService {
     }
 
     @Transactional
-    public OrderNotification updateOrderToCompetition(List<UserDTO> users, Long competitionId) {
+    public OrderNotification updateOrderToCompetition(List<UserModel> users, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
             .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
 
@@ -98,7 +99,7 @@ public class CompetitionService {
 
         // Assign pick order starting from 1
         Long pickOrder = 1L;
-        for (UserDTO user : users) {
+        for (UserModel user : users) {
             CompetitionPick pick = new CompetitionPick();
             pick.setCompetition(competition);
             pick.setUserId(user.getId());
@@ -175,5 +176,19 @@ public Competition createCompetition(CreateCompetitionData competitionData) {
 
     // Save updated competition with users, races, and picks
     return competitionRepository.save(competition);
+}
+
+public List<CompetitionModel> getCompetitionDTOs() {
+    List<Competition> competitions = competitionRepository.findAll();
+    List<CompetitionModel> competitionDTOs = new ArrayList<>();
+    
+    for (Competition competition : competitions) {
+        CompetitionModel competitionDTO = new CompetitionModel();
+        competitionDTO.setId(competition.getId());
+        competitionDTO.setName(competition.getName());        
+        competitionDTOs.add(competitionDTO);
+    }
+    
+    return competitionDTOs;
 }
 }
