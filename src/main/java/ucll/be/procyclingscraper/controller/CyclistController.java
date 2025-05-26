@@ -11,7 +11,7 @@ import java.util.List;
 
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
 @RequestMapping("/cyclists")
 public class CyclistController {
 

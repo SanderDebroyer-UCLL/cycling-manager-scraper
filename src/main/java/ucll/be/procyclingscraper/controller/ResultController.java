@@ -10,11 +10,13 @@ import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.ResultService;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/results")
+@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
 public class ResultController {
     
     @Autowired

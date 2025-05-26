@@ -1,8 +1,6 @@
 package ucll.be.procyclingscraper.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,7 +12,7 @@ import ucll.be.procyclingscraper.model.UserTeam;
 import ucll.be.procyclingscraper.service.UserTeamService;
 
 @RestController
-@CrossOrigin(origins = "*") 
+@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
 @RequestMapping("/user-teams")
 public class UserTeamController {
 

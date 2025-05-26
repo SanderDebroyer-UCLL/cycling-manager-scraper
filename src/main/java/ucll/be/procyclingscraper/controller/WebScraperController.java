@@ -6,6 +6,7 @@ import ucll.be.procyclingscraper.service.WebScraperService;
 
 @RestController
 @RequestMapping("/api/scrape")
+@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
 public class WebScraperController {
 
     private final WebScraperService scraperService;

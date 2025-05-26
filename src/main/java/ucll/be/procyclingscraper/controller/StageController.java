@@ -12,11 +12,10 @@ import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.service.StageService;
 
 import java.util.List;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
 @RequestMapping("/stages")
 public class StageController {
 

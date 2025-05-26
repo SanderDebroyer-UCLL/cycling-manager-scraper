@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "https://cycling-manager-frontend.vercel.app")
 @RequestMapping("/competitions")
 public class CompetitionController {
 
