@@ -64,4 +64,7 @@ public class Competition {
             inverseJoinColumns = @JoinColumn(name = "race_id", 
             referencedColumnName = "id"))
     private Set<Race> races = new HashSet<>();
+
+    @OneToMany()
+    private Set<Stage> stages = new HashSet<>();
 }

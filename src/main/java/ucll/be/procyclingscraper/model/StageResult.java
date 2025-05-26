@@ -1,5 +1,8 @@
 package ucll.be.procyclingscraper.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.*;
@@ -35,4 +38,11 @@ public abstract class StageResult {
     @ManyToOne
     @JsonBackReference
     private Stage stage;
+
+    @OneToMany(mappedBy = "stageResult", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<StagePoints> stagePoints = new ArrayList<>();
+
+    public int getTotalPoints() {
+        return stagePoints.stream().mapToInt(StagePoints::getValue).sum();
+    }
 }
