@@ -35,6 +35,8 @@ public class Competition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    private int maxMainCyclists;
+    private int maxReserveCyclists;
     private Long currentPick;
 
     @Enumerated(EnumType.STRING)
