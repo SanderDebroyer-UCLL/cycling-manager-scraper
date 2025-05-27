@@ -71,52 +71,59 @@ public class StagePointsService {
             ScrapeResultType resultType = entry.getKey();
             List<Cyclist> resultCyclists = entry.getValue();
 
-            for (int i = 0; i < resultCyclists.size(); i++) {
-                Cyclist cyclist = resultCyclists.get(i);
-                if (teamCyclists.stream().anyMatch(c -> c.getId().equals(cyclist.getId()))) {
-
-                    Optional<StageResult> resultOption = cyclist.getResults().stream()
-                            .filter(r -> r.getStage().getId().equals(stageId) &&
-                                    r.getScrapeResultType() == resultType)
-                            .findFirst();
-
-                    int points;
-                    int position = 0;
-
-                    if (resultOption.isPresent()) {
-                        StageResult result = resultOption.get();
-                        position = Integer.parseInt(result.getPosition());
-                        points = calculatePoints(resultType, position);
-                    } else {
-                        points = 0; // or some default/error value
-                    }
-
-                    // Find matching StageResult for this cyclist and resultType
-                    StageResult matchingStageResult = cyclist.getResults().stream()
-                            .filter(sr -> sr.getScrapeResultType() == resultType &&
-                                    sr.getStage().equals(stage)) // assuming you have a `stage` variable
-                            .findFirst()
-                            .orElseThrow(() -> new IllegalStateException(
-                                    "StageResult not found for cyclist " + cyclist.getName()));
-
-                    if (points <= 0) {
-                        continue; // Skip saving if points are zero
-                    }
-
-                    // Create and save StagePoints
-                    StagePoints stagePoints = StagePoints.builder()
-                            .competition(competitionRepository.findById(competitionId).orElseThrow())
-                            .stageResult(matchingStageResult)
-                            .value(points)
-                            .reason(resultType.name() + " - position " + position + " - cyclist " + cyclist.getName())
-                            .build();
-
-                    stagePointsRepository.save(stagePoints);
-                    matchingStageResult.getStagePoints().add(stagePoints); // Optional: update bi-directional link
-                    stagePointsList.add(stagePoints);
+            for (Cyclist cyclist : resultCyclists) {
+                if (teamCyclists.stream().noneMatch(c -> c.getId().equals(cyclist.getId()))) {
+                    continue;
                 }
+
+                Optional<StageResult> resultOption = cyclist.getResults().stream()
+                        .filter(r -> r.getStage().getId().equals(stageId) &&
+                                r.getScrapeResultType() == resultType)
+                        .findFirst();
+
+                int points;
+                int position = 0;
+
+                if (resultOption.isPresent()) {
+                    StageResult result = resultOption.get();
+                    position = Integer.parseInt(result.getPosition());
+                    points = calculatePoints(resultType, position);
+                } else {
+                    points = 0;
+                }
+
+                if (points <= 0) {
+                    continue;
+                }
+
+                StageResult matchingStageResult = cyclist.getResults().stream()
+                        .filter(sr -> sr.getScrapeResultType() == resultType &&
+                                sr.getStage().equals(stage))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException(
+                                "StageResult not found for cyclist " + cyclist.getName()));
+
+                String reason = resultType.name() + " - position " + position + " - cyclist " + cyclist.getName();
+
+                // Check for duplicate StagePoints
+                boolean exists = stagePointsRepository.existsByStageResultAndReason(matchingStageResult, reason);
+                if (exists) {
+                    continue;
+                }
+
+                StagePoints stagePoints = StagePoints.builder()
+                        .competition(competitionRepository.findById(competitionId).orElseThrow())
+                        .stageResult(matchingStageResult)
+                        .value(points)
+                        .reason(reason)
+                        .build();
+
+                stagePointsRepository.save(stagePoints);
+                matchingStageResult.getStagePoints().add(stagePoints); // Optional: bi-directional
+                stagePointsList.add(stagePoints);
             }
         }
+
         return stagePointsList;
     }
 

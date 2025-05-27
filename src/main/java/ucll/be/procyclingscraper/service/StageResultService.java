@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
+import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.RaceStatus;
@@ -43,8 +44,24 @@ public class StageResultService {
     @Autowired
     CyclistService cyclistService;
 
+    @Autowired
+    CompetitionRepository competitionRepository;
+
     public List<Cyclist> findCyclistInByStageId(Long stage_id, String type) {
         return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
+    }
+
+    public void getStageResultsForAllStagesICompetitions() {
+        List<Competition> competitions = competitionRepository.findAll();
+
+        List<Race> uniqueRaces = competitions.stream()
+                .flatMap(competition -> competition.getRaces().stream())
+                .distinct()
+                .collect(Collectors.toList());
+
+        for (Race race : uniqueRaces) {
+            scrapeTimeResultByRace(ScrapeResultType.STAGE, race.getId());
+        }
     }
 
     public List<StageResultWithCyclistDTO> getStageResultsByStageIdAndType(Long stageId, ScrapeResultType type) {
