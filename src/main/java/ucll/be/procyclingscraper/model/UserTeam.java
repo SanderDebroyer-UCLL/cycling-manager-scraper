@@ -23,17 +23,26 @@ public class UserTeam {
 
     private Long competitionId;
 
+    // Main team
     @ManyToMany
     @JoinTable(
-        name = "user_team_cyclists",
+        name = "user_team_main_cyclists",
         joinColumns = @JoinColumn(name = "user_team_id"),
         inverseJoinColumns = @JoinColumn(name = "cyclist_id")
     )
-    private List<Cyclist> cyclists;
+    private List<Cyclist> mainCyclists;
+
+    // Reserve team
+    @ManyToMany
+    @JoinTable(
+        name = "user_team_reserve_cyclists",
+        joinColumns = @JoinColumn(name = "user_team_id"),
+        inverseJoinColumns = @JoinColumn(name = "cyclist_id")
+    )
+    private List<Cyclist> reserveCyclists;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties("userTeams")  // ignore the back link in user when serializing user inside UserTeam
+    @JsonIgnoreProperties("userTeams")
     private User user;
-
 }

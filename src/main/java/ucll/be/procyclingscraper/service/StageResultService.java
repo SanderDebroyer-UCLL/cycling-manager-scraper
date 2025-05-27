@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class ResultService {
+public class StageResultService {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3";
 
     @Autowired
@@ -38,20 +38,27 @@ public class ResultService {
     @Autowired
     CyclistService cyclistService;
 
+    public List<Cyclist> findCyclistInByStageId(Long stage_id, String type) {
+        return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
+    }
+
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) {
-        List<TimeResult> results = new ArrayList<>();
+
+        
+        List<TimeResult> allResults = new ArrayList<>();
         System.out.println("Starting scraping...");
         int resultCount = 0;
         //Change this for higher or lower amount of results
         final int MAX_RESULTS = 278;
         try { 
             List<Race> races = raceRepository.findAll();
-            
+
             for (Race race : races) {
                 List<Stage> stages = race.getStages();
                 for (Stage stage : stages) {
-                    System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
+                    
                     if (resultCount >= MAX_RESULTS) break;
+                    List<TimeResult> stageResults = new ArrayList<>();
                     Document doc = fetchStageDocument(race, stage, scrapeResultType);
 
 
@@ -85,6 +92,7 @@ public class ResultService {
                             cumulativeTime = resultTime;
                         }
 
+
                         if (stage.getName().startsWith("Stage 1 |") && scrapeResultType.equals(ScrapeResultType.GC)) {
                             String boniSeconds = "0";
                             Element boniSecondsElement = row.selectFirst("td.bonis.ar.fs11.cu600 > div > a");
@@ -108,8 +116,25 @@ public class ResultService {
 
                         fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
 
-                        saveResult(stage, timeResult, results);
+                        saveResult(stage, timeResult, stageResults);
                         resultCount++;
+                    }
+                    if (scrapeResultType == ScrapeResultType.GC) {
+                        // Reset results for each stage to avoid accumulating across stages
+                        stageResults.sort((r1, r2) -> r1.getTime().compareTo(r2.getTime()));
+                        System.out.println("Sorting results by time for GC stage: " + stage.getName());
+                        int positionCounter = 1;
+                        for (TimeResult r : stageResults) {
+                            if (r.getRaceStatus() == RaceStatus.FINISHED) {
+                                r.setPosition(String.valueOf(positionCounter));
+                                positionCounter++;
+                            }
+                            timeResultRepository.save(r);
+                        }
+                        // Add stage results to allResults
+                        allResults.addAll(stageResults);
+                        // Clear stageResults for the next stage
+                        stageResults.clear();
                     }
                 }
                 if (resultCount >= MAX_RESULTS) break;
@@ -119,7 +144,7 @@ public class ResultService {
             e.printStackTrace();
         }
 
-        return results;
+        return allResults;
     }
 
     private static String modifyUrl(String url) {

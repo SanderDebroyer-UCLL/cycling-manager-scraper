@@ -8,10 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ucll.be.procyclingscraper.dto.CompetitionModel;
+import ucll.be.procyclingscraper.dto.CountNotification;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.dto.OrderNotification;
 import ucll.be.procyclingscraper.dto.StatusNotification;
-import ucll.be.procyclingscraper.dto.UserDTO;
+import ucll.be.procyclingscraper.dto.UserModel;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.CompetitionPick;
 import ucll.be.procyclingscraper.model.CompetitionStatus;
@@ -57,6 +59,25 @@ public class CompetitionService {
     }
 
     @Transactional
+    public CountNotification handleCyclistCount(int maxMainCyclists, int maxReserveCyclists, Long competitionId) {
+        Competition competition = competitionRepository.findById(competitionId)
+            .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+        if (maxMainCyclists < 0 || maxReserveCyclists < 0) {
+            throw new IllegalArgumentException("Cyclist counts must be non-negative");
+        }
+
+        competition.setMaxMainCyclists(maxMainCyclists);
+        competition.setMaxReserveCyclists(maxReserveCyclists);
+
+        competitionRepository.save(competition);
+
+        CountNotification notification = new CountNotification();
+        notification.setMaxMainCyclists(maxMainCyclists);
+        notification.setMaxReserveCyclists(maxReserveCyclists);
+        return notification;
+    }
+
+    @Transactional
     public StatusNotification updateCompetitionStatus(CompetitionStatus status, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
             .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
@@ -69,7 +90,7 @@ public class CompetitionService {
     }
 
     @Transactional
-    public OrderNotification updateOrderToCompetition(List<UserDTO> users, Long competitionId) {
+    public OrderNotification updateOrderToCompetition(List<UserModel> users, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
             .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
 
@@ -78,7 +99,7 @@ public class CompetitionService {
 
         // Assign pick order starting from 1
         Long pickOrder = 1L;
-        for (UserDTO user : users) {
+        for (UserModel user : users) {
             CompetitionPick pick = new CompetitionPick();
             pick.setCompetition(competition);
             pick.setUserId(user.getId());
@@ -111,6 +132,8 @@ public Competition createCompetition(CreateCompetitionData competitionData) {
 
     competition.setCompetitionStatus(CompetitionStatus.SORTING);
     competition.setCurrentPick(1L);
+    competition.setMaxMainCyclists(15);
+    competition.setMaxReserveCyclists(5);
 
     Long pickOrder = 1L; // initialize pick order for users
 
@@ -133,7 +156,8 @@ public Competition createCompetition(CreateCompetitionData competitionData) {
                 .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
                 .competitionId(competition.getId())
                 .user(user)
-                .cyclists(new ArrayList<>())      // Empty initial list
+                .mainCyclists(new ArrayList<>())      // Empty initial list
+                .reserveCyclists(new ArrayList<>())    // Empty initial list
                 .build();
 
             userTeamRepository.save(userTeam);
@@ -152,5 +176,19 @@ public Competition createCompetition(CreateCompetitionData competitionData) {
 
     // Save updated competition with users, races, and picks
     return competitionRepository.save(competition);
+}
+
+public List<CompetitionModel> getCompetitionDTOs() {
+    List<Competition> competitions = competitionRepository.findAll();
+    List<CompetitionModel> competitionDTOs = new ArrayList<>();
+    
+    for (Competition competition : competitions) {
+        CompetitionModel competitionDTO = new CompetitionModel();
+        competitionDTO.setId(competition.getId());
+        competitionDTO.setName(competition.getName());        
+        competitionDTOs.add(competitionDTO);
+    }
+    
+    return competitionDTOs;
 }
 }

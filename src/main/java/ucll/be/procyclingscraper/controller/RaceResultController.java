@@ -11,18 +11,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.service.RaceResultService;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/raceResults")
 @CrossOrigin(origins = "*")
+@RequestMapping("/raceResults")
 public class RaceResultController {
     
     @Autowired 
     private RaceResultService raceResultService;
 
-    @GetMapping("/scrape/oneDayRaceResults")
+    @GetMapping("/scrape")
     public List<RaceResult> getOneDayRaceResult() throws IOException {
         System.out.println("I entered the controller");
         return raceResultService.scrapeOneDayRaceResults();
@@ -38,13 +37,13 @@ public class RaceResultController {
         return raceResultService.getRaceResultByRaceId(id);
     }
 
-    @GetMapping("/cyclist")
-    public List<RaceResult> getRaceResultsByCyclistId(@RequestParam String cyclistId) {
-        return raceResultService.getRaceResultsByCyclistId(cyclistId);
+    @GetMapping("/cyclist/{id}")
+    public List<RaceResult> getRaceResultsByCyclistId(@PathVariable String id) {
+        return raceResultService.getRaceResultsByCyclistId(id);
     }
 
-    @GetMapping("/raceAndCyclist")
-    public RaceResult getRaceResultByRaceIdAndCyclistId(@RequestParam String raceId, @RequestParam String cyclistId) {
+    @GetMapping("/raceAndCyclist/{raceId}/{cyclistId}")
+    public RaceResult getRaceResultByRaceIdAndCyclistId(@PathVariable String raceId, @PathVariable String cyclistId) {
         return raceResultService.getRaceResultByRaceIdAndCyclistId(raceId, cyclistId);
     }
 }
