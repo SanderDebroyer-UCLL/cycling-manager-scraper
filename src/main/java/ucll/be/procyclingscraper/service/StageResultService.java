@@ -15,6 +15,7 @@ import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.repository.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,16 +50,22 @@ public class StageResultService {
         System.out.println("Starting scraping...");
         int resultCount = 0;
         //Change this for higher or lower amount of results
-        final int MAX_RESULTS = 278;
+        final int MAX_RESULTS = 1000;
         try { 
             List<Race> races = raceRepository.findAll();
 
             for (Race race : races) {
+                LocalDate raceStartTime = LocalDate.parse(race.getStartDate());
+                if (raceStartTime.isAfter(LocalDate.now())) {
+                    System.out.println("Race " + race.getName() + " has not started yet.");
+                    break;
+                }
                 List<Stage> stages = race.getStages();
                 for (Stage stage : stages) {
-                    
+                    System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
                     if (resultCount >= MAX_RESULTS) break;
                     List<TimeResult> stageResults = new ArrayList<>();
+
                     Document doc = fetchStageDocument(race, stage, scrapeResultType);
 
 
@@ -136,7 +143,7 @@ public class StageResultService {
                         stageResults.clear();
                     }
                 }
-                if (resultCount >= MAX_RESULTS) break;
+                // if (resultCount >= MAX_RESULTS) break;
             }
 
         } catch (IOException e) {
