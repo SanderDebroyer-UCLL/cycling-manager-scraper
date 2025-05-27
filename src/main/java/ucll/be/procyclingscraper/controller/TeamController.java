@@ -10,7 +10,6 @@ import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.service.TeamService;
 
 import java.util.List;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
