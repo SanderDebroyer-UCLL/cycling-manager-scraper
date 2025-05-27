@@ -40,4 +40,9 @@ public class StagePointsController {
             @RequestParam Long stageId) {
         return stagePointsService.getStagePointsForStage(competitionId, stageId);
     }
+
+    @GetMapping("/all/{competitionId}")
+    public List<StagePointsPerUserPerCyclistDTO> getAllStagePoints(@PathVariable Long competitionId, @RequestParam Long userId) {
+        return stagePointsService.getAllStagePoints(competitionId, userId);
+    }
 }

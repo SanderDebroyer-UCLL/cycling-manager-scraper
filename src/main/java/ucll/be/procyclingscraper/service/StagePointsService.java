@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Map;
 
 import java.util.Optional;
+import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.StagePointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.StagePointsPerUserPerCyclistDTO;
+import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
@@ -164,7 +167,36 @@ public class StagePointsService {
                     totalPoints = totalPoints + cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
                 }
             }
-            result.add(new StagePointsPerUserDTO(totalPoints, userTeam.getUser().getFirstName() + " " + userTeam.getUser().getLastName(), userTeam.getUser().getId()));
+            result.add(new StagePointsPerUserDTO(totalPoints,
+                    userTeam.getUser().getFirstName() + " " + userTeam.getUser().getLastName(),
+                    userTeam.getUser().getId()));
+        }
+        return result;
+    }
+
+    public List<StagePointsPerUserPerCyclistDTO> getAllStagePoints(Long competitionId, Long userId) {
+
+        UserTeam userTeam = userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId);
+
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+
+        Set<StagePoints> stagePoints = competition.getStagePoints();
+
+        List<StagePointsPerUserPerCyclistDTO> result = new ArrayList<>();
+
+        for (Cyclist cyclist : userTeam.getMainCyclists()) {
+            List<StagePoints> cyclistStagePoints = stagePoints.stream()
+                    .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
+                    .toList();
+
+            if (!cyclistStagePoints.isEmpty()) {
+                int totalPoints = cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
+
+                result.add(new StagePointsPerUserPerCyclistDTO(totalPoints,
+                        cyclist.getName(),
+                        userTeam.getUser().getId()));
+            }
         }
         return result;
     }

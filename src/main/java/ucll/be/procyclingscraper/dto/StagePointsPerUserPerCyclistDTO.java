@@ -5,6 +5,6 @@ import lombok.Value;
 @Value
 public class StagePointsPerUserPerCyclistDTO {
     private int points;
-    private String userName;
+    private String cyclistName;
     private Long userId;
 }

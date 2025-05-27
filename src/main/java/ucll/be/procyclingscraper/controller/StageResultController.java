@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
-import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.StageResultService;
@@ -29,6 +28,11 @@ public class StageResultController {
     @GetMapping("/scrape/stage")
     public List<TimeResult> scrapeResults() {
         return stageResultService.scrapeTimeResult(ScrapeResultType.STAGE);
+    }
+
+    @GetMapping("/scrape/{raceId}")
+    public List<TimeResult> scrapeResults(@PathVariable Long raceId) {
+        return stageResultService.scrapeTimeResultByRace(ScrapeResultType.STAGE, raceId);
     }
 
     @GetMapping("/scrape/gc")
