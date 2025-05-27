@@ -24,13 +24,14 @@ public class StagePointsController {
     private StagePointsService stagePointsService;
 
     @GetMapping("/create/{competitionId}")
-    public List<StagePoints> createStagePoints(@PathVariable Long competitionId, @RequestParam Long userId,
+    public List<StagePoints> createStagePoints(@PathVariable Long competitionId,
             @RequestParam Long stageId) {
-        return stagePointsService.createStagePoints(competitionId, userId, stageId);
+        return stagePointsService.createStagePoints(competitionId, stageId);
     }
 
     @GetMapping("/user/{competitionId}")
-    public List<StagePointsPerUserPerCyclistDTO> getStagePointsForUser(@PathVariable Long competitionId, @RequestParam Long userId,
+    public List<StagePointsPerUserPerCyclistDTO> getStagePointsForUser(@PathVariable Long competitionId,
+            @RequestParam Long userId,
             @RequestParam Long stageId) {
         return stagePointsService.getStagePointsForUser(competitionId, userId, stageId);
     }
@@ -42,7 +43,8 @@ public class StagePointsController {
     }
 
     @GetMapping("/all/{competitionId}")
-    public List<StagePointsPerUserPerCyclistDTO> getAllStagePoints(@PathVariable Long competitionId, @RequestParam Long userId) {
+    public List<StagePointsPerUserPerCyclistDTO> getAllStagePoints(@PathVariable Long competitionId,
+            @RequestParam Long userId) {
         return stagePointsService.getAllStagePoints(competitionId, userId);
     }
 }
