@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.model;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,12 +26,14 @@ public abstract class StageResult {
 
     private String position;
 
+    private LocalTime time;
+
     @Enumerated(EnumType.STRING)
-    private RaceStatus raceStatus;  
+    private RaceStatus raceStatus;
 
     @Enumerated(EnumType.STRING)
     private ScrapeResultType scrapeResultType;
-    
+
     @ManyToOne
     @JsonBackReference
     private Cyclist cyclist;

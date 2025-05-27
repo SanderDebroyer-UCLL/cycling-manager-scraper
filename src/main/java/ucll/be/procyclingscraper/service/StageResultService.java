@@ -56,6 +56,7 @@ public class StageResultService {
                     Cyclist cyclist = result.getCyclist();
                     return StageResultWithCyclistDTO.builder()
                             .id(result.getId())
+                            .time(result.getTime())
                             .position(result.getPosition())
                             .raceStatus(result.getRaceStatus())
                             .scrapeResultType(result.getScrapeResultType())
