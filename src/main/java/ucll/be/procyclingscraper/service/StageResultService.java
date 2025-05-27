@@ -46,11 +46,12 @@ public class StageResultService {
         return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
     }
 
-    public List<StageResultWithCyclistDTO> getStageResultByStageId(Long stageId) {
-        Stage stage = stageRepository.findStageById(stageId);
+    public List<StageResultWithCyclistDTO> getStageResultsByStageIdAndType(Long stageId, ScrapeResultType type) {
+        Stage stage = stageRepository.findStageById((stageId));
         List<StageResult> stageResults = stage.getResults();
 
         return stageResults.stream()
+                .filter(result -> result.getScrapeResultType() == type)
                 .map(result -> {
                     Cyclist cyclist = result.getCyclist();
                     return StageResultWithCyclistDTO.builder()
