@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -13,6 +15,7 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
+import ucll.be.procyclingscraper.dto.RaceResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.RaceResult;
@@ -33,7 +36,8 @@ public class RaceResultService {
     private final CyclistRepository cyclistRepository;
     private final CyclistService cyclistService;
 
-    public RaceResultService(RaceResultRepository raceResultRepository, StageResultService resultService, RaceRepository raceRepository, CyclistRepository cyclistRepository, CyclistService cyclistService) {
+    public RaceResultService(RaceResultRepository raceResultRepository, StageResultService resultService,
+            RaceRepository raceRepository, CyclistRepository cyclistRepository, CyclistService cyclistService) {
         this.raceResultRepository = raceResultRepository;
         this.resultService = resultService;
         this.raceRepository = raceRepository;
@@ -57,21 +61,23 @@ public class RaceResultService {
         String time = parts[0];
         System.out.println("Time: " + time);
 
-        return new HashMap<String, String>() {{
-            put("position", position);
-            put("riderName", riderName);
-            put("time", time);
-        }};
+        return new HashMap<String, String>() {
+            {
+                put("position", position);
+                put("riderName", riderName);
+                put("time", time);
+            }
+        };
 
     }
 
     public List<RaceResult> scrapeOneDayRaceResults() throws IOException {
-        
+
         try {
             List<RaceResult> raceResults = new ArrayList<>();
             List<Race> oneDayRaces = raceRepository.findRaceByStagesIsEmpty();
-            
-            for (Race race: oneDayRaces) {
+
+            for (Race race : oneDayRaces) {
                 String raceUrl = race.getRaceUrl() + "/result";
                 System.out.println("Constructed race URL: " + raceUrl);
                 Document doc = Jsoup.connect(raceUrl)
@@ -81,7 +87,7 @@ public class RaceResultService {
                 Elements raceResultRows = doc.select("table.results tbody > tr");
                 LocalTime cumulativeTime = LocalTime.MIDNIGHT;
                 List<String> ridersToAvoid = Arrays.asList("GUALDI Simone");
-                
+
                 for (Element row : raceResultRows) {
                     HashMap<String, String> resultData = getResultsTableData(row);
                     System.out.println("Fetched race name " + race.getName());
@@ -112,9 +118,8 @@ public class RaceResultService {
                     }
                     RaceStatus raceStatus = calculateRaceStatus(position);
                     RaceResult raceResult = raceResultRepository.findRaceResultByRaceAndCyclist(race, cyclist);
-                    
 
-                    if (raceResult == null) { 
+                    if (raceResult == null) {
                         System.out.println("RaceResult not found, creating a new one");
                         RaceResult newRaceResult = new RaceResult();
                         newRaceResult.setPosition(position);
@@ -153,16 +158,29 @@ public class RaceResultService {
     public List<RaceResult> getRaceResults() {
         return raceResultRepository.findAll();
     }
-
-    public List<RaceResult> getRaceResultByRaceId(String raceId) {
-        
+    
+    public List<RaceResultWithCyclistDTO> getRaceResultByRaceId(String raceId) {
         Race race = raceRepository.findRaceById(Integer.parseInt(raceId));
         List<RaceResult> raceResults = race.getRaceResult();
-        return raceResults;
+
+        return raceResults.stream()
+                .map(result -> {
+                    Cyclist cyclist = result.getCyclist();
+                    return RaceResultWithCyclistDTO.builder()
+                            .id(result.getId())
+                            .position(result.getPosition())
+                            .time(result.getTime())
+                            .raceStatus(result.getRaceStatus())
+                            .cyclistId(cyclist != null ? cyclist.getId() : null)
+                            .cyclistName(cyclist != null ? cyclist.getName() : null)
+                            .cyclistCountry(cyclist != null ? cyclist.getCountry() : null)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     public List<RaceResult> getRaceResultsByCyclistId(String cyclistId) {
-        
+
         Cyclist cyclist = cyclistRepository.findCyclistById(Integer.parseInt(cyclistId));
         List<RaceResult> raceResults = cyclist.getRaceResults();
         return raceResults;

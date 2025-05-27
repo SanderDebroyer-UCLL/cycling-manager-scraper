@@ -30,7 +30,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Table(name = "competition")
 public class Competition {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,7 +40,7 @@ public class Competition {
     private Long currentPick;
 
     @Enumerated(EnumType.STRING)
-    private CompetitionStatus competitionStatus ;
+    private CompetitionStatus competitionStatus;
 
     public Competition(String name) {
         this.name = name;
@@ -52,16 +52,18 @@ public class Competition {
 
     @ManyToMany
     @JsonBackReference("competition_user")
-    @JoinTable(name = "competition_user", 
-        joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
+    @JoinTable(name = "competition_user", joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
     public Set<User> users = new HashSet<>();
+
+    @OneToMany(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("competition_stage_points")
+    private Set<StagePoints> stagePoints = new HashSet<>();
 
     @JsonManagedReference("competition_race")
     @ManyToMany
-    @JoinTable(name = "competition_race",
-            joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "race_id", 
-            referencedColumnName = "id"))
+    @JoinTable(name = "competition_race", joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "race_id", referencedColumnName = "id"))
     private Set<Race> races = new HashSet<>();
+
+    @OneToMany()
+    private Set<Stage> stages = new HashSet<>();
 }
