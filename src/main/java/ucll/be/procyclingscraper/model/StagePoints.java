@@ -1,5 +1,7 @@
 package ucll.be.procyclingscraper.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -27,11 +29,14 @@ public class StagePoints {
 
     private String reason; // e.g., "Stage 1 finish", "Mountain points", etc.
 
+    @JsonBackReference("competition_stage_points")
     @ManyToOne
     @JoinColumn(name = "competition_id")
     private Competition competition;
 
+    @JsonBackReference("stage_result_points")
     @ManyToOne
     @JoinColumn(name = "stage_result_id")
     private StageResult stageResult;
+
 }

@@ -19,7 +19,7 @@ public interface CyclistRepository extends JpaRepository<Cyclist, Long> {
     Cyclist findCyclistByName(String rider);
     Cyclist findByCyclistUrl(String riderUrl);
     @Query(value = "SELECT c.* FROM cyclist c " +
-                   "JOIN result r ON c.id = r.cyclist_id " +
+                   "JOIN stage_result r ON c.id = r.cyclist_id " +
                    "JOIN stage s ON s.id = r.stage_id " +
                    "WHERE s.id = :stageId " +
                    "ORDER BY " +
@@ -28,7 +28,7 @@ public interface CyclistRepository extends JpaRepository<Cyclist, Long> {
     List<Cyclist> findCyclistsByStageId(@Param("stageId") Long stageId);
 
     @Query(value = "SELECT c.* FROM cyclist c " +
-                   "JOIN result r ON c.id = r.cyclist_id " +
+                   "JOIN stage_result r ON c.id = r.cyclist_id " +
                    "JOIN stage s ON s.id = r.stage_id " +
                    "WHERE s.id = :stageId AND r.scrape_result_type = :scrapeResultType " +
                    "ORDER BY " +
