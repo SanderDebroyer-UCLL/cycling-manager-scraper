@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.dto.StagePointsPerUserDTO;
+import ucll.be.procyclingscraper.dto.StagePointsPerUserPerCyclistDTO;
 import ucll.be.procyclingscraper.model.StagePoints;
 import ucll.be.procyclingscraper.service.StagePointsService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,10 +23,21 @@ public class StagePointsController {
     @Autowired
     private StagePointsService stagePointsService;
 
-    @GetMapping("/{competitionId}")
+    @GetMapping("/create/{competitionId}")
     public List<StagePoints> createStagePoints(@PathVariable Long competitionId, @RequestParam Long userId,
             @RequestParam Long stageId) {
         return stagePointsService.createStagePoints(competitionId, userId, stageId);
     }
 
+    @GetMapping("/user/{competitionId}")
+    public List<StagePointsPerUserPerCyclistDTO> getStagePointsForUser(@PathVariable Long competitionId, @RequestParam Long userId,
+            @RequestParam Long stageId) {
+        return stagePointsService.getStagePointsForUser(competitionId, userId, stageId);
+    }
+
+    @GetMapping("/{competitionId}")
+    public List<StagePointsPerUserDTO> getStagePointsForStage(@PathVariable Long competitionId,
+            @RequestParam Long stageId) {
+        return stagePointsService.getStagePointsForStage(competitionId, stageId);
+    }
 }

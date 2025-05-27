@@ -9,6 +9,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.StagePointsPerUserDTO;
+import ucll.be.procyclingscraper.dto.StagePointsPerUserPerCyclistDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
@@ -62,28 +64,16 @@ public class StagePointsService {
 
         List<StagePoints> stagePointsList = new ArrayList<>();
 
-        for (Cyclist cyclist : teamCyclists) {
-            System.out.println("Cyclist: " + cyclist.getName() + " - Id: " + cyclist.getId());
-        }
-
         for (Map.Entry<ScrapeResultType, List<Cyclist>> entry : resultTypeToCyclists.entrySet()) {
             ScrapeResultType resultType = entry.getKey();
             List<Cyclist> resultCyclists = entry.getValue();
 
-            for (Cyclist cyclist : resultCyclists) {
-                System.out.println("Checking cyclist: " + cyclist.getName() + " - Id: " + cyclist.getId());
-                if (teamCyclists.stream().anyMatch(c -> c.getId().equals(cyclist.getId()))) {
-                    System.out.println("MATCH: " + cyclist.getName());
-                }
-            }
-
             for (int i = 0; i < resultCyclists.size(); i++) {
                 Cyclist cyclist = resultCyclists.get(i);
                 if (teamCyclists.stream().anyMatch(c -> c.getId().equals(cyclist.getId()))) {
-                    System.out.println("Cyclist: " + cyclist.getName() + " - Result Type: " + resultType);
 
                     Optional<StageResult> resultOption = cyclist.getResults().stream()
-                            .filter(r -> r.getId().equals(stageId) &&
+                            .filter(r -> r.getStage().getId().equals(stageId) &&
                                     r.getScrapeResultType() == resultType)
                             .findFirst();
 
@@ -95,7 +85,6 @@ public class StagePointsService {
                         position = Integer.parseInt(result.getPosition());
                         points = calculatePoints(resultType, position);
                     } else {
-                        // Handle not found
                         points = 0; // or some default/error value
                     }
 
@@ -107,6 +96,10 @@ public class StagePointsService {
                             .orElseThrow(() -> new IllegalStateException(
                                     "StageResult not found for cyclist " + cyclist.getName()));
 
+                    if (points <= 0) {
+                        continue; // Skip saving if points are zero
+                    }
+
                     // Create and save StagePoints
                     StagePoints stagePoints = StagePoints.builder()
                             .competition(competitionRepository.findById(competitionId).orElseThrow())
@@ -115,13 +108,65 @@ public class StagePointsService {
                             .reason(resultType.name() + " - position " + position + " - cyclist " + cyclist.getName())
                             .build();
 
-                    // stagePointsRepository.save(stagePoints);
+                    stagePointsRepository.save(stagePoints);
                     matchingStageResult.getStagePoints().add(stagePoints); // Optional: update bi-directional link
                     stagePointsList.add(stagePoints);
                 }
             }
         }
         return stagePointsList;
+    }
+
+    public List<StagePointsPerUserPerCyclistDTO> getStagePointsForUser(Long competitionId, Long userId, Long stageId) {
+
+        UserTeam userTeam = userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId);
+
+        List<StagePoints> stagePointsList = stagePointsRepository.findByCompetition_idAndStageResult_Stage_id(
+                competitionId,
+                stageId);
+
+        List<StagePointsPerUserPerCyclistDTO> result = new ArrayList<>();
+
+        for (Cyclist cyclist : userTeam.getMainCyclists()) {
+            List<StagePoints> cyclistStagePoints = stagePointsList.stream()
+                    .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
+                    .toList();
+
+            if (!cyclistStagePoints.isEmpty()) {
+                int totalPoints = cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
+
+                result.add(new StagePointsPerUserPerCyclistDTO(totalPoints,
+                        cyclist.getName(),
+                        userTeam.getUser().getId()));
+            }
+        }
+        return result;
+    }
+
+    public List<StagePointsPerUserDTO> getStagePointsForStage(Long competitionId, Long stageId) {
+
+        List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
+
+        List<StagePoints> stagePointsList = stagePointsRepository.findByCompetition_idAndStageResult_Stage_id(
+                competitionId,
+                stageId);
+
+        List<StagePointsPerUserDTO> result = new ArrayList<>();
+
+        for (UserTeam userTeam : userTeams) {
+            int totalPoints = 0;
+            for (Cyclist cyclist : userTeam.getMainCyclists()) {
+                List<StagePoints> cyclistStagePoints = stagePointsList.stream()
+                        .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
+                        .toList();
+
+                if (!cyclistStagePoints.isEmpty()) {
+                    totalPoints = totalPoints + cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
+                }
+            }
+            result.add(new StagePointsPerUserDTO(totalPoints, userTeam.getUser().getFirstName() + " " + userTeam.getUser().getLastName(), userTeam.getUser().getId()));
+        }
+        return result;
     }
 
     private int calculatePoints(ScrapeResultType type, int position) {
