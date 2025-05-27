@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.RaceStatus;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
@@ -47,20 +48,35 @@ public class StageResultService {
     }
 
     public List<StageResultWithCyclistDTO> getStageResultsByStageIdAndType(Long stageId, ScrapeResultType type) {
-        Stage stage = stageRepository.findStageById((stageId));
+        Stage stage = stageRepository.findStageById(stageId);
         List<StageResult> stageResults = stage.getResults();
 
         return stageResults.stream()
                 .filter(result -> result.getScrapeResultType() == type)
                 .map(result -> {
                     Cyclist cyclist = result.getCyclist();
+
+                    // Default: time is null
+                    LocalTime time = null;
+
+                    // If result is a TimeResult, extract the time
+                    if (result instanceof TimeResult) {
+                        time = ((TimeResult) result).getTime();
+                    }
+
+                    int point = 0;
+
+                    if (result instanceof PointResult) {
+                        point = ((PointResult) result).getPoint();
+                    }
+
                     return StageResultWithCyclistDTO.builder()
                             .id(result.getId())
-                            .time(result.getTime())
+                            .time(time)
+                            .point(point)
                             .position(result.getPosition())
                             .raceStatus(result.getRaceStatus())
                             .scrapeResultType(result.getScrapeResultType())
-                            .totalPoints(result.getTotalPoints())
                             .cyclistId(cyclist != null ? cyclist.getId() : null)
                             .cyclistName(cyclist != null ? cyclist.getName() : null)
                             .cyclistCountry(cyclist != null ? cyclist.getCountry() : null)

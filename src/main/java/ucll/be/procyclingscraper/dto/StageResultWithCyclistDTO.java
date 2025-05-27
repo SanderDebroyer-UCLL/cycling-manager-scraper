@@ -16,6 +16,7 @@ public class StageResultWithCyclistDTO {
     private String position;
     private RaceStatus raceStatus;
     private LocalTime time;
+    private int point;
     private ScrapeResultType scrapeResultType;
     private int totalPoints;
 

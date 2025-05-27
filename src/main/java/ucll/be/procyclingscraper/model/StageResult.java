@@ -26,8 +26,6 @@ public abstract class StageResult {
 
     private String position;
 
-    private LocalTime time;
-
     @Enumerated(EnumType.STRING)
     private RaceStatus raceStatus;
 
