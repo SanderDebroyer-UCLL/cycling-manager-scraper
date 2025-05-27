@@ -4,24 +4,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import ucll.be.procyclingscraper.service.CyclistService;
-import ucll.be.procyclingscraper.service.RaceService;
-import ucll.be.procyclingscraper.service.StageResultService;
-import ucll.be.procyclingscraper.service.StageService;
-import ucll.be.procyclingscraper.service.TeamService;
+import ucll.be.procyclingscraper.service.*;
 
 @Component
 public class ScraperScheduler {
+
     @Autowired
     private RaceService raceService;
-    
+
+    @Autowired
+    private StagePointsService stagePointsService;
+
     @Autowired
     private TeamService teamService;
 
-    @Autowired 
+    @Autowired
     private CyclistService cyclistService;
 
-    @Autowired 
+    @Autowired
     private StageService stageService;
 
     @Autowired
@@ -36,7 +36,12 @@ public class ScraperScheduler {
         raceService.scrapeRaces();
 
         stageService.scrapeStages();
-        
+
         stageResultService.getStageResultsForAllStagesICompetitions();
+    }
+
+    @Scheduled(cron = "0 * 2 * * *")
+    public void runPointsHandler() {
+        stagePointsService.createStagePointsForAllExistingResults();
     }
 }
