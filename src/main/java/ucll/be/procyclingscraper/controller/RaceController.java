@@ -28,6 +28,7 @@ public class RaceController {
     public List<Race> scrapeRaces() {
         return raceService.scrapeRaces();
     }
+
     @GetMapping()
     public List<Race> getRaces() {
         return raceService.getRaces();
@@ -43,7 +44,6 @@ public class RaceController {
         }
     }
 
-
     @GetMapping("/one_day")
     public List<Race> fetchOneDayRaces() {
         return raceService.fetchOneDayRaces();
@@ -53,5 +53,5 @@ public class RaceController {
     public List<RaceModel> getRaceDTOs() {
         return raceService.getRaceDTOs();
     }
-    
+
 }

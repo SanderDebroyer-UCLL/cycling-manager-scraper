@@ -13,13 +13,12 @@ import ucll.be.procyclingscraper.dto.RaceResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.service.RaceResultService;
 
-
 @RestController
 @RequestMapping("/raceResults")
 @CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
 public class RaceResultController {
-    
-    @Autowired 
+
+    @Autowired
     private RaceResultService raceResultService;
 
     @GetMapping("/scrape")

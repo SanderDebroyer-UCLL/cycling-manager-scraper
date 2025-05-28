@@ -12,7 +12,6 @@ import ucll.be.procyclingscraper.service.StageService;
 
 import java.util.List;
 
-
 @RestController
 @CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
 @RequestMapping("/stages")
@@ -25,7 +24,7 @@ public class StageController {
     public List<Stage> scrapeStages() {
         return stageService.scrapeStages();
     }
-    
+
     @GetMapping()
     public List<Stage> getStages() {
         return stageService.getStages();

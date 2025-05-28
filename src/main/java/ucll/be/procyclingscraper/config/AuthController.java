@@ -1,6 +1,5 @@
 package ucll.be.procyclingscraper.config;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,6 @@ import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.security.JwtHelper;
 import ucll.be.procyclingscraper.service.UserService;
 
-
 @RestController
 @RequestMapping("/auth")
 @CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
@@ -47,17 +45,16 @@ public class AuthController {
     private UserService userService;
 
     @GetMapping("/user")
-    public User getLoggedInUser(@RequestHeader(name="Authorization") String token) {
+    public User getLoggedInUser(@RequestHeader(name = "Authorization") String token) {
         String email = jwtHelper.getUsernameFromToken(token.substring(7));
         return userService.getLoggedInUser(email);
     }
-    
 
     @PostMapping("/login")
     public ResponseEntity<JwtRes> login(@RequestBody JwtReq request) throws UsernameNotFoundException {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-        
+
         this.doAuthenticate(request.getEmail(), request.getPassword());
         String token = this.jwtHelper.generateToken(userDetails);
 
@@ -119,7 +116,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    @ExceptionHandler(UsernameNotFoundException.class)  
+    @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleUsernameNotFoundException(UsernameNotFoundException ex) {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", ex.getMessage());

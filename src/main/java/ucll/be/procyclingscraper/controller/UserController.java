@@ -28,7 +28,8 @@ public class UserController {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleDomainException(MethodArgumentNotValidException ex, WebRequest request) {
+    public ResponseEntity<Map<String, String>> handleDomainException(MethodArgumentNotValidException ex,
+            WebRequest request) {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("DomainException: ", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

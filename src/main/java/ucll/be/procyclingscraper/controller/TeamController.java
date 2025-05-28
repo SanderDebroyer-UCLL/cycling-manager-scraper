@@ -11,7 +11,6 @@ import ucll.be.procyclingscraper.service.TeamService;
 
 import java.util.List;
 
-
 @RestController
 @CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
 @RequestMapping("/teams")
@@ -27,7 +26,7 @@ public class TeamController {
     public List<Team> scrape() {
         return teamService.scrape();
     }
-    
+
     @GetMapping()
     public List<Team> getTeams() {
         return teamService.getTeams();
@@ -37,5 +36,5 @@ public class TeamController {
     public List<TeamModel> getTeamDTOs() {
         return teamService.getTeamDTOs();
     }
-    
+
 }

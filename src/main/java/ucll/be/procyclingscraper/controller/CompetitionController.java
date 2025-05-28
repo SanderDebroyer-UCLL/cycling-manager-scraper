@@ -44,12 +44,12 @@ public class CompetitionController {
     }
 
     @GetMapping("/{id}")
-    public Competition getCompetition(@RequestHeader(name="Authorization") String token, @PathVariable Long id) {
+    public Competition getCompetition(@RequestHeader(name = "Authorization") String token, @PathVariable Long id) {
         return competitionService.getCompetitionById(id);
     }
 
     @GetMapping()
-    public Set<Competition> getCompetitions(@RequestHeader(name="Authorization") String token) {
+    public Set<Competition> getCompetitions(@RequestHeader(name = "Authorization") String token) {
         String username = jwtHelper.getUsernameFromToken(token.substring(7));
         return competitionService.getCompetitions(username);
     }
@@ -58,6 +58,5 @@ public class CompetitionController {
     public List<CompetitionModel> getCompetionDTOs() {
         return competitionService.getCompetitionDTOs();
     }
-    
-    
+
 }

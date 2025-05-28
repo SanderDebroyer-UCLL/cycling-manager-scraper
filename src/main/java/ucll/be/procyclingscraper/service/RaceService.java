@@ -38,7 +38,6 @@ public class RaceService {
     @Autowired
     private CyclistService cyclistService;
 
-
     public List<Race> getRaces() {
         return raceRepository.findAll();
     }
