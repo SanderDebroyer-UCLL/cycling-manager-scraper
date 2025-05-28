@@ -109,7 +109,7 @@ public class StageResultService {
         System.out.println("Starting scraping...");
         int resultCount = 0;
         //Change this for higher or lower amount of results
-        final int MAX_RESULTS = 1000;
+        final int MAX_RESULTS = 2000;
         try { 
             List<Race> races = raceRepository.findAll();
 
@@ -460,23 +460,115 @@ public class StageResultService {
         }
     }
 
+    // private Elements resultRows(Document doc, Stage stage, ScrapeResultType scrapeResultType) {
+    //     Elements tables = doc.select("table.results");
+    //     System.out.println("Number of tables found: " + tables.size());
+
+    //     Elements resultRows = null;
+    //     if (tables.isEmpty()) {
+    //         System.out.println("No tables found in the document.");
+    //         return null;
+    //     }
+
+    //     if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
+    //         if (tables.size() > 0) {
+    //             resultRows = tables.get(0).select("tbody > tr");
+    //         }
+    //     } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
+    //         if (tables.size() > 1) {
+    //             resultRows = tables.get(1).select("tbody > tr");
+    //         }
+    //     } else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
+    //         if (tables.size() > 2) {
+    //             resultRows = tables.get(2).select("tbody > tr");
+    //         } else if (tables.size() > 0) {
+    //             System.out.println("POINTS table not found at index 2, using first table as fallback.");
+    //             resultRows = tables.get(0).select("tbody > tr");
+    //         }
+    //     } else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
+    //         if (tables.size() > 2) {
+    //             resultRows = tables.get(2).select("tbody > tr");
+    //         } else if (tables.size() > 3) {
+    //             System.out.println("POINTS table not found at index 2, using first table as fallback.");
+    //             resultRows = tables.get(0).select("tbody > tr");
+    //         }
+    //     } else {
+    //         if (tables.size() > 0) {
+    //             resultRows = tables.get(0).select("tbody > tr");
+    //         }
+    //     }
+
+    //     if (resultRows == null || resultRows.isEmpty()) {
+    //         System.out.println("No rows found in the selected table.");
+    //         return null;
+    //     }
+    //     return resultRows;
+    // }
+
     private Elements resultRows(Document doc, Stage stage, ScrapeResultType scrapeResultType) {
         Elements tables = doc.select("table.results");
         System.out.println("Number of tables found: " + tables.size());
 
-        Elements resultRows;
+        if (tables.isEmpty()) {
+            System.out.println("No tables found in the document.");
+            return null;
+        }
 
-        if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
-            resultRows = tables.get(0).select("tbody > tr");
-        } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
-            resultRows = tables.get(1).select("tbody > tr");
+        Elements resultRows = null;
+        String targetHeader = "";
+
+        if (scrapeResultType.equals(ScrapeResultType.GC) || scrapeResultType.equals(ScrapeResultType.STAGE) || scrapeResultType.equals(ScrapeResultType.YOUTH)) {
+            targetHeader = "Time"; 
+        } else if (scrapeResultType.equals(ScrapeResultType.POINTS) || scrapeResultType.equals(ScrapeResultType.KOM)) {
+            targetHeader = "Points";
         } else {
-            resultRows = tables.get(0).select("tbody > tr");
+            System.out.println("No matching header found: " + targetHeader + " for " + scrapeResultType);
         }
 
-        if (resultRows.isEmpty()) {
-            System.out.println("No rows found in the selected table.");
+        for (Element table : tables) {
+            Elements headers = table.select("thead tr th");
+            for (Element header : headers) {
+                System.out.println("Checking header: " + header.text().trim());
+                if (header.text().trim().equalsIgnoreCase(targetHeader)) {
+                    if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
+                        if (tables.size() > 0) {
+                            resultRows = tables.get(0).select("tbody > tr");
+                        }
+                    } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
+                        if (tables.size() > 1) {
+                            resultRows = tables.get(1).select("tbody > tr");
+                        }
+                    } else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
+                        if (tables.size() > 2) {
+                            resultRows = tables.get(2).select("tbody > tr");
+                        } else if (tables.size() > 0) {
+                            System.out.println("POINTS table not found at index 2, using first table as fallback.");
+                            resultRows = tables.get(0).select("tbody > tr");
+                        }
+                    } else if (scrapeResultType.equals(ScrapeResultType.KOM)) {
+                        if (tables.size() > 2) {
+                            resultRows = tables.get(3).select("tbody > tr");
+                        } else if (tables.size() > 3) {
+                            System.out.println("KOM table not found at index 3, using first table as fallback.");
+                            resultRows = tables.get(0).select("tbody > tr");
+                        }
+                    } else {
+                        if (tables.size() > 0) {
+                            resultRows = tables.get(0).select("tbody > tr");
+                        }
+                    }
+                }
+            }
+            if (resultRows != null) {
+                break;
+            }
         }
+
+        if (resultRows == null || resultRows.isEmpty()) {
+            System.out.println("No rows found in the selected table.");
+            return null;
+        }
+
         return resultRows;
     }
 }

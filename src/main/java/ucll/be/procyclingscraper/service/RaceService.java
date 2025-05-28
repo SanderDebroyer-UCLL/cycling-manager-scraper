@@ -239,9 +239,6 @@ public class RaceService {
                         System.out.println("Trying rearranged name: " + fixedName);
                     }
     
-
-
-                    
                     Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
                     if (cyclist != null) {
                         System.out.println("Found Cyclist: " + cyclist.getName());
