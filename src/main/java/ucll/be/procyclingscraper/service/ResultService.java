@@ -430,6 +430,14 @@ public class ResultService {
                 System.out.println("POINTS table not found at index 2, using first table as fallback.");
                 resultRows = tables.get(0).select("tbody > tr");
             }
+        } else if (scrapeResultType.equals(ScrapeResultType.KOM)) {
+            if (tables.size() > 2) {
+                resultRows = tables.get(3).select("tbody > tr");
+            } else if (tables.size() > 0) {
+                // fallback: use the first table if only one exists
+                System.out.println("POINTS table not found at index 2, using first table as fallback.");
+                resultRows = tables.get(0).select("tbody > tr");
+            }
         } else {
             if (tables.size() > 0) {
                 resultRows = tables.get(0).select("tbody > tr");
