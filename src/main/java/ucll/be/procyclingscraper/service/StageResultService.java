@@ -6,6 +6,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.CyclistStageResult;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.RaceStatus;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
@@ -39,8 +40,8 @@ public class StageResultService {
     @Autowired
     CyclistService cyclistService;
 
-    public List<Cyclist> findCyclistInByStageId(Long stage_id, String type) {
-        return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
+    public List<CyclistStageResult> findCyclistInByStageId(Long stage_id, String type) {
+        return cyclistRepository.findCyclistStageResults(stage_id, type);
     }
 
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) {
