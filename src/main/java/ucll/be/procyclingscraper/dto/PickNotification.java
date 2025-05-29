@@ -1,16 +1,15 @@
 package ucll.be.procyclingscraper.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.Value;
 
 @Setter
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
+@Value
 public class PickNotification {
     private String cyclistName;
+    private Long cyclistId;
     private String email;
     private Long currentPick;
 }

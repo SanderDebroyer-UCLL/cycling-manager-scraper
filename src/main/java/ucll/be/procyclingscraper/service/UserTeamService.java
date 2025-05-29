@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ucll.be.procyclingscraper.dto.PickNotification;
+import ucll.be.procyclingscraper.dto.UpdateUserTeamDTO;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.CompetitionPick;
 import ucll.be.procyclingscraper.model.Cyclist;
@@ -38,24 +39,61 @@ public class UserTeamService {
         return userTeamRepository.findAll();
     }
 
+    public List<UserTeam> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
+        UserTeam userTeam = userTeamRepository.findById(userTeamId)
+                .orElseThrow(() -> new RuntimeException("User team not found with ID: " + userTeamId));
+
+        List<String> mainCyclists = updateUserTeamDTO.getMainCyclistIds();
+        List<String> reserveCyclists = updateUserTeamDTO.getReserveCyclistIds();
+
+        // Remove main cyclists not in the new list
+        userTeam.getMainCyclists().removeIf(cyclist -> !mainCyclists.contains(cyclist.getId().toString()));
+        // Add new main cyclists
+        for (String cyclistId : mainCyclists) {
+            boolean alreadyPresent = userTeam.getMainCyclists().stream()
+                    .anyMatch(c -> c.getId().toString().equals(cyclistId));
+            if (!alreadyPresent) {
+                Cyclist cyclist = cyclistRepository.findById(Long.parseLong(cyclistId))
+                        .orElseThrow(() -> new RuntimeException("Cyclist not found with ID: " + cyclistId));
+                userTeam.getMainCyclists().add(cyclist);
+            }
+        }
+
+        // Remove reserve cyclists not in the new list
+        userTeam.getReserveCyclists().removeIf(cyclist -> !reserveCyclists.contains(cyclist.getId().toString()));
+        // Add new reserve cyclists
+        for (String cyclistId : reserveCyclists) {
+            boolean alreadyPresent = userTeam.getReserveCyclists().stream()
+                    .anyMatch(c -> c.getId().toString().equals(cyclistId));
+            if (!alreadyPresent) {
+                Cyclist cyclist = cyclistRepository.findById(Long.parseLong(cyclistId))
+                        .orElseThrow(() -> new RuntimeException("Cyclist not found with ID: " + cyclistId));
+                userTeam.getReserveCyclists().add(cyclist);
+            }
+        }
+
+        userTeamRepository.save(userTeam);
+        return List.of(userTeam);
+    }
+
     @Transactional
     public PickNotification addCyclistToUserTeam(String email, Long cyclistId, Long competitionId) {
         // Fetch core entities
         User user = userRepository.findUserByEmail(email);
 
         Cyclist cyclist = cyclistRepository.findById(cyclistId)
-            .orElseThrow(() -> new RuntimeException("Cyclist not found with ID: " + cyclistId));
+                .orElseThrow(() -> new RuntimeException("Cyclist not found with ID: " + cyclistId));
 
         Competition competition = competitionRepository.findById(competitionId)
-            .orElseThrow(() -> new RuntimeException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new RuntimeException("Competition not found with ID: " + competitionId));
 
         Long currentPick = competition.getCurrentPick();
 
         CompetitionPick currentCompetitionPick = competition.getCompetitionPicks()
-            .stream()
-            .filter(pick -> pick.getPickOrder().equals(currentPick))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Current pick not found for competition ID: " + competitionId));
+                .stream()
+                .filter(pick -> pick.getPickOrder().equals(currentPick))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Current pick not found for competition ID: " + competitionId));
 
         if (!currentCompetitionPick.getUserId().equals(user.getId())) {
             throw new RuntimeException("It's not your turn to pick");
@@ -68,23 +106,26 @@ public class UserTeamService {
 
         // Find user's team in this competition
         UserTeam userTeam = user.getUserTeams().stream()
-            .filter(team -> team.getCompetitionId().equals(competitionId))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("User does not have a team in this competition"));
+                .filter(team -> team.getCompetitionId().equals(competitionId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User does not have a team in this competition"));
 
         // Check if the cyclist is already picked by any user in this competition
         for (User otherUser : competition.getUsers()) {
             for (UserTeam otherTeam : otherUser.getUserTeams()) {
                 if (otherTeam.getCompetitionId().equals(competitionId) &&
-                    otherTeam.getMainCyclists().contains(cyclist)) {
+                        otherTeam.getMainCyclists().contains(cyclist)) {
                     throw new RuntimeException("Cyclist is already in a team in this competition");
                 }
             }
         }
 
-        if (userTeam.getMainCyclists().size() + userTeam.getReserveCyclists().size() >= competition.getMaxMainCyclists() + competition.getMaxReserveCyclists()) {
+        if (userTeam.getMainCyclists().size() + userTeam.getReserveCyclists().size() >= competition.getMaxMainCyclists()
+                + competition.getMaxReserveCyclists()) {
             // Check if the user has already picked a cyclist in this competition
-            throw new RuntimeException("User already has " + (competition.getMaxMainCyclists() + competition.getMaxReserveCyclists()) + " cyclists in their team");
+            throw new RuntimeException(
+                    "User already has " + (competition.getMaxMainCyclists() + competition.getMaxReserveCyclists())
+                            + " cyclists in their team");
         }
         // Add cyclist to the user's team
         if (userTeam.getMainCyclists().size() < competition.getMaxMainCyclists()) {
@@ -102,10 +143,8 @@ public class UserTeamService {
         competitionRepository.save(competition);
 
         // Return pick notification
-        PickNotification notification = new PickNotification();
-        notification.setCurrentPick(competition.getCurrentPick());
-        notification.setCyclistName(cyclist.getName());
-        notification.setEmail(email);
+        PickNotification notification = new PickNotification(cyclist.getName(), cyclist.getId(), email,
+                competition.getCurrentPick());
         return notification;
     }
 }

@@ -1,18 +1,24 @@
 package ucll.be.procyclingscraper.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ucll.be.procyclingscraper.dto.CompetitionDTO;
 import ucll.be.procyclingscraper.dto.CompetitionModel;
 import ucll.be.procyclingscraper.dto.CountNotification;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.dto.OrderNotification;
+import ucll.be.procyclingscraper.dto.RaceDTO;
+import ucll.be.procyclingscraper.dto.StageDTO;
 import ucll.be.procyclingscraper.dto.StatusNotification;
+import ucll.be.procyclingscraper.dto.UserDTO;
 import ucll.be.procyclingscraper.dto.UserModel;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.CompetitionPick;
@@ -32,7 +38,7 @@ public class CompetitionService {
     private UserTeamRepository userTeamRepository;
 
     @Autowired
-    private  UserRepository userRepository;
+    private UserRepository userRepository;
 
     @Autowired
     private CompetitionRepository competitionRepository;
@@ -48,20 +54,122 @@ public class CompetitionService {
         return competitionRepository.findAll();
     }
 
-    public Set<Competition> getCompetitions(String email) {
+    public Set<CompetitionDTO> getCompetitions(String email) {
         User currentUser = userRepository.findUserByEmail(email);
         Set<Competition> competitions = currentUser.getCompetitions();
-        return competitions;
+
+        Set<CompetitionDTO> competitionDTOs = new HashSet<>();
+        for (Competition competition : competitions) {
+
+            // Convert races with nested stages
+            Set<RaceDTO> raceDTOs = competition.getRaces().stream().map(race -> {
+                List<StageDTO> stageDTOs = race.getStages().stream().map(stage -> new StageDTO(
+                        stage.getId(),
+                        stage.getName(),
+                        stage.getDeparture(),
+                        stage.getArrival(),
+                        stage.getDate().toString(), // format if needed
+                        stage.getStartTime(),
+                        stage.getDistance(),
+                        stage.getStageUrl(),
+                        stage.getVerticalMeters(),
+                        stage.getParcoursType())).collect(Collectors.toList());
+
+                return new RaceDTO(
+                        race.getId(),
+                        race.getName(),
+                        race.getNiveau(),
+                        race.getStartDate().toString(),
+                        race.getEndDate().toString(),
+                        race.getDistance(),
+                        race.getRaceUrl(),
+                        race.getCompetitions().stream().map(c -> c.getId()).collect(Collectors.toList()),
+                        stageDTOs);
+            }).collect(Collectors.toSet());
+
+            // Convert users
+            Set<UserDTO> userDTOs = competition.getUsers().stream().map(user -> new UserDTO(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getRole())).collect(Collectors.toSet());
+
+            // Create CompetitionDTO
+            CompetitionDTO dto = new CompetitionDTO(
+                    competition.getId(),
+                    competition.getName(),
+                    raceDTOs,
+                    userDTOs,
+                    competition.getCompetitionStatus(),
+                    competition.getMaxMainCyclists(),
+                    competition.getMaxReserveCyclists(),
+                    competition.getCurrentPick(),
+                    competition.getCompetitionPicks());
+
+            competitionDTOs.add(dto);
+        }
+
+        return competitionDTOs;
     }
 
-    public Competition getCompetitionById(Long id) {
-        return competitionRepository.findById(id).orElse(null);
+    public CompetitionDTO getCompetitionById(Long id) {
+        Competition competition = competitionRepository.findById(id).orElse(null);
+        if (competition == null) {
+            return null;
+        }
+
+        // Convert races with nested stages
+        Set<RaceDTO> raceDTOs = competition.getRaces().stream().map(race -> {
+            List<StageDTO> stageDTOs = race.getStages().stream().map(stage -> new StageDTO(
+                    stage.getId(),
+                    stage.getName(),
+                    stage.getDeparture(),
+                    stage.getArrival(),
+                    stage.getDate().toString(),
+                    stage.getStartTime(),
+                    stage.getDistance(),
+                    stage.getStageUrl(),
+                    stage.getVerticalMeters(),
+                    stage.getParcoursType())).collect(Collectors.toList());
+
+            return new RaceDTO(
+                    race.getId(),
+                    race.getName(),
+                    race.getNiveau(),
+                    race.getStartDate().toString(),
+                    race.getEndDate().toString(),
+                    race.getDistance(),
+                    race.getRaceUrl(),
+                    race.getCompetitions().stream().map(c -> c.getId()).collect(Collectors.toList()),
+                    stageDTOs);
+        }).collect(Collectors.toSet());
+
+        // Convert users
+        Set<UserDTO> userDTOs = competition.getUsers().stream().map(user -> new UserDTO(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole())).collect(Collectors.toSet());
+
+        // Create CompetitionDTO
+        return new CompetitionDTO(
+                competition.getId(),
+                competition.getName(),
+                raceDTOs,
+                userDTOs,
+                competition.getCompetitionStatus(),
+                competition.getMaxMainCyclists(),
+                competition.getMaxReserveCyclists(),
+                competition.getCurrentPick(),
+                competition.getCompetitionPicks());
     }
 
     @Transactional
     public CountNotification handleCyclistCount(int maxMainCyclists, int maxReserveCyclists, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-            .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
         if (maxMainCyclists < 0 || maxReserveCyclists < 0) {
             throw new IllegalArgumentException("Cyclist counts must be non-negative");
         }
@@ -80,7 +188,7 @@ public class CompetitionService {
     @Transactional
     public StatusNotification updateCompetitionStatus(CompetitionStatus status, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-            .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
 
         competition.setCompetitionStatus(status);
         competitionRepository.save(competition);
@@ -92,7 +200,7 @@ public class CompetitionService {
     @Transactional
     public OrderNotification updateOrderToCompetition(List<UserModel> users, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-            .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
 
         // Clear existing picks if you want to replace them
         competition.getCompetitionPicks().clear();
@@ -112,83 +220,84 @@ public class CompetitionService {
 
         // Notify frontend/system (if needed)
         OrderNotification notification = new OrderNotification();
-        notification.setCompetitionPicks(new java.util.HashSet<>(competition.getCompetitionPicks())); // assuming it accepts a set
+        notification.setCompetitionPicks(new java.util.HashSet<>(competition.getCompetitionPicks())); // assuming it
+                                                                                                      // accepts a set
         return notification;
     }
 
-public Competition createCompetition(CreateCompetitionData competitionData) {
+    public Competition createCompetition(CreateCompetitionData competitionData) {
 
-    System.out.println("Received competitionData: " + competitionData);
+        System.out.println("Received competitionData: " + competitionData);
 
-    Competition existingCompetition = competitionRepository.findByName(competitionData.getName());
-    if (existingCompetition != null) {
-        throw new IllegalArgumentException("Competition with this name already exists");
-    }
-
-    Competition competition = new Competition(competitionData.getName());
-
-    // First save the competition (to get its ID if needed)
-    competition = competitionRepository.save(competition);
-
-    competition.setCompetitionStatus(CompetitionStatus.SORTING);
-    competition.setCurrentPick(1L);
-    competition.setMaxMainCyclists(15);
-    competition.setMaxReserveCyclists(5);
-
-    Long pickOrder = 1L; // initialize pick order for users
-
-    for (String email : competitionData.getUserEmails()) {
-        User user = userRepository.findUserByEmail(email);
-        if (user == null) {
-            throw new IllegalArgumentException("User with email " + email + " not found.");
-        } else {
-            competition.getUsers().add(user);
-
-            // Create a CompetitionPick for the user
-            CompetitionPick pick = new CompetitionPick();
-            pick.setCompetition(competition);
-            pick.setUserId(user.getId());
-            pick.setPickOrder(pickOrder++);
-            competition.getCompetitionPicks().add(pick);
-
-            // Create a user team for this user
-            UserTeam userTeam = UserTeam.builder()
-                .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
-                .competitionId(competition.getId())
-                .user(user)
-                .mainCyclists(new ArrayList<>())      // Empty initial list
-                .reserveCyclists(new ArrayList<>())    // Empty initial list
-                .build();
-
-            userTeamRepository.save(userTeam);
+        Competition existingCompetition = competitionRepository.findByName(competitionData.getName());
+        if (existingCompetition != null) {
+            throw new IllegalArgumentException("Competition with this name already exists");
         }
-    }
 
-    for (String raceId : competitionData.getRaceIds()) {
-        Race race = raceRepository.findRaceById(Integer.parseInt(raceId));
+        Competition competition = new Competition(competitionData.getName());
 
-        if (race == null) {
-            throw new IllegalArgumentException("Race with ID " + raceId + " not found.");
-        } else {
-            competition.getRaces().add(race);
+        // First save the competition (to get its ID if needed)
+        competition = competitionRepository.save(competition);
+
+        competition.setCompetitionStatus(CompetitionStatus.SORTING);
+        competition.setCurrentPick(1L);
+        competition.setMaxMainCyclists(15);
+        competition.setMaxReserveCyclists(5);
+
+        Long pickOrder = 1L; // initialize pick order for users
+
+        for (String email : competitionData.getUserEmails()) {
+            User user = userRepository.findUserByEmail(email);
+            if (user == null) {
+                throw new IllegalArgumentException("User with email " + email + " not found.");
+            } else {
+                competition.getUsers().add(user);
+
+                // Create a CompetitionPick for the user
+                CompetitionPick pick = new CompetitionPick();
+                pick.setCompetition(competition);
+                pick.setUserId(user.getId());
+                pick.setPickOrder(pickOrder++);
+                competition.getCompetitionPicks().add(pick);
+
+                // Create a user team for this user
+                UserTeam userTeam = UserTeam.builder()
+                        .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
+                        .competitionId(competition.getId())
+                        .user(user)
+                        .mainCyclists(new ArrayList<>()) // Empty initial list
+                        .reserveCyclists(new ArrayList<>()) // Empty initial list
+                        .build();
+
+                userTeamRepository.save(userTeam);
+            }
         }
+
+        for (String raceId : competitionData.getRaceIds()) {
+            Race race = raceRepository.findRaceById(Integer.parseInt(raceId));
+
+            if (race == null) {
+                throw new IllegalArgumentException("Race with ID " + raceId + " not found.");
+            } else {
+                competition.getRaces().add(race);
+            }
+        }
+
+        // Save updated competition with users, races, and picks
+        return competitionRepository.save(competition);
     }
 
-    // Save updated competition with users, races, and picks
-    return competitionRepository.save(competition);
-}
+    public List<CompetitionModel> getCompetitionDTOs() {
+        List<Competition> competitions = competitionRepository.findAll();
+        List<CompetitionModel> competitionDTOs = new ArrayList<>();
 
-public List<CompetitionModel> getCompetitionDTOs() {
-    List<Competition> competitions = competitionRepository.findAll();
-    List<CompetitionModel> competitionDTOs = new ArrayList<>();
-    
-    for (Competition competition : competitions) {
-        CompetitionModel competitionDTO = new CompetitionModel();
-        competitionDTO.setId(competition.getId());
-        competitionDTO.setName(competition.getName());        
-        competitionDTOs.add(competitionDTO);
+        for (Competition competition : competitions) {
+            CompetitionModel competitionDTO = new CompetitionModel();
+            competitionDTO.setId(competition.getId());
+            competitionDTO.setName(competition.getName());
+            competitionDTOs.add(competitionDTO);
+        }
+
+        return competitionDTOs;
     }
-    
-    return competitionDTOs;
-}
 }
