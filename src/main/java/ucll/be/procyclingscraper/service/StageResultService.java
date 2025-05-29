@@ -109,7 +109,7 @@ public class StageResultService {
         System.out.println("Starting scraping...");
         int resultCount = 0;
         //Change this for higher or lower amount of results
-        final int MAX_RESULTS = 2000;
+        final int MAX_RESULTS = 2100;
         try {
             List<Race> races = raceRepository.findAll();
 
@@ -141,7 +141,7 @@ public class StageResultService {
 
                 Element timeElement = row.selectFirst("td.time.ar");
                 rawTime = timeElement != null ? timeElement.text() : "Unknown";
-                System.out.println("Raw time: " + rawTime);
+                // System.out.println("Raw time: " + rawTime);
                 Element riderElement = row.selectFirst("td:nth-child(7) a");
                 String riderName = riderElement != null ? riderElement.text() : "Unknown";
 
@@ -386,41 +386,33 @@ public class StageResultService {
         System.out.println("First Finisher Time: " + firstFinisherTime);
         try {
             String cleanedTime = time.trim();
-            System.out.println("Original Time: " + cleanedTime);
-
-            // If the time is in hh:mm:ss or mm:ss format, treat as absolute time
-            if (cleanedTime.matches("\\d{1,2}:\\d{2}(:\\d{2})?")) {
-                System.out.println("Cleaned Time (absolute): " + cleanedTime);
+            // If the time is in hh:mm:ss format, treat as absolute time
+            if (cleanedTime.matches("\\d{1,2}:\\d{2}:\\d{2}")) {
                 LocalTime inputTime = parseToLocalTime(cleanedTime);
-                System.out.println("Input Time: " + inputTime);
                 return inputTime;
             }
-            // If the time is in mm.ss format (ITT gap or time gap), treat as relative to first finisher
-            else if (cleanedTime.matches("\\d{1,2}\\.\\d{2}")) {
-                cleanedTime = cleanedTime.replace(".", ":");
-                System.out.println("Cleaned Time (gap): " + cleanedTime);
-                LocalTime gapTime = parseToLocalTime(cleanedTime);
-                System.out.println("Gap Time: " + gapTime);
+            // If the time is in mm:ss format, treat as absolute time for first finisher, gap otherwise
+            else if (cleanedTime.matches("\\d{1,2}:\\d{2}")) {
+                LocalTime parsed = parseToLocalTime(cleanedTime);
                 if (firstFinisherTime == null) {
-                    // If this is the first finisher, treat as absolute
-                    return gapTime;
+                    return parsed;
                 } else {
-                    // Add gap to first finisher's time
-                    LocalTime resultTime = firstFinisherTime.plusHours(gapTime.getHour())
-                            .plusMinutes(gapTime.getMinute())
-                            .plusSeconds(gapTime.getSecond());
+                    // treat as gap
+                    LocalTime resultTime = firstFinisherTime
+                            .plusMinutes(parsed.getMinute())
+                            .plusSeconds(parsed.getSecond());
                     System.out.println("Calculated Time (relative to first): " + resultTime);
                     return resultTime;
                 }
             }
-            // If the time is only seconds (e.g., "0.13" or "0:13"), treat as gap
-            else if (cleanedTime.matches("\\d{1,2}:\\d{2}")) {
+            // If the time is in m.ss or mm.ss format (gap), treat as relative to first finisher
+            else if (cleanedTime.matches("\\d{1,2}\\.\\d{2}")) {
+                cleanedTime = cleanedTime.replace(".", ":");
                 LocalTime gapTime = parseToLocalTime(cleanedTime);
-                System.out.println("Gap Time: " + gapTime);
                 if (firstFinisherTime == null) {
                     return gapTime;
                 } else {
-                    LocalTime resultTime = firstFinisherTime.plusHours(gapTime.getHour())
+                    LocalTime resultTime = firstFinisherTime
                             .plusMinutes(gapTime.getMinute())
                             .plusSeconds(gapTime.getSecond());
                     System.out.println("Calculated Time (relative to first): " + resultTime);
@@ -437,7 +429,7 @@ public class StageResultService {
             e.printStackTrace();
             return firstFinisherTime;
         }
-}
+    }
 
 
     public LocalTime parseToLocalTime(String timeStr) {
