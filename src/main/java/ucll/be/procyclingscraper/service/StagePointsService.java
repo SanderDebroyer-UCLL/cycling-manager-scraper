@@ -7,7 +7,6 @@ import java.util.Map;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -159,16 +158,37 @@ public class StagePointsService {
 
         List<StagePointsPerUserPerCyclistDTO> result = new ArrayList<>();
 
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+
+        List<StageResult> stageResults = competition.getRaces().stream().flatMap(race -> race.getStages().stream())
+                .flatMap(stage -> stage.getResults().stream()).toList();
+
+        Set<Cyclist> toBeRemovedCyclists = stageResults.stream()
+                .filter(stageResult -> userTeam.getMainCyclists().contains(stageResult.getCyclist()))
+                .filter(stageResult -> {
+                    String pos = stageResult.getPosition();
+                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                })
+                .map(StageResult::getCyclist)
+                .collect(java.util.stream.Collectors.toSet());
+
         for (Cyclist cyclist : userTeam.getMainCyclists()) {
             List<StagePoints> cyclistStagePoints = stagePointsList.stream()
                     .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
                     .toList();
 
+            boolean isCyclistActive = true;
+
+            if (toBeRemovedCyclists.contains(cyclist)) {
+                isCyclistActive = false;
+            }
+
             if (!cyclistStagePoints.isEmpty()) {
                 int totalPoints = cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
 
                 result.add(new StagePointsPerUserPerCyclistDTO(totalPoints,
-                        cyclist.getName(),
+                        cyclist.getName(), isCyclistActive,
                         userTeam.getUser().getId()));
             }
         }
@@ -210,7 +230,21 @@ public class StagePointsService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
 
+        List<StageResult> stageResults = competition.getRaces().stream().flatMap(race -> race.getStages().stream())
+                .flatMap(stage -> stage.getResults().stream()).toList();
+
         Set<StagePoints> stagePoints = competition.getStagePoints();
+
+        System.out.println(stageResults.size() + " stage results found for competition " + competitionId);
+
+        Set<Cyclist> toBeRemovedCyclists = stageResults.stream()
+                .filter(stageResult -> userTeam.getMainCyclists().contains(stageResult.getCyclist()))
+                .filter(stageResult -> {
+                    String pos = stageResult.getPosition();
+                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                })
+                .map(StageResult::getCyclist)
+                .collect(java.util.stream.Collectors.toSet());
 
         List<StagePointsPerUserPerCyclistDTO> result = new ArrayList<>();
 
@@ -219,11 +253,21 @@ public class StagePointsService {
                     .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
                     .toList();
 
+            boolean isCyclistActive = true;
+
+            if (toBeRemovedCyclists.contains(cyclist)) {
+                isCyclistActive = false;
+            }
+
             if (!cyclistStagePoints.isEmpty()) {
                 int totalPoints = cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
 
                 result.add(new StagePointsPerUserPerCyclistDTO(totalPoints,
-                        cyclist.getName(),
+                        cyclist.getName(), isCyclistActive,
+                        userTeam.getUser().getId()));
+            } else {
+                result.add(new StagePointsPerUserPerCyclistDTO(0,
+                        cyclist.getName(), isCyclistActive,
                         userTeam.getUser().getId()));
             }
         }
