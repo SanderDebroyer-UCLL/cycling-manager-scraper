@@ -36,6 +36,5 @@ public class RaceResult {
     @ManyToOne
     @JoinColumn(name = "cyclist_id", referencedColumnName = "id")
     @JsonBackReference
-    private Cyclist cyclist;
-    
+    private Cyclist cyclist;   
 }

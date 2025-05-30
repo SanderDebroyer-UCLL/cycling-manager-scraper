@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.dto.RaceResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.service.RaceResultService;
 
@@ -33,7 +34,7 @@ public class RaceResultController {
     }
 
     @GetMapping("/race/{id}")
-    public List<RaceResult> getRaceResultByRaceId(@PathVariable String id) {
+    public List<RaceResultWithCyclistDTO> getRaceResultByRaceId(@PathVariable String id) {
         return raceResultService.getRaceResultByRaceId(id);
     }
 
