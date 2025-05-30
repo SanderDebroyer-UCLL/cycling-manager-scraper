@@ -32,9 +32,9 @@ public class Stage {
     private Enum<ParcoursType> parcoursType;
     @OneToMany(mappedBy = "stage", cascade = CascadeType.ALL)
     @JsonManagedReference
-    private List<Result> results = new ArrayList<>();
+    private List<StageResult> results = new ArrayList<>();
 
-    public void addResult(Result result) {
+    public void addResult(StageResult result) {
         result.setStage(this);
         results.add(result);
     }

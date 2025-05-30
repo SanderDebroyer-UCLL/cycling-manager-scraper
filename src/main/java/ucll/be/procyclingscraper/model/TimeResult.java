@@ -13,6 +13,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TimeResult extends Result{
+public class TimeResult extends StageResult{
     private LocalTime time;
 }

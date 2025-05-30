@@ -34,6 +34,7 @@ public class Race {
     private List<Stage> stages;
 
     @ManyToMany
+    @JsonManagedReference
     @JoinTable(
         name = "race_cyclist",
         joinColumns = @JoinColumn(name = "race_id"),
@@ -44,6 +45,10 @@ public class Race {
     @JsonIgnore
     @ManyToMany(mappedBy = "races")
     Set<Competition> competitions;
+
+    public String getRaceUrl() {
+        return raceUrl;
+    }
 
     @OneToMany(mappedBy = "race")
     @JsonManagedReference

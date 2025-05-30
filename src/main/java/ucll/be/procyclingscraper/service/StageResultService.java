@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-public class ResultService {
+public class StageResultService {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3";
 
     @Autowired
@@ -120,6 +120,18 @@ public class ResultService {
 
                         saveTimeResult(stage, timeResult, results);
                         resultCount++;
+                    }
+                    if (scrapeResultType == ScrapeResultType.GC) {
+                        results.sort((r1, r2) -> r1.getTime().compareTo(r2.getTime()));
+    
+                        int positionCounter = 1;
+                        for (TimeResult r : results) {
+                            if (r.getRaceStatus() == RaceStatus.FINISHED) {
+                                r.setPosition(String.valueOf(positionCounter));
+                                positionCounter++;
+                            }
+                            timeResultRepository.save(r);
+                        }
                     }
                 }
                 if (resultCount >= MAX_RESULTS) break;

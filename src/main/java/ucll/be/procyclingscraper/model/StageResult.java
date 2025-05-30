@@ -14,7 +14,7 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class Result {
+public abstract class StageResult {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

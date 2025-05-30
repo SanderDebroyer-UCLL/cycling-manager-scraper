@@ -5,6 +5,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import ucll.be.procyclingscraper.dto.RaceModel;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
@@ -40,6 +42,15 @@ public class RaceService {
     public List<Race> getRaces() {
         return raceRepository.findAll();
     }
+
+    public String getRaceUrlByName(String name) {
+        Race race = raceRepository.findByName(name.trim());
+        if (race == null) {
+            throw new IllegalArgumentException("Race with name '" + name + "' not found in the database.");
+        }
+        return race.getRaceUrl();
+    }
+    
 
     public List<Race> fetchOneDayRaces() {
         return raceRepository.findRaceByStagesIsEmpty();
@@ -122,6 +133,37 @@ public class RaceService {
         return races;
     }
 
+    public Race scrapeRaceByUrl(String name) {
+        
+        try {
+            
+            Document docRaceInfo = Jsoup.connect(getRaceUrlByName(name)).userAgent(USER_AGENT).get();
+    
+            String raceName = docRaceInfo.select("h1").text(); // Of haal het uit URL of elders op pagina
+            Race race = raceRepository.findByName(raceName);
+            if (race == null) {
+                race = new Race();
+            }
+    
+            race.setName(raceName);
+            race.setRaceUrl(getRaceUrlByName(name));
+    
+    
+            
+            List<Cyclist> startlist = scrapeAndSaveStartlist(getRaceUrlByName(name) + "/startlist", race);
+            race.setStartList(startlist);
+    
+            raceRepository.save(race);
+            return race;
+    
+        } catch (IOException e) {
+            System.err.println("Fout bij het scrapen van de race: " + getRaceUrlByName(name));
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+
     public List<Cyclist> scrapeAndSaveStartlist(String url, Race race) {
         List<Cyclist> startList = new ArrayList<>();
         System.out.println(url);
@@ -187,7 +229,7 @@ public class RaceService {
                     String riderName = riderElement.text().toLowerCase();
                     System.out.println("Extracted Rider Name: " + riderName);
 
-                    String[] nameParts = riderName.trim().split("\\s+");
+                    String[] nameParts = riderName.trim().split("\s+");
                     String fixedName = "";
                     for (int i = 1; i < nameParts.length; i++) {
                         String firstName = String.join(" ", Arrays.copyOfRange(nameParts, i, nameParts.length));
@@ -259,6 +301,20 @@ public class RaceService {
     
         System.out.println("Verwerkte startlijst: " + startList);
         return startList;
+    }
+
+    public List<RaceModel> getRaceDTOs() {
+        List<Race> races = raceRepository.findAll();
+        List<RaceModel> raceDTOs = new ArrayList<>();
+
+        for (Race race: races) {
+            RaceModel raceModel = new RaceModel();
+            raceModel.setId(race.getId());
+            raceModel.setName(race.getName());
+            raceModel.setRaceUrl(race.getRaceUrl());
+            raceDTOs.add(raceModel);
+        }
+        return raceDTOs;
     }
     
 
