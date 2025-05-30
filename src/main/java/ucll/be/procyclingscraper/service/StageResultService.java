@@ -381,23 +381,22 @@ public class StageResultService {
         timeResultRepository.save(timeResult);
         results.add(timeResult);
     }
-    //work in progress
+    
     public LocalTime timeHandlerWithCumulative(String time, LocalTime firstFinisherTime) {
         System.out.println("First Finisher Time: " + firstFinisherTime);
         try {
             String cleanedTime = time.trim();
-            // If the time is in hh:mm:ss format, treat as absolute time
+            // If the time is in hh:mm:ss
             if (cleanedTime.matches("\\d{1,2}:\\d{2}:\\d{2}")) {
                 LocalTime inputTime = parseToLocalTime(cleanedTime);
                 return inputTime;
             }
-            // If the time is in mm:ss format, treat as absolute time for first finisher, gap otherwise
+            // If the time is in mm:ss
             else if (cleanedTime.matches("\\d{1,2}:\\d{2}")) {
                 LocalTime parsed = parseToLocalTime(cleanedTime);
                 if (firstFinisherTime == null) {
                     return parsed;
                 } else {
-                    // treat as gap
                     LocalTime resultTime = firstFinisherTime
                             .plusMinutes(parsed.getMinute())
                             .plusSeconds(parsed.getSecond());
@@ -405,7 +404,7 @@ public class StageResultService {
                     return resultTime;
                 }
             }
-            // If the time is in m.ss or mm.ss format (gap), treat as relative to first finisher
+            // If the time is in m.ss or mm.ss
             else if (cleanedTime.matches("\\d{1,2}\\.\\d{2}")) {
                 cleanedTime = cleanedTime.replace(".", ":");
                 LocalTime gapTime = parseToLocalTime(cleanedTime);
@@ -419,7 +418,6 @@ public class StageResultService {
                     return resultTime;
                 }
             }
-            // If not matching any known format, return first finisher's time
             else {
                 System.out.println("Unknown time format, returning first finisher's time.");
                 return firstFinisherTime;
