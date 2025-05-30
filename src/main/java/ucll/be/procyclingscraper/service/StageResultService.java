@@ -129,7 +129,13 @@ public class StageResultService {
 
                 Elements resultRows = resultRows(doc, stage, scrapeResultType);
                 LocalTime cumulativeTime = null;
-
+                if (stage.getName().contains("TTT") && scrapeResultType == ScrapeResultType.STAGE) {
+                    if (stage.getName().startsWith("Stage 1 |")) {
+                        resultRows = resultRows(doc, stage, ScrapeResultType.GC);
+                    } else {
+                        
+                    }
+                }
                 for (Element row : resultRows) {
                 if (resultCount >= MAX_RESULTS)
                     break;
@@ -170,7 +176,7 @@ public class StageResultService {
                     boniSeconds = boniSecondsElement != null ? boniSecondsElement.text() : "0";
                     resultTime = subtractFromCumulative(resultTime, boniSeconds);
                 }
-
+                
                 Cyclist cyclist = cyclistService.searchCyclist(riderName);
                 if (cyclist == null) {
                     System.out.println("Cyclist not found for name: " + riderName);
