@@ -135,7 +135,7 @@ public class ResultService {
     public List<PointResult> scrapePointResult(ScrapeResultType scrapeResultType) {
         List<PointResult> results = new ArrayList<>();
         int resultCount = 0;
-        final int MAX_RESULTS = 1000;  // Verhoogd voor volledigheid
+        final int MAX_RESULTS = 1000;
         try { 
             List<Race> races = raceRepository.findAll();
             
@@ -144,7 +144,6 @@ public class ResultService {
                 for (Stage stage : stages) {
                     System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
                     
-                    // Stage 1 apart verwerken
                     if (stage.getName().contains("Stage 1 |")) {
                         System.out.println("=== SPECIAL PROCESSING FOR STAGE 1 ===");
                         List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), scrapeResultType);
@@ -157,10 +156,9 @@ public class ResultService {
                             System.out.println("Saved PointResult for " + pr.getCyclist().getName() + 
                                               ": " + pr.getPoint() + " points");
                         }
-                        continue;  // Skip normale verwerking
+                        continue; 
                     }
                     
-                    // Normale verwerking voor andere stages
                     Document doc = fetchStageDocument(race, stage, scrapeResultType);
                     Elements resultRows = resultRows(doc, stage, scrapeResultType);
                     if (resultRows == null || resultRows.isEmpty()) {
@@ -426,7 +424,6 @@ public class ResultService {
             if (tables.size() > 2) {
                 resultRows = tables.get(2).select("tbody > tr");
             } else if (tables.size() > 0) {
-                // fallback: use the first table if only one exists
                 System.out.println("POINTS table not found at index 2, using first table as fallback.");
                 resultRows = tables.get(0).select("tbody > tr");
             }
@@ -434,7 +431,6 @@ public class ResultService {
             if (tables.size() > 2) {
                 resultRows = tables.get(3).select("tbody > tr");
             } else if (tables.size() > 0) {
-                // fallback: use the first table if only one exists
                 System.out.println("POINTS table not found at index 2, using first table as fallback.");
                 resultRows = tables.get(0).select("tbody > tr");
             }
@@ -475,7 +471,6 @@ public class ResultService {
                 Element table = tables.get(i);
                 String captionText = h3Element.text();
                 
-                // Bepaal of deze tabel relevant is
                 boolean isRelevantTable = false;
                 if (scrapeResultType == ScrapeResultType.POINTS) {
                     if (captionText.startsWith("Sprint |") || captionText.startsWith("Points at finish")) {
@@ -494,31 +489,25 @@ public class ResultService {
                     continue;
                 }
                 
-                // Verwerk elke rij in de relevante tabel
                 Elements rows = table.select("tbody > tr");
                 System.out.println("Found " + rows.size() + " result rows");
                 
                 for (Element row : rows) {
-                    // Haal positie uit eerste kolom
                     Element positionElement = row.selectFirst("td:first-child");
                     String position = positionElement != null ? positionElement.text() : "N/A";
                     
-                    // Haal punten uit vierde kolom
                     Element pointElement = row.selectFirst("td:nth-child(4)");
                     String point = pointElement != null ? pointElement.text() : "0";
                     
-                    // Haal rennersnaam uit tweede kolom
                     Element riderElement = row.selectFirst("td:nth-child(2) a");
                     String riderName = riderElement != null ? riderElement.text() : "Unknown";
                     
-                    // Zoek renner in database
                     Cyclist cyclist = cyclistService.searchCyclist(riderName);
                     if (cyclist == null) {
                         System.out.println("  Cyclist not found: " + riderName);
                         continue;
                     }
                     
-                    // Parse punten
                     int pointValue = 0;
                     try {
                         pointValue = Integer.parseInt(point.replaceAll("[^\\d]", ""));
@@ -529,7 +518,6 @@ public class ResultService {
                     System.out.println("  " + cyclist.getName() + " (ID:" + cyclist.getId() + 
                                       ") earned " + pointValue + " points at position " + position);
                     
-                    // Update totaal voor renner
                     PointResult pointResult = riderResultMap.get(riderName);
                     if (pointResult == null) {
                         pointResult = new PointResult();
@@ -551,7 +539,6 @@ public class ResultService {
             e.printStackTrace();
         }
         
-        // Log eindresultaten
         System.out.println("\nFINAL " + klassementType + " RESULTS FOR STAGE 1:");
         for (Map.Entry<String, PointResult> entry : riderResultMap.entrySet()) {
             PointResult pointResult = entry.getValue();
