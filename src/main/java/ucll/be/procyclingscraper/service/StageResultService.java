@@ -4,6 +4,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.model.Cyclist;
@@ -17,6 +18,7 @@ import ucll.be.procyclingscraper.repository.*;
 import java.io.IOException;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -49,14 +51,16 @@ public class StageResultService {
         System.out.println("Starting scraping...");
         int resultCount = 0;
         //Change this for higher or lower amount of results
-        final int MAX_RESULTS = 278;
+        final int MAX_RESULTS = 1000;
         try { 
-            List<Race> races = raceRepository.findAll();
-
+            List<Race> races = raceRepository.findAll(Sort.by("id"));
+            
             for (Race race : races) {
+                System.out.println("Huidige race: " + race.getName());
                 List<Stage> stages = race.getStages();
+                System.out.println("Fetched stages size: " + stages.size());
                 for (Stage stage : stages) {
-                    
+                    System.out.println("Huidige stage: " + stage.getName());
                     if (resultCount >= MAX_RESULTS) break;
                     List<TimeResult> stageResults = new ArrayList<>();
                     Document doc = fetchStageDocument(race, stage, scrapeResultType);
@@ -163,11 +167,11 @@ public class StageResultService {
             stageUrl = stageUrl + "-gc";
         }
 
-        // // Logic for youth results added
-        // if (scrapeResultType.equals(ScrapeResultType.YOUTH)) {
-        //     System.out.println("Scraping Youth results for stage: " + stage.getName());
-        //     stageUrl = stageUrl + "-youth";
-        // }
+        // Logic for youth results added
+        if (scrapeResultType.equals(ScrapeResultType.YOUTH)) {
+            System.out.println("Scraping Youth results for stage: " + stage.getName());
+            stageUrl = stageUrl + "-youth";
+        }
 
         List<Stage> stages = race.getStages();
         if (!stages.isEmpty() && stage.equals(stages.get(stages.size() - 1)) && scrapeResultType.equals(ScrapeResultType.GC)) {
@@ -176,11 +180,11 @@ public class StageResultService {
             stageUrl = stageUrl + "/gc";
         }
 
-        // if (!stages.isEmpty() && stage.equals(stages.get(stages.size() - 1)) && scrapeResultType.equals(ScrapeResultType.YOUTH)) {
-        //     System.out.println("Last stage in the Youth results: " + stage.getName());
-        //     stageUrl = modifyUrl(stageUrl);
-        //     stageUrl = stageUrl + "/youth";
-        // }
+        if (!stages.isEmpty() && stage.equals(stages.get(stages.size() - 1)) && scrapeResultType.equals(ScrapeResultType.YOUTH)) {
+            System.out.println("Last stage in the Youth results: " + stage.getName());
+            stageUrl = modifyUrl(stageUrl);
+            stageUrl = stageUrl + "/youth";
+        }
 
         System.out.println("Final URL: " + stageUrl);
 
@@ -312,18 +316,41 @@ public class StageResultService {
         Elements tables = doc.select("table.results");
         System.out.println("Number of tables found: " + tables.size());
 
-        Elements resultRows;
-
-        if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
-            resultRows = tables.get(0).select("tbody > tr");
-        } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
-            resultRows = tables.get(1).select("tbody > tr");
-        } else {
-            resultRows = tables.get(0).select("tbody > tr");
+        Elements resultRows = null;
+        if (tables.isEmpty()) {
+            System.out.println("No tables found in the document.");
+            return null;
         }
 
-        if (resultRows.isEmpty()) {
+        if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
+            if (tables.size() > 0) {
+                resultRows = tables.get(0).select("tbody > tr");
+            }
+        } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
+            if (tables.size() > 1) {
+                resultRows = tables.get(1).select("tbody > tr");
+            }
+        } else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
+            if (tables.size() > 2) {
+                resultRows = tables.get(2).select("tbody > tr");
+            } else if (tables.size() > 0) {
+                // fallback: use the first table if only one exists
+                System.out.println("POINTS table not found at index 2, using first table as fallback.");
+                resultRows = tables.get(0).select("tbody > tr");
+            }
+        } else if (scrapeResultType.equals(ScrapeResultType.YOUTH)) {
+                System.out.println("Selecting youth results table.");
+                resultRows = tables.get(4).select("tbody > tr");
+                System.out.println("Youth results table selected, number of rows: " + resultRows.size());
+        } else {
+            if (tables.size() > 0) {
+                resultRows = tables.get(0).select("tbody > tr");
+            }
+        }
+
+        if (resultRows == null || resultRows.isEmpty()) {
             System.out.println("No rows found in the selected table.");
+            return null;
         }
         return resultRows;
     }
@@ -335,40 +362,92 @@ public class StageResultService {
         
     }
 
-    // public List<TimeResult> calculateYouthResults() {
+    public List<TimeResult> calculateYouthTimeResult(ScrapeResultType scrapeResultType) {
         
-    //     try {
+        try {
 
-    //         List<Race> races = raceRepository.findAll();
+            List<Race> races = raceRepository.findAll(Sort.by("id"));
+            System.out.println("Number of races found: " +  races.size());
+            List<TimeResult> youthResults = new ArrayList<>();
             
-    //         for (Race race: races) {
-    //             List<Cyclist> raceStartList = race.getStartList();
-    //             List<Cyclist> cyclistsWithAgerUnder24 = new ArrayList<>();
+            for (Race race: races) {
+                System.out.println("Current processed race: " + race.getName());
+                List<Stage> raceStages = race.getStages();
+                System.out.println("Number of stages found for race: " + raceStages.size());
+                List<Long> youthCyclistsIDs = race.getYouthCyclistsIDs();
+                System.out.println("Youth Cylists IDs size: " + youthCyclistsIDs.size());
 
-    //             for (Cyclist cyclist : raceStartList) {
-    //                 if (cyclist.getAge() < 24) {
-    //                     cyclistsWithAgerUnder24.add(cyclist);
-    //                 }
-    //             }
-    //             List<Stage> raceStages = race.getStages();
+                for (Stage stage : raceStages) {
+                    List<TimeResult> gcResults = getGCTimeResultsByStageIdAndScrapeResultTypeAndCyclistIdIn(stage.getId(), youthCyclistsIDs);
 
-    //             for (Stage stage : raceStages) {
+                    List<TimeResult> numericResults = new ArrayList<>();
+                    List<TimeResult> nonNumericResults = new ArrayList<>();
+
+                    for (TimeResult result : gcResults) {
+                        if (result.getPosition().matches("^[0-9]+$")) {
+                            numericResults.add(result);
+                        } else {
+                            nonNumericResults.add(result);
+                        }
+                    }
                     
-    //             }
-                
+                    numericResults.sort(
+                        Comparator.comparing(TimeResult::getTime)
+                        .thenComparing(r -> {
+                            return Integer.parseInt(r.getPosition());   
+                        })
+                    );
+                    
+                    int positionCounter = 1;
+                    for (TimeResult numericResult: numericResults) {
+                        TimeResult timeResult = timeResultRepository.findByStageAndCyclistAndScrapeResultType(stage, numericResult.getCyclist(), scrapeResultType);
 
-    //         }
+                        if (timeResult == null) {
+                            System.out.println("Creating new TimeResult Youth for Stage: " + stage.getName());
+                            timeResult = new TimeResult();
+                            timeResult.setPosition(String.valueOf(positionCounter));
+                            timeResult.setRaceStatus(numericResult.getRaceStatus());
+                            timeResult.setTime(numericResult.getTime());
+                            timeResult.setScrapeResultType(scrapeResultType);
+                            timeResult.setStage(stage);
+                            timeResult.setCyclist(numericResult.getCyclist());
+                            timeResultRepository.save(timeResult);
+                            youthResults.add(timeResult);
+                            positionCounter++;
+                        }
+                    }
 
+                    for (TimeResult nonNumericResult : nonNumericResults) {
+                        TimeResult timeResult = timeResultRepository.findByStageAndCyclistAndScrapeResultType(stage, nonNumericResult.getCyclist(), scrapeResultType);
+                        
+                        if (timeResult == null) {
+                            System.out.println("Creating new TimeResult Youth for Stage: " + stage.getName());
+                            timeResult = new TimeResult();
+                            timeResult.setPosition(nonNumericResult.getPosition());
+                            timeResult.setRaceStatus(nonNumericResult.getRaceStatus());
+                            timeResult.setTime(nonNumericResult.getTime());
+                            timeResult.setScrapeResultType(scrapeResultType);
+                            timeResult.setStage(stage);
+                            timeResult.setCyclist(nonNumericResult.getCyclist());
+                            timeResultRepository.save(timeResult);
+                            youthResults.add(timeResult);
+                        }
+                    }
+                }
+            }
+            return youthResults;
 
-    //     } catch (Exception e) {
-    //         System.out.println("Failed to calculate youth results.");
-    //         e.printStackTrace();
-    //     }
+        } catch (Exception e) {
+            System.out.println("Failed to calculate youth results.");
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
 
-    // }
-
-    public List<TimeResult> findGCTimeResultsByStageIdAndCylistUnderAge24(String stageId) {
-        List<TimeResult> stageTimeResultsGC = timeResultRepository.findTimeResultsByStageIdAndScrapeResultTypeAndCyclistAgeLessThan(1, ScrapeResultType.GC, 24);
+    public List<TimeResult> getGCTimeResultsByStageIdAndScrapeResultTypeAndCyclistIdIn(long stageId, List<Long> youthCyclistIds) {
+        System.out.println("Fetched youth Cyclist IDs: " + youthCyclistIds.size());
+        List<TimeResult> stageTimeResultsGC = timeResultRepository.findTimeResultsByStageIdAndScrapeResultTypeAndCyclistIdIn(stageId, ScrapeResultType.GC, youthCyclistIds);
+        System.out.println("Number of GC results for stage ID " + stageId + ": " + stageTimeResultsGC.size());
         return stageTimeResultsGC;
     }
 }

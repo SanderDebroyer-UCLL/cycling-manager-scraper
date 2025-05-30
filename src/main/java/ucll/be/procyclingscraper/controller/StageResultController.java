@@ -32,6 +32,11 @@ public class StageResultController {
     public List<TimeResult> scrapeGcPerStage() {
         return stageResultService.scrapeTimeResult(ScrapeResultType.GC);
     }
+
+    @GetMapping("/scrape/youth")
+    public List<TimeResult> scrapeYouthPerStageTest() {
+        return stageResultService.calculateYouthTimeResult(ScrapeResultType.YOUTH);
+    }
     
     @GetMapping("")
     public List<TimeResult> getAllResults() {

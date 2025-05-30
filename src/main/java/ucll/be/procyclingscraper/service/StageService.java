@@ -7,6 +7,7 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.StageModel;
@@ -40,11 +41,12 @@ public class StageService {
     }
 
     public List<Stage> scrapeStages() {
-        List<Race> races = raceRepository.findAll();
+        List<Race> races = raceRepository.findAll(Sort.by("id"));
+        System.out.println("Number of races found in the database: " + races.size());
         List<Stage> allStages = new ArrayList<>();
     
         for (Race race : races) {
-            System.out.println("race: " + race.getName());
+            System.out.println("Current processed race: " + race.getName());
             List<Stage> stagesList = new ArrayList<>();
     
             try {
@@ -85,7 +87,9 @@ public class StageService {
     
                         List<Stage> existingStages = race.getStages();
                         existingStages.removeIf(stage -> !stagesList.contains(stage));
+                        System.out.println("Existing stages of race" + race.getName() + ": " + existingStages.size());
                         race.setStages(stagesList);
+                        System.out.println("Persisting race " + race.getName() + " after stage added");
                         raceRepository.save(race);
                         break;
                     }

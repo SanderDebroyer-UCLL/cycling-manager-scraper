@@ -22,11 +22,11 @@ public interface TimeResultRepository extends JpaRepository<TimeResult,Long> {
     List<TimeResult> findTimeResultByStageIdAndScrapeResultType(long stageId, ScrapeResultType gc);
 
     @Query(
-        "SELECT t FROM TimeResult t WHERE t.stage.id = :stageId AND t.scrapeResultType = :scrapeResultType AND t.cyclist.age < :maxAge ORDER BY t.time ASC"
+        "SELECT t FROM TimeResult t WHERE t.stage.id = :stageId AND t.scrapeResultType = :scrapeResultType AND t.cyclist.id IN :cyclistIds"
     )
-    List<TimeResult> findTimeResultsByStageIdAndScrapeResultTypeAndCyclistAgeLessThan(
+    List<TimeResult> findTimeResultsByStageIdAndScrapeResultTypeAndCyclistIdIn(
         @Param("stageId") long stageId,
         @Param("scrapeResultType") ScrapeResultType scrapeResultType,
-        @Param("maxAge") int maxAge
+        @Param("cyclistIds") List<Long> cyclistIds
     );
 }
