@@ -1,16 +1,19 @@
 package ucll.be.procyclingscraper.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ucll.be.procyclingscraper.dto.CyclistDTO;
 import ucll.be.procyclingscraper.dto.PickNotification;
 import ucll.be.procyclingscraper.dto.UpdateUserTeamDTO;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.CompetitionPick;
 import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.StageResult;
 import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.model.UserTeam;
 import ucll.be.procyclingscraper.repository.CompetitionRepository;
@@ -37,6 +40,55 @@ public class UserTeamService {
         // This method should return the list of user teams.
         // For now, we will return an empty list.
         return userTeamRepository.findAll();
+    }
+
+    public List<CyclistDTO> getCyclistsWithDNS(Long competitionId) {
+        List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+
+        List<StageResult> stageResults = competition.getRaces().stream().flatMap(race -> race.getStages().stream())
+                .flatMap(stage -> stage.getResults().stream()).toList();
+
+        Set<Cyclist> allMainCyclists = userTeams.stream()
+                .flatMap(userTeam -> userTeam.getMainCyclists().stream())
+                .collect(java.util.stream.Collectors.toSet());
+
+        Set<Cyclist> cyclistsWithDNS = stageResults.stream()
+                .filter(stageResult -> allMainCyclists.contains(stageResult.getCyclist()))
+                .filter(stageResult -> {
+                    String pos = stageResult.getPosition();
+                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                })
+                .map(StageResult::getCyclist)
+                .collect(java.util.stream.Collectors.toSet());
+
+        List<CyclistDTO> cyclistDTOs = cyclistsWithDNS.stream()
+                .map(cyclist -> {
+                    String dnsReason = stageResults.stream()
+                            .filter(stageResult -> stageResult.getCyclist().equals(cyclist))
+                            .filter(stageResult -> {
+                                String pos = stageResult.getPosition();
+                                return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                            })
+                            .map(StageResult::getPosition)
+                            .findFirst()
+                            .orElse("");
+
+                    return new CyclistDTO(
+                            cyclist.getId(),
+                            cyclist.getName(),
+                            cyclist.getRanking(),
+                            cyclist.getAge(),
+                            cyclist.getCountry(),
+                            cyclist.getCyclistUrl(),
+                            cyclist.getTeam(),
+                            cyclist.getUpcomingRaces(),
+                            dnsReason);
+                })
+                .toList();
+
+        return cyclistDTOs;
     }
 
     public List<UserTeam> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {

@@ -28,11 +28,10 @@ public class Cyclist {
     private String cyclistUrl;
     @ManyToOne
     @JoinColumn(name = "team_id")
-    @JsonBackReference
+    @JsonManagedReference
     private Team team;
-    
-    private List<String> upcomingRaces = new ArrayList<>();
 
+    private List<String> upcomingRaces = new ArrayList<>();
 
     @OneToMany(mappedBy = "cyclist")
     @JsonManagedReference
@@ -52,5 +51,5 @@ public class Cyclist {
     public void addRaceResult(RaceResult raceResult) {
         this.raceResults.add(raceResult);
     }
-    
+
 }

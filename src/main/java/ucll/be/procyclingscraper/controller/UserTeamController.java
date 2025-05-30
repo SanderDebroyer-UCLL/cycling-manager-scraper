@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import ucll.be.procyclingscraper.dto.CyclistDTO;
 import ucll.be.procyclingscraper.dto.UpdateUserTeamDTO;
 import ucll.be.procyclingscraper.model.UserTeam;
 import ucll.be.procyclingscraper.security.JwtHelper;
@@ -31,6 +32,11 @@ public class UserTeamController {
     @GetMapping()
     public List<UserTeam> getTeams() {
         return userTeamService.getTeams();
+    }
+
+    @GetMapping("/dns/{competitionId}")
+    public List<CyclistDTO> getCyclistsWithDNS(@PathVariable Long competitionId) {
+        return userTeamService.getCyclistsWithDNS(competitionId);
     }
 
     @PutMapping("/update/{userTeamId}")
