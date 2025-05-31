@@ -71,12 +71,15 @@ public class CompetitionService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
 
-        if (competition.getRaces().size() == 1) {
+        if (!competition.getRaces().isEmpty()
+                && !competition.getRaces().stream().findFirst().get().getStages().isEmpty()) {
             stageResultService.getStageResultsForAllStagesInCompetition(competitionId);
             stagePointsService.createStagePointsForAllExistingResults();
-        } else if (competition.getRaces().size() > 1) {
+        } else if (!competition.getRaces().isEmpty()) {
             raceResultService.getRaceResultsForAllRacesInCompetition(competitionId);
             racePointsService.createRacePointsForAllExistingResults();
+        } else {
+            throw new IllegalArgumentException("Competition with ID " + competitionId + " has no races or stages.");
         }
         return true;
     }

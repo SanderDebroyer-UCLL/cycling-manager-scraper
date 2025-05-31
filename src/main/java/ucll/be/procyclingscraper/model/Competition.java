@@ -77,7 +77,7 @@ public class Competition {
         DateTimeFormatter formatterStage = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         DateTimeFormatter formatterRace = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        if (this.races.size() == 1) {
+        if (!this.races.isEmpty() && !this.races.stream().findFirst().get().getStages().isEmpty()) {
             stages = this.races.stream()
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No race found"))
