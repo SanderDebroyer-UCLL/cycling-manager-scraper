@@ -1,6 +1,11 @@
 package ucll.be.procyclingscraper.service;
 
+import java.time.LocalDate;
+import java.time.MonthDay;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +62,42 @@ public class StagePointsService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
 
-        // Fetch all user teams for this competition
+        List<Stage> allStages = new ArrayList<>(stage.getRace().getStages());
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM");
+        int defaultYear = LocalDate.now().getYear();
+
+        List<Stage> orderedStages = allStages.stream()
+                .sorted(Comparator.comparing((Stage s) -> {
+                    try {
+                        // Parse as MonthDay first, then convert to LocalDate
+                        MonthDay monthDay = MonthDay.parse(s.getDate(), inputFormatter);
+                        return monthDay.atYear(defaultYear);
+                    } catch (DateTimeParseException e) {
+                        // Handle invalid dates gracefully
+                        return LocalDate.MIN; // or throw exception based on requirements
+                    }
+                }))
+                .collect(Collectors.toList());
+
+        // 2. Determine current stage number from ordered list (1-based index)
+        int tempStageNumber = -1;
+        for (int i = 0; i < orderedStages.size(); i++) {
+            if (orderedStages.get(i).getId().equals(stageId)) {
+                tempStageNumber = i + 1;
+                break;
+            }
+        }
+
+        if (tempStageNumber == -1) {
+            throw new IllegalStateException("Stage ID not found in competition stages.");
+        }
+
+        final int currentStageNumber = tempStageNumber;
+
+        // 3. Get user teams
         List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
 
-        // Fetch result cyclists for each result type once
+        // 4. Fetch cyclists by result type
         Map<ScrapeResultType, List<Cyclist>> resultTypeToCyclists = new HashMap<>();
         resultTypeToCyclists.put(ScrapeResultType.STAGE,
                 cyclistRepository.findCyclistsByStageIdAndResultType(stageId, ScrapeResultType.STAGE.toString()));
@@ -72,10 +109,8 @@ public class StagePointsService {
         List<StagePoints> allStagePoints = new ArrayList<>();
 
         for (UserTeam userTeam : userTeams) {
-            // Get cyclists that are active for this stage
             List<Cyclist> teamCyclists = userTeam.getCyclistAssignments().stream()
-                    .filter(a -> a.getRole() == CyclistRole.MAIN
-                            && isCyclistActiveInStage(a, competition.getCurrentStage()))
+                    .filter(a -> a.getRole() == CyclistRole.MAIN && isCyclistActiveInStage(a, currentStageNumber))
                     .map(CyclistAssignment::getCyclist)
                     .toList();
 
@@ -116,9 +151,8 @@ public class StagePointsService {
                                     "StageResult not found for cyclist " + cyclist.getName()));
 
                     String reason = resultType.name() + " - position " + position + " - cyclist " + cyclist.getName()
-                            + " - user " + userTeam.getUser().getUsername(); // Include user to make reason unique
+                            + " - user " + userTeam.getUser().getUsername();
 
-                    // Avoid duplicates
                     boolean exists = stagePointsRepository.existsByStageResultAndReason(matchingStageResult, reason);
                     if (exists) {
                         continue;
@@ -375,13 +409,11 @@ public class StagePointsService {
         return new MainReserveCyclistStagePointsDTO(mainCyclists, reserveCyclists);
     }
 
-    private boolean isCyclistActiveInStage(CyclistAssignment assignment, Integer stageNumber) {
-        // Check if cyclist was active from this stage onwards
+    private boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber) {
         if (assignment.getFromStage() != null && stageNumber < assignment.getFromStage()) {
             return false;
         }
 
-        // Check if cyclist was still active until this stage
         if (assignment.getToStage() != null && stageNumber > assignment.getToStage()) {
             return false;
         }
