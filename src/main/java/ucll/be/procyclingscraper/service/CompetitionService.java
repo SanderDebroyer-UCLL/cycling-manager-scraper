@@ -265,8 +265,7 @@ public class CompetitionService {
                         .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
                         .competitionId(competition.getId())
                         .user(user)
-                        .mainCyclists(new ArrayList<>()) // Empty initial list
-                        .reserveCyclists(new ArrayList<>()) // Empty initial list
+                        .cyclistAssignments(new ArrayList<>()) // Empty initial list
                         .build();
 
                 userTeamRepository.save(userTeam);

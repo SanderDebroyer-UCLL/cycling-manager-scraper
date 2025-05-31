@@ -10,6 +10,7 @@ import java.util.List;
 
 import ucll.be.procyclingscraper.dto.CyclistDTO;
 import ucll.be.procyclingscraper.dto.UpdateUserTeamDTO;
+import ucll.be.procyclingscraper.dto.UserTeamDTO;
 import ucll.be.procyclingscraper.model.UserTeam;
 import ucll.be.procyclingscraper.security.JwtHelper;
 import ucll.be.procyclingscraper.service.UserTeamService;
@@ -30,7 +31,7 @@ public class UserTeamController {
     private JwtHelper jwtHelper;
 
     @GetMapping()
-    public List<UserTeam> getTeams() {
+    public List<UserTeamDTO> getTeams() {
         return userTeamService.getTeams();
     }
 
@@ -43,6 +44,7 @@ public class UserTeamController {
     public List<UserTeam> putMethodName(@PathVariable Long userTeamId, @RequestBody UpdateUserTeamDTO updateUserTeamDTO,
             @RequestHeader(name = "Authorization") String token) {
         String email = jwtHelper.getUsernameFromToken(token.substring(7));
-        return userTeamService.updateUserTeam(userTeamId, email, updateUserTeamDTO);
+        return userTeamService.updateUserTeam(userTeamId, email, updateUserTeamDTO,
+                updateUserTeamDTO.getCurrentStage());
     }
 }

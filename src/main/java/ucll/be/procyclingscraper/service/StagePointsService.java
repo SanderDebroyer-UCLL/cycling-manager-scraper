@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,8 @@ import ucll.be.procyclingscraper.dto.StagePointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.StagePointsPerUserPerCyclistDTO;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.CyclistAssignment;
+import ucll.be.procyclingscraper.model.CyclistRole;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
@@ -47,29 +50,12 @@ public class StagePointsService {
     @Autowired
     private StageRepository stageRepository;
 
-    public void createStagePointsForAllExistingResults() {
-        List<Competition> competitions = competitionRepository.findAll();
-
-        for (Competition competition : competitions) {
-            Set<Race> races = competition.getRaces();
-            if (races == null)
-                continue;
-
-            for (Race race : races) {
-                List<Stage> stages = race.getStages();
-                if (stages == null)
-                    continue;
-
-                for (Stage stage : stages) {
-                    createStagePoints(competition.getId(), stage.getId());
-                }
-            }
-        }
-    }
-
     public List<StagePoints> createStagePoints(Long competitionId, Long stageId) {
         Stage stage = stageRepository.findById(stageId)
                 .orElseThrow(() -> new IllegalArgumentException("Stage not found with id: " + stageId));
+
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
 
         // Fetch all user teams for this competition
         List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
@@ -86,7 +72,12 @@ public class StagePointsService {
         List<StagePoints> allStagePoints = new ArrayList<>();
 
         for (UserTeam userTeam : userTeams) {
-            List<Cyclist> teamCyclists = userTeam.getMainCyclists();
+            // Get cyclists that are active for this stage
+            List<Cyclist> teamCyclists = userTeam.getCyclistAssignments().stream()
+                    .filter(a -> a.getRole() == CyclistRole.MAIN
+                            && isCyclistActiveInStage(a, competition.getCurrentStage()))
+                    .map(CyclistAssignment::getCyclist)
+                    .toList();
 
             for (Map.Entry<ScrapeResultType, List<Cyclist>> entry : resultTypeToCyclists.entrySet()) {
                 ScrapeResultType resultType = entry.getKey();
@@ -134,7 +125,7 @@ public class StagePointsService {
                     }
 
                     StagePoints stagePoints = StagePoints.builder()
-                            .competition(competitionRepository.findById(competitionId).orElseThrow())
+                            .competition(competition)
                             .stageResult(matchingStageResult)
                             .value(points)
                             .reason(reason)
@@ -150,14 +141,30 @@ public class StagePointsService {
         return allStagePoints;
     }
 
+    public void createStagePointsForAllExistingResults() {
+        List<Competition> competitions = competitionRepository.findAll();
+        for (Competition competition : competitions) {
+            Set<Race> races = competition.getRaces();
+            if (races == null)
+                continue;
+            for (Race race : races) {
+                List<Stage> stages = race.getStages();
+                if (stages == null)
+                    continue;
+                for (Stage stage : stages) {
+                    createStagePoints(competition.getId(), stage.getId());
+                }
+            }
+        }
+    }
+
     public MainReserveCyclistStagePointsDTO getStagePointsForUserPerCylicst(Long competitionId, Long userId,
             Long stageId) {
 
         UserTeam userTeam = userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId);
 
         List<StagePoints> stagePointsList = stagePointsRepository.findByCompetition_idAndStageResult_Stage_id(
-                competitionId,
-                stageId);
+                competitionId, stageId);
 
         List<StagePointsPerUserPerCyclistDTO> mainCyclists = new ArrayList<>();
         List<StagePointsPerUserPerCyclistDTO> reserveCyclists = new ArrayList<>();
@@ -165,36 +172,47 @@ public class StagePointsService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
 
-        List<StageResult> stageResults = competition.getRaces().stream().flatMap(race -> race.getStages().stream())
-                .flatMap(stage -> stage.getResults().stream()).toList();
+        List<StageResult> stageResults = competition.getRaces().stream()
+                .flatMap(race -> race.getStages().stream())
+                .flatMap(s -> s.getResults().stream())
+                .toList();
 
         Set<Cyclist> toBeRemovedCyclists = stageResults.stream()
-                .filter(stageResult -> userTeam.getMainCyclists().contains(stageResult.getCyclist()))
+                .filter(stageResult -> userTeam.getCyclistAssignments().stream()
+                        .anyMatch(a -> a.getRole() == CyclistRole.MAIN
+                                && a.getToStage() == null
+                                && a.getCyclist().equals(stageResult.getCyclist())))
                 .filter(stageResult -> {
                     String pos = stageResult.getPosition();
                     return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
                 })
                 .map(StageResult::getCyclist)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
+
+        List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
+                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToStage() == null)
+                .toList();
+
+        List<CyclistAssignment> reserveAssignments = userTeam.getCyclistAssignments().stream()
+                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getToStage() == null)
+                .toList();
 
         CompletableFuture<Void> mainCyclistsFuture = CompletableFuture.runAsync(() -> {
-            for (Cyclist cyclist : userTeam.getMainCyclists()) {
+            for (CyclistAssignment assignment : mainAssignments) {
+                Cyclist cyclist = assignment.getCyclist();
+
                 List<StagePoints> cyclistStagePoints = stagePointsList.stream()
                         .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
                         .toList();
 
-                boolean isCyclistActive = true;
-
-                if (toBeRemovedCyclists.contains(cyclist)) {
-                    isCyclistActive = false;
-                }
+                boolean isCyclistActive = !toBeRemovedCyclists.contains(cyclist);
 
                 if (!cyclistStagePoints.isEmpty()) {
                     int totalPoints = cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
 
                     synchronized (mainCyclists) {
-                        mainCyclists.add(new StagePointsPerUserPerCyclistDTO(totalPoints,
-                                cyclist.getName(), cyclist.getId(), isCyclistActive,
+                        mainCyclists.add(new StagePointsPerUserPerCyclistDTO(
+                                totalPoints, cyclist.getName(), cyclist.getId(), isCyclistActive,
                                 userTeam.getUser().getId()));
                     }
                 }
@@ -202,23 +220,21 @@ public class StagePointsService {
         });
 
         CompletableFuture<Void> reserveCyclistsFuture = CompletableFuture.runAsync(() -> {
-            for (Cyclist cyclist : userTeam.getReserveCyclists()) {
+            for (CyclistAssignment assignment : reserveAssignments) {
+                Cyclist cyclist = assignment.getCyclist();
+
                 List<StagePoints> cyclistStagePoints = stagePointsList.stream()
                         .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
                         .toList();
 
-                boolean isCyclistActive = true;
-
-                if (toBeRemovedCyclists.contains(cyclist)) {
-                    isCyclistActive = false;
-                }
+                boolean isCyclistActive = !toBeRemovedCyclists.contains(cyclist);
 
                 if (!cyclistStagePoints.isEmpty()) {
                     int totalPoints = cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
 
                     synchronized (reserveCyclists) {
-                        reserveCyclists.add(new StagePointsPerUserPerCyclistDTO(totalPoints,
-                                cyclist.getName(), cyclist.getId(), isCyclistActive,
+                        reserveCyclists.add(new StagePointsPerUserPerCyclistDTO(
+                                totalPoints, cyclist.getName(), cyclist.getId(), isCyclistActive,
                                 userTeam.getUser().getId()));
                     }
                 }
@@ -242,19 +258,30 @@ public class StagePointsService {
 
         for (UserTeam userTeam : userTeams) {
             int totalPoints = 0;
-            for (Cyclist cyclist : userTeam.getMainCyclists()) {
+
+            // Get active MAIN cyclist assignments
+            List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
+                    .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToStage() == null)
+                    .toList();
+
+            for (CyclistAssignment assignment : mainAssignments) {
+                Cyclist cyclist = assignment.getCyclist();
+
                 List<StagePoints> cyclistStagePoints = stagePointsList.stream()
                         .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
                         .toList();
 
                 if (!cyclistStagePoints.isEmpty()) {
-                    totalPoints = totalPoints + cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
+                    totalPoints += cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
                 }
             }
-            result.add(new StagePointsPerUserDTO(totalPoints,
+
+            result.add(new StagePointsPerUserDTO(
+                    totalPoints,
                     userTeam.getUser().getFirstName() + " " + userTeam.getUser().getLastName(),
                     userTeam.getUser().getId()));
         }
+
         return result;
     }
 
@@ -265,28 +292,42 @@ public class StagePointsService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
 
-        List<StageResult> stageResults = competition.getRaces().stream().flatMap(race -> race.getStages().stream())
-                .flatMap(stage -> stage.getResults().stream()).toList();
+        List<StageResult> stageResults = competition.getRaces().stream()
+                .flatMap(race -> race.getStages().stream())
+                .flatMap(stage -> stage.getResults().stream())
+                .toList();
 
         Set<StagePoints> stagePoints = competition.getStagePoints();
 
         System.out.println(stageResults.size() + " stage results found for competition " + competitionId);
 
+        // Active Cyclist Assignments
+        List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
+                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToStage() == null)
+                .toList();
+
+        List<CyclistAssignment> reserveAssignments = userTeam.getCyclistAssignments().stream()
+                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getToStage() == null)
+                .toList();
+
+        // Determine DNF/DNS/DQS cyclists
         Set<Cyclist> toBeRemovedCyclists = stageResults.stream()
-            .filter(stageResult -> userTeam.getMainCyclists().contains(stageResult.getCyclist()) 
-                || userTeam.getReserveCyclists().contains(stageResult.getCyclist()))
-            .filter(stageResult -> {
-                String pos = stageResult.getPosition();
-                return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
-            })
-            .map(StageResult::getCyclist)
-            .collect(java.util.stream.Collectors.toSet());
+                .filter(stageResult -> userTeam.getCyclistAssignments().stream()
+                        .anyMatch(a -> a.getToStage() == null && a.getCyclist().equals(stageResult.getCyclist())))
+                .filter(stageResult -> {
+                    String pos = stageResult.getPosition();
+                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                })
+                .map(StageResult::getCyclist)
+                .collect(Collectors.toSet());
 
         List<StagePointsPerUserPerCyclistDTO> mainCyclists = new ArrayList<>();
         List<StagePointsPerUserPerCyclistDTO> reserveCyclists = new ArrayList<>();
 
         CompletableFuture<Void> mainCyclistsFuture = CompletableFuture.runAsync(() -> {
-            for (Cyclist cyclist : userTeam.getMainCyclists()) {
+            for (CyclistAssignment assignment : mainAssignments) {
+                Cyclist cyclist = assignment.getCyclist();
+
                 List<StagePoints> cyclistStagePoints = stagePoints.stream()
                         .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
                         .toList();
@@ -296,15 +337,20 @@ public class StagePointsService {
                 int totalPoints = cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
 
                 synchronized (mainCyclists) {
-                    mainCyclists.add(new StagePointsPerUserPerCyclistDTO(totalPoints,
-                            cyclist.getName(), cyclist.getId(), isCyclistActive,
+                    mainCyclists.add(new StagePointsPerUserPerCyclistDTO(
+                            totalPoints,
+                            cyclist.getName(),
+                            cyclist.getId(),
+                            isCyclistActive,
                             userTeam.getUser().getId()));
                 }
             }
         });
 
         CompletableFuture<Void> reserveCyclistsFuture = CompletableFuture.runAsync(() -> {
-            for (Cyclist cyclist : userTeam.getReserveCyclists()) {
+            for (CyclistAssignment assignment : reserveAssignments) {
+                Cyclist cyclist = assignment.getCyclist();
+
                 List<StagePoints> cyclistStagePoints = stagePoints.stream()
                         .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
                         .toList();
@@ -314,8 +360,11 @@ public class StagePointsService {
                 int totalPoints = cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
 
                 synchronized (reserveCyclists) {
-                    reserveCyclists.add(new StagePointsPerUserPerCyclistDTO(totalPoints,
-                            cyclist.getName(), cyclist.getId(), isCyclistActive,
+                    reserveCyclists.add(new StagePointsPerUserPerCyclistDTO(
+                            totalPoints,
+                            cyclist.getName(),
+                            cyclist.getId(),
+                            isCyclistActive,
                             userTeam.getUser().getId()));
                 }
             }
@@ -324,6 +373,20 @@ public class StagePointsService {
         CompletableFuture.allOf(mainCyclistsFuture, reserveCyclistsFuture).join();
 
         return new MainReserveCyclistStagePointsDTO(mainCyclists, reserveCyclists);
+    }
+
+    private boolean isCyclistActiveInStage(CyclistAssignment assignment, Integer stageNumber) {
+        // Check if cyclist was active from this stage onwards
+        if (assignment.getFromStage() != null && stageNumber < assignment.getFromStage()) {
+            return false;
+        }
+
+        // Check if cyclist was still active until this stage
+        if (assignment.getToStage() != null && stageNumber > assignment.getToStage()) {
+            return false;
+        }
+
+        return true;
     }
 
     private int calculatePoints(ScrapeResultType type, int position) {

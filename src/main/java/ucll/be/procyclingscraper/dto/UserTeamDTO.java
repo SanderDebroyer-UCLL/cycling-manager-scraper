@@ -9,7 +9,6 @@ public class UserTeamDTO {
     private Long id;
     private String name;
     private Long competitionId;
-    private List<CyclistDTO> mainCyclists;
-    private List<CyclistDTO> reserveCyclists;
+    private List<CyclistAssignmentDTO> cyclistAssignments;
     private UserDTO user;
 }

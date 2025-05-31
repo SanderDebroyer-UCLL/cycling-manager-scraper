@@ -17,7 +17,8 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Cyclist {
+public class 
+Cyclist {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -10,4 +10,5 @@ import lombok.Value;
 public class UpdateUserTeamDTO {
     List<String> mainCyclistIds;
     List<String> reserveCyclistIds;
+    int currentStage;
 }

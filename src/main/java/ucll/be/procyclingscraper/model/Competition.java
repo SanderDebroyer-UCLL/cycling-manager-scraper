@@ -1,7 +1,10 @@
 package ucll.be.procyclingscraper.model;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.time.format.DateTimeFormatter;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -64,6 +67,32 @@ public class Competition {
     @JoinTable(name = "competition_race", joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "race_id", referencedColumnName = "id"))
     private Set<Race> races = new HashSet<>();
 
-    @OneToMany()
-    private Set<Stage> stages = new HashSet<>();
+    public Integer getCurrentStage() {
+        List<Stage> stages = new ArrayList<>();
+        if (this.races.size() == 1) {
+            stages = this.races.stream()
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No race found"))
+                    .getStages();
+        }
+        if (stages == null || stages.isEmpty()) {
+            System.out.println("Stages are not set for this competition.");
+            return null;
+        }
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        // Find the current stage based on today's date
+        return stages.stream()
+                .sorted((s1, s2) -> java.time.LocalDate.parse(s1.getDate() + "/" + today.getYear(), formatter)
+                        .compareTo(java.time.LocalDate.parse(s2.getDate() + "/" + today.getYear(), formatter)))
+                .map(stage -> {
+                    java.time.LocalDate stageDate = java.time.LocalDate.parse(stage.getDate() + "/" + today.getYear(),
+                            formatter);
+                    return stageDate.isBefore(today) || stageDate.isEqual(today);
+                })
+                .collect(java.util.stream.Collectors.toList())
+                .lastIndexOf(true) + 1;
+    }
 }
