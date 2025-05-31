@@ -214,21 +214,21 @@ public class StagePointsService {
         Set<Cyclist> toBeRemovedCyclists = stageResults.stream()
                 .filter(stageResult -> userTeam.getCyclistAssignments().stream()
                         .anyMatch(a -> a.getRole() == CyclistRole.MAIN
-                                && a.getTo() == null
+                                && a.getToEvent() == null
                                 && a.getCyclist().equals(stageResult.getCyclist())))
                 .filter(stageResult -> {
                     String pos = stageResult.getPosition();
-                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos) || "OTL".equals(pos);
                 })
                 .map(StageResult::getCyclist)
                 .collect(Collectors.toSet());
 
         List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
-                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getTo() == null)
+                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
                 .toList();
 
         List<CyclistAssignment> reserveAssignments = userTeam.getCyclistAssignments().stream()
-                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getTo() == null)
+                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getToEvent() == null)
                 .toList();
 
         CompletableFuture<Void> mainCyclistsFuture = CompletableFuture.runAsync(() -> {
@@ -295,7 +295,7 @@ public class StagePointsService {
 
             // Get active MAIN cyclist assignments
             List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
-                    .filter(a -> a.getRole() == CyclistRole.MAIN && a.getTo() == null)
+                    .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
                     .toList();
 
             for (CyclistAssignment assignment : mainAssignments) {
@@ -337,20 +337,20 @@ public class StagePointsService {
 
         // Active Cyclist Assignments
         List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
-                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getTo() == null)
+                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
                 .toList();
 
         List<CyclistAssignment> reserveAssignments = userTeam.getCyclistAssignments().stream()
-                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getTo() == null)
+                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getToEvent() == null)
                 .toList();
 
         // Determine DNF/DNS/DQS cyclists
         Set<Cyclist> toBeRemovedCyclists = stageResults.stream()
                 .filter(stageResult -> userTeam.getCyclistAssignments().stream()
-                        .anyMatch(a -> a.getTo() == null && a.getCyclist().equals(stageResult.getCyclist())))
+                        .anyMatch(a -> a.getToEvent() == null && a.getCyclist().equals(stageResult.getCyclist())))
                 .filter(stageResult -> {
                     String pos = stageResult.getPosition();
-                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos) || "OTL".equals(pos);
                 })
                 .map(StageResult::getCyclist)
                 .collect(Collectors.toSet());
@@ -410,11 +410,11 @@ public class StagePointsService {
     }
 
     private boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber) {
-        if (assignment.getFrom() != null && stageNumber < assignment.getFrom()) {
+        if (assignment.getFromEvent() != null && stageNumber < assignment.getFromEvent()) {
             return false;
         }
 
-        if (assignment.getTo() != null && stageNumber > assignment.getTo()) {
+        if (assignment.getToEvent() != null && stageNumber > assignment.getToEvent()) {
             return false;
         }
 

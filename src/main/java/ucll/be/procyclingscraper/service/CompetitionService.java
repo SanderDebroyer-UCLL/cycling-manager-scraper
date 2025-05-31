@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -46,12 +47,38 @@ public class CompetitionService {
     @Autowired
     private RaceRepository raceRepository;
 
+    @Autowired
+    private StageResultService stageResultService;
+
+    @Autowired
+    private StagePointsService stagePointsService;
+
+    @Autowired
+    private RaceResultService raceResultService;
+
+    @Autowired
+    private RacePointsService racePointsService;
+
     CompetitionService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     public List<Competition> getAllCompetitions() {
         return competitionRepository.findAll();
+    }
+
+    public Boolean getResults(Long competitionId) throws IOException {
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+
+        if (competition.getRaces().size() == 1) {
+            stageResultService.getStageResultsForAllStagesInCompetition(competitionId);
+            stagePointsService.createStagePointsForAllExistingResults();
+        } else if (competition.getRaces().size() > 1) {
+            raceResultService.getRaceResultsForAllRacesInCompetition(competitionId);
+            racePointsService.createRacePointsForAllExistingResults();
+        }
+        return true;
     }
 
     public Set<CompetitionDTO> getCompetitions(String email) {
@@ -182,6 +209,7 @@ public class CompetitionService {
         CountNotification notification = new CountNotification();
         notification.setMaxMainCyclists(maxMainCyclists);
         notification.setMaxReserveCyclists(maxReserveCyclists);
+        notification.setCompetitionId(competitionId);
         return notification;
     }
 

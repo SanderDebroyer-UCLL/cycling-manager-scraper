@@ -49,6 +49,18 @@ public class RacePointsService {
     @Autowired
     private CyclistRepository cyclistRepository;
 
+    public void createRacePointsForAllExistingResults() {
+        List<Competition> competitions = competitionRepository.findAll();
+        for (Competition competition : competitions) {
+            Set<Race> races = competition.getRaces();
+            if (races == null)
+                continue;
+            for (Race race : races) {
+                createRacePoints(competition.getId(), race.getId());
+            }
+        }
+    }
+
     public List<RacePoints> createRacePoints(Long competitionId, Long raceId) {
         Race race = raceRepository.findById(raceId)
                 .orElseThrow(() -> new IllegalArgumentException("Race not found with id: " + raceId));
@@ -175,21 +187,21 @@ public class RacePointsService {
         Set<Cyclist> toBeRemovedCyclists = raceResults.stream()
                 .filter(raceResult -> userTeam.getCyclistAssignments().stream()
                         .anyMatch(a -> a.getRole() == CyclistRole.MAIN
-                                && a.getTo() == null
+                                && a.getToEvent() == null
                                 && a.getCyclist().equals(raceResult.getCyclist())))
                 .filter(raceResult -> {
                     String pos = raceResult.getPosition();
-                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos) || "OTL".equals(pos);
                 })
                 .map(RaceResult::getCyclist)
                 .collect(Collectors.toSet());
 
         List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
-                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getTo() == null)
+                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
                 .toList();
 
         List<CyclistAssignment> reserveAssignments = userTeam.getCyclistAssignments().stream()
-                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getTo() == null)
+                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getToEvent() == null)
                 .toList();
 
         CompletableFuture<Void> mainCyclistsFuture = CompletableFuture.runAsync(() -> {
@@ -256,7 +268,7 @@ public class RacePointsService {
 
             // Get active MAIN cyclist assignments
             List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
-                    .filter(a -> a.getRole() == CyclistRole.MAIN && a.getTo() == null)
+                    .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
                     .toList();
 
             for (CyclistAssignment assignment : mainAssignments) {
@@ -284,6 +296,9 @@ public class RacePointsService {
 
         UserTeam userTeam = userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId);
 
+        System.out.println(userTeam.getCyclistAssignments().size() + " cyclist assignments found for user "
+                + userId + " in competition " + competitionId);
+
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
 
@@ -297,20 +312,20 @@ public class RacePointsService {
 
         // Active Cyclist Assignments
         List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
-                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getTo() == null)
+                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
                 .toList();
 
         List<CyclistAssignment> reserveAssignments = userTeam.getCyclistAssignments().stream()
-                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getTo() == null)
+                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getToEvent() == null)
                 .toList();
 
         // Determine DNF/DNS/DQS cyclists
         Set<Cyclist> toBeRemovedCyclists = raceResults.stream()
                 .filter(raceResult -> userTeam.getCyclistAssignments().stream()
-                        .anyMatch(a -> a.getTo() == null && a.getCyclist().equals(raceResult.getCyclist())))
+                        .anyMatch(a -> a.getToEvent() == null && a.getCyclist().equals(raceResult.getCyclist())))
                 .filter(raceResult -> {
                     String pos = raceResult.getPosition();
-                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                    return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos) || "OTL".equals(pos);
                 })
                 .map(RaceResult::getCyclist)
                 .collect(Collectors.toSet());
@@ -370,11 +385,11 @@ public class RacePointsService {
     }
 
     private boolean isCyclistActiveInRace(CyclistAssignment assignment, int raceNumber) {
-        if (assignment.getFrom() != null && raceNumber < assignment.getFrom()) {
+        if (assignment.getFromEvent() != null && raceNumber < assignment.getFromEvent()) {
             return false;
         }
 
-        if (assignment.getTo() != null && raceNumber > assignment.getTo()) {
+        if (assignment.getToEvent() != null && raceNumber > assignment.getToEvent()) {
             return false;
         }
 
