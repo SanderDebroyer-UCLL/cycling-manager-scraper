@@ -62,6 +62,10 @@ public class Competition {
     @JsonManagedReference("competition_stage_points")
     private Set<StagePoints> stagePoints = new HashSet<>();
 
+    @OneToMany(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("competition_race_points")
+    private Set<RacePoints> racePoints = new HashSet<>();
+
     @JsonManagedReference("competition_race")
     @ManyToMany
     @JoinTable(name = "competition_race", joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "race_id", referencedColumnName = "id"))

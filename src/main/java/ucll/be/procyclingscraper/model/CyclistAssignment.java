@@ -46,8 +46,8 @@ public class CyclistAssignment {
     private CyclistRole role;
 
     // Stage when this cyclist was added
-    private Integer fromStage;
+    private Integer from;
 
     // Stage when this cyclist was removed (nullable if still active)
-    private Integer toStage;
+    private Integer to;
 }
