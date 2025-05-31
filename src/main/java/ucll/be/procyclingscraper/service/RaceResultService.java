@@ -71,6 +71,85 @@ public class RaceResultService {
 
     }
 
+    public List<RaceResult> scrapeOneDayRaceResultsById(Long raceId) throws IOException {
+    try {
+        List<RaceResult> raceResults = new ArrayList<>();
+        
+        // Fetch the race by ID
+        Race race = raceRepository.findById(raceId).orElse(null);
+        if (race == null) {
+            System.out.println("Race not found for ID: " + raceId);
+            return new ArrayList<>();
+        }
+        
+        String raceUrl = race.getRaceUrl() + "/result";
+        System.out.println("Constructed race URL: " + raceUrl);
+        
+        Document doc = Jsoup.connect(raceUrl)
+                .userAgent(USER_AGENT)
+                .get();
+                
+        Elements raceResultRows = doc.select("table.results tbody > tr");
+        LocalTime cumulativeTime = LocalTime.MIDNIGHT;
+        List<String> ridersToAvoid = Arrays.asList("GUALDI Simone");
+        
+        for (Element row : raceResultRows) {
+            HashMap<String, String> resultData = getResultsTableData(row);
+            System.out.println("Fetched race name " + race.getName());
+            
+            String position = resultData.get("position");
+            String riderName = resultData.get("riderName");
+            String time = resultData.get("time");
+            
+            if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
+                System.out.println("Skipping row due to missing data");
+                continue;
+            }
+            
+            LocalTime resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime);
+            if (resultTime != null) {
+                cumulativeTime = resultTime;
+            }
+            System.out.println("Parsed Time: " + resultTime);
+            
+            if (ridersToAvoid.contains(riderName)) {
+                System.out.println("Skipping rider: " + riderName);
+                continue;
+            }
+            
+            Cyclist cyclist = cyclistService.searchCyclist(riderName);
+            if (cyclist == null) {
+                System.out.println("Cyclist not found for name: " + riderName);
+                continue;
+            }
+            
+            RaceStatus raceStatus = calculateRaceStatus(position);
+            RaceResult raceResult = raceResultRepository.findRaceResultByRaceAndCyclist(race, cyclist);
+            
+            if (raceResult == null) {
+                System.out.println("RaceResult not found, creating a new one");
+                RaceResult newRaceResult = new RaceResult();
+                newRaceResult.setPosition(position);
+                newRaceResult.setTime(resultTime);
+                newRaceResult.setRaceStatus(raceStatus);
+                newRaceResult.setRace(race);
+                newRaceResult.setCyclist(cyclist);
+                
+                cyclist.addRaceResult(newRaceResult);
+                race.addRaceResult(newRaceResult);
+                
+                raceResultRepository.save(newRaceResult);
+                raceResults.add(newRaceResult);
+            }
+        }
+        
+        return raceResults;
+    } catch (Exception e) {
+        e.printStackTrace();
+        return new ArrayList<>();
+    }
+}
+
     public List<RaceResult> scrapeOneDayRaceResults() throws IOException {
 
         try {
