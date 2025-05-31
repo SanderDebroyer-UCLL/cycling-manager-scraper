@@ -6,6 +6,7 @@ import lombok.*;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Setter
@@ -24,23 +25,9 @@ public class UserTeam {
 
     private Long competitionId;
 
-    // Main team
-    @ManyToMany
-    @JoinTable(
-        name = "user_team_main_cyclists",
-        joinColumns = @JoinColumn(name = "user_team_id"),
-        inverseJoinColumns = @JoinColumn(name = "cyclist_id")
-    )
-    private List<Cyclist> mainCyclists;
-
-    // Reserve team
-    @ManyToMany
-    @JoinTable(
-        name = "user_team_reserve_cyclists",
-        joinColumns = @JoinColumn(name = "user_team_id"),
-        inverseJoinColumns = @JoinColumn(name = "cyclist_id")
-    )
-    private List<Cyclist> reserveCyclists;
+    @OneToMany(mappedBy = "userTeam", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<CyclistAssignment> cyclistAssignments;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

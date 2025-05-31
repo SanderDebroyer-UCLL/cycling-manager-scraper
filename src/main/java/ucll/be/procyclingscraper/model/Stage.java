@@ -8,6 +8,7 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.*;
@@ -33,6 +34,11 @@ public class Stage {
     @OneToMany(mappedBy = "stage", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<StageResult> results = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "race_id")
+    @JsonBackReference
+    private Race race;
 
     public void addResult(StageResult result) {
         result.setStage(this);

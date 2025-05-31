@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.dto.MainReserveCyclistStagePointsDTO;
 import ucll.be.procyclingscraper.dto.StagePointsPerUserDTO;
-import ucll.be.procyclingscraper.dto.StagePointsPerUserPerCyclistDTO;
 import ucll.be.procyclingscraper.model.StagePoints;
 import ucll.be.procyclingscraper.service.StagePointsService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,10 +30,10 @@ public class StagePointsController {
     }
 
     @GetMapping("/user/{competitionId}")
-    public List<StagePointsPerUserPerCyclistDTO> getStagePointsForUser(@PathVariable Long competitionId,
+    public MainReserveCyclistStagePointsDTO getStagePointsForUser(@PathVariable Long competitionId,
             @RequestParam Long userId,
             @RequestParam Long stageId) {
-        return stagePointsService.getStagePointsForUser(competitionId, userId, stageId);
+        return stagePointsService.getStagePointsForUserPerCylicst(competitionId, userId, stageId);
     }
 
     @GetMapping("/{competitionId}")
@@ -43,7 +43,7 @@ public class StagePointsController {
     }
 
     @GetMapping("/all/{competitionId}")
-    public List<StagePointsPerUserPerCyclistDTO> getAllStagePoints(@PathVariable Long competitionId,
+    public MainReserveCyclistStagePointsDTO getAllStagePoints(@PathVariable Long competitionId,
             @RequestParam Long userId) {
         return stagePointsService.getAllStagePoints(competitionId, userId);
     }
