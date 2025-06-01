@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,6 +55,19 @@ public class StageResultService {
 
     public void getStageResultsForAllStagesInCompetitions() {
         List<Competition> competitions = competitionRepository.findAll();
+
+        List<Race> uniqueRaces = competitions.stream()
+                .flatMap(competition -> competition.getRaces().stream())
+                .distinct()
+                .collect(Collectors.toList());
+
+        for (Race race : uniqueRaces) {
+            scrapeTimeResultByRace(ScrapeResultType.STAGE, race.getId());
+        }
+    }
+
+    public void getStageResultsForAllStagesInCompetition(Long competitionId) {
+        Optional<Competition> competitions = competitionRepository.findById(competitionId);
 
         List<Race> uniqueRaces = competitions.stream()
                 .flatMap(competition -> competition.getRaces().stream())

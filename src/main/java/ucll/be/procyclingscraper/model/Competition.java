@@ -62,6 +62,10 @@ public class Competition {
     @JsonManagedReference("competition_stage_points")
     private Set<StagePoints> stagePoints = new HashSet<>();
 
+    @OneToMany(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("competition_race_points")
+    private Set<RacePoints> racePoints = new HashSet<>();
+
     @JsonManagedReference("competition_race")
     @ManyToMany
     @JoinTable(name = "competition_race", joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "race_id", referencedColumnName = "id"))
@@ -69,30 +73,45 @@ public class Competition {
 
     public Integer getCurrentStage() {
         List<Stage> stages = new ArrayList<>();
-        if (this.races.size() == 1) {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        DateTimeFormatter formatterStage = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        DateTimeFormatter formatterRace = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        if (!this.races.isEmpty() && !this.races.stream().findFirst().get().getStages().isEmpty()) {
             stages = this.races.stream()
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No race found"))
                     .getStages();
-        }
-        if (stages == null || stages.isEmpty()) {
-            System.out.println("Stages are not set for this competition.");
+            if (stages == null || stages.isEmpty()) {
+                System.out.println("Stages are not set for this competition.");
+                return null;
+            }
+
+            return stages.stream()
+                    .sorted((s1, s2) -> java.time.LocalDate.parse(s1.getDate() + "/" + today.getYear(), formatterStage)
+                            .compareTo(java.time.LocalDate.parse(s2.getDate() + "/" + today.getYear(), formatterStage)))
+                    .map(stage -> {
+                        java.time.LocalDate stageDate = java.time.LocalDate.parse(
+                                stage.getDate() + "/" + today.getYear(),
+                                formatterStage);
+                        return stageDate.isBefore(today) || stageDate.isEqual(today);
+                    })
+                    .collect(java.util.stream.Collectors.toList())
+                    .lastIndexOf(true) + 1;
+        } else if (this.races.size() > 1) {
+            return this.races.stream()
+                    .sorted((s1, s2) -> java.time.LocalDate.parse(s1.getStartDate(), formatterRace)
+                            .compareTo(java.time.LocalDate.parse(s2.getStartDate(), formatterRace)))
+                    .map(race -> {
+                        java.time.LocalDate raceDate = java.time.LocalDate.parse(
+                                race.getStartDate(),
+                                formatterRace);
+                        return raceDate.isBefore(today) || raceDate.isEqual(today);
+                    })
+                    .collect(java.util.stream.Collectors.toList())
+                    .lastIndexOf(true) + 1;
+        } else {
             return null;
         }
-
-        java.time.LocalDate today = java.time.LocalDate.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-        // Find the current stage based on today's date
-        return stages.stream()
-                .sorted((s1, s2) -> java.time.LocalDate.parse(s1.getDate() + "/" + today.getYear(), formatter)
-                        .compareTo(java.time.LocalDate.parse(s2.getDate() + "/" + today.getYear(), formatter)))
-                .map(stage -> {
-                    java.time.LocalDate stageDate = java.time.LocalDate.parse(stage.getDate() + "/" + today.getYear(),
-                            formatter);
-                    return stageDate.isBefore(today) || stageDate.isEqual(today);
-                })
-                .collect(java.util.stream.Collectors.toList())
-                .lastIndexOf(true) + 1;
     }
 }

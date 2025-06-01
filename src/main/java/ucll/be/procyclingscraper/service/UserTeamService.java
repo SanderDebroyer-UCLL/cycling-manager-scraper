@@ -1,5 +1,7 @@
 package ucll.be.procyclingscraper.service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,6 +21,7 @@ import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.CyclistAssignment;
 import ucll.be.procyclingscraper.model.CyclistRole;
 import ucll.be.procyclingscraper.model.Race;
+import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.model.StageResult;
 import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.model.UserTeam;
@@ -61,41 +64,105 @@ public class UserTeamService {
                                 .orElseThrow(() -> new IllegalArgumentException(
                                                 "Competition not found with id: " + competitionId));
 
-                // Flatten all stage results in this competition
-                List<StageResult> stageResults = competition.getRaces().stream()
-                                .flatMap(race -> race.getStages().stream())
-                                .flatMap(stage -> stage.getResults().stream())
-                                .toList();
+                // Collect stage results and race results separately
+                List<StageResult> stageResults = new ArrayList<>();
+                List<RaceResult> raceResults = new ArrayList<>();
+
+                for (Race race : competition.getRaces()) {
+                        // Add stage results if stages exist
+                        if (race.getStages() != null && !race.getStages().isEmpty()) {
+                                race.getStages().stream()
+                                                .flatMap(stage -> stage.getResults().stream())
+                                                .forEach(stageResults::add);
+                        }
+
+                        // Add direct race results if they exist
+                        if (race.getRaceResult() != null && !race.getRaceResult().isEmpty()) {
+                                raceResults.addAll(race.getRaceResult());
+                        }
+                }
+
+                System.out.println("Stage results found: " + stageResults.size());
+                System.out.println("Race results found: " + raceResults.size());
 
                 // Get all active MAIN cyclists from assignments
                 Set<Cyclist> activeMainCyclists = userTeams.stream()
                                 .flatMap(userTeam -> userTeam.getCyclistAssignments().stream())
-                                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToStage() == null)
+                                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
                                 .map(CyclistAssignment::getCyclist)
                                 .collect(Collectors.toSet());
 
                 System.out.println("Active main cyclists: " + activeMainCyclists.size());
 
-                // Find all active main cyclists that had a DNF/DQS/DNS
-                Set<Cyclist> cyclistsWithDNS = stageResults.stream()
+                // Find cyclists with DNS/DNF from stage results
+                Set<Cyclist> cyclistsWithDNSFromStages = stageResults.stream()
                                 .filter(sr -> activeMainCyclists.contains(sr.getCyclist()))
                                 .filter(sr -> {
                                         String pos = sr.getPosition();
-                                        return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos);
+                                        if (pos == null)
+                                                return false;
+                                        pos = pos.toUpperCase().trim();
+                                        return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos)
+                                                        || "OTL".equals(pos);
                                 })
                                 .map(StageResult::getCyclist)
                                 .collect(Collectors.toSet());
 
-                // Map to DTOs with reason
+                // Find cyclists with DNS/DNF from race results
+                Set<Cyclist> cyclistsWithDNSFromRaces = raceResults.stream()
+                                .filter(rr -> activeMainCyclists.contains(rr.getCyclist()))
+                                .filter(rr -> {
+                                        String pos = rr.getPosition(); // Assuming RaceResult also has getPosition()
+                                        if (pos == null)
+                                                return false;
+                                        pos = pos.toUpperCase().trim();
+                                        return "DNF".equals(pos) || "DQS".equals(pos) || "DNS".equals(pos)
+                                                        || "OTL".equals(pos);
+                                })
+                                .map(RaceResult::getCyclist)
+                                .collect(Collectors.toSet());
+
+                // Combine both sets
+                Set<Cyclist> cyclistsWithDNS = new HashSet<>();
+                cyclistsWithDNS.addAll(cyclistsWithDNSFromStages);
+                cyclistsWithDNS.addAll(cyclistsWithDNSFromRaces);
+
+                System.out.println("Cyclists with DNS/DNF: " + cyclistsWithDNS.size());
+
+                // Map to DTOs with reason (check both stage and race results)
                 List<CyclistDTO> cyclistDTOs = cyclistsWithDNS.stream()
                                 .map(cyclist -> {
+                                        // First try to find reason in stage results
                                         String dnsReason = stageResults.stream()
                                                         .filter(sr -> sr.getCyclist().equals(cyclist))
                                                         .map(StageResult::getPosition)
-                                                        .filter(pos -> "DNF".equals(pos) || "DQS".equals(pos)
-                                                                        || "DNS".equals(pos))
+                                                        .filter(pos -> {
+                                                                if (pos == null)
+                                                                        return false;
+                                                                pos = pos.toUpperCase().trim();
+                                                                return "DNF".equals(pos) || "DQS".equals(pos)
+                                                                                || "DNS".equals(pos)
+                                                                                || "OTL".equals(pos);
+                                                        })
                                                         .findFirst()
                                                         .orElse("");
+
+                                        // If not found in stage results, check race results
+                                        if (dnsReason.isEmpty()) {
+                                                dnsReason = raceResults.stream()
+                                                                .filter(rr -> rr.getCyclist().equals(cyclist))
+                                                                .map(RaceResult::getPosition)
+                                                                .filter(pos -> {
+                                                                        if (pos == null)
+                                                                                return false;
+                                                                        pos = pos.toUpperCase().trim();
+                                                                        return "DNF".equals(pos) || "DQS".equals(pos)
+                                                                                        || "DNS".equals(pos)
+                                                                                        || "OTL".equals(pos);
+                                                                })
+                                                                .findFirst()
+                                                                .orElse("");
+                                        }
 
                                         return new CyclistDTO(
                                                         cyclist.getId(),
@@ -129,7 +196,7 @@ public class UserTeamService {
 
                 // 1. Mark current assignments as expired if they're not in the updated lists
                 for (CyclistAssignment assignment : existingAssignments) {
-                        if (assignment.getToStage() == null) {
+                        if (assignment.getToEvent() == null) {
                                 Long cyclistId = assignment.getCyclist().getId();
                                 boolean stillInMain = updatedMain.contains(cyclistId)
                                                 && assignment.getRole() == CyclistRole.MAIN;
@@ -137,7 +204,7 @@ public class UserTeamService {
                                                 && assignment.getRole() == CyclistRole.RESERVE;
 
                                 if (!(stillInMain || stillInReserve)) {
-                                        assignment.setToStage(currentStage - 1);
+                                        assignment.setToEvent(currentStage - 1);
                                 }
                         }
                 }
@@ -147,7 +214,7 @@ public class UserTeamService {
                         boolean alreadyAssigned = existingAssignments.stream()
                                         .anyMatch(a -> a.getCyclist().getId().equals(cyclistId)
                                                         && a.getRole() == CyclistRole.MAIN
-                                                        && a.getFromStage() == currentStage);
+                                                        && a.getFromEvent() == currentStage);
 
                         if (!alreadyAssigned) {
                                 Cyclist cyclist = cyclistRepository.findById(cyclistId)
@@ -158,8 +225,8 @@ public class UserTeamService {
                                                 .userTeam(userTeam)
                                                 .cyclist(cyclist)
                                                 .role(CyclistRole.MAIN)
-                                                .fromStage(currentStage)
-                                                .toStage(null)
+                                                .fromEvent(currentStage)
+                                                .toEvent(null)
                                                 .build();
 
                                 existingAssignments.add(newAssignment);
@@ -170,7 +237,7 @@ public class UserTeamService {
                         boolean alreadyAssigned = existingAssignments.stream()
                                         .anyMatch(a -> a.getCyclist().getId().equals(cyclistId)
                                                         && a.getRole() == CyclistRole.RESERVE
-                                                        && a.getFromStage() == currentStage);
+                                                        && a.getFromEvent() == currentStage);
 
                         if (!alreadyAssigned) {
                                 Cyclist cyclist = cyclistRepository.findById(cyclistId)
@@ -181,8 +248,8 @@ public class UserTeamService {
                                                 .userTeam(userTeam)
                                                 .cyclist(cyclist)
                                                 .role(CyclistRole.RESERVE)
-                                                .fromStage(currentStage)
-                                                .toStage(null)
+                                                .fromEvent(currentStage)
+                                                .toEvent(null)
                                                 .build();
 
                                 existingAssignments.add(newAssignment);
@@ -237,7 +304,7 @@ public class UserTeamService {
 
                                 boolean alreadyPicked = otherTeam.getCyclistAssignments().stream()
                                                 .anyMatch(a -> a.getCyclist().getId().equals(cyclistId)
-                                                                && a.getToStage() == null);
+                                                                && a.getToEvent() == null);
 
                                 if (alreadyPicked) {
                                         throw new RuntimeException("Cyclist is already in a team in this competition");
@@ -247,11 +314,11 @@ public class UserTeamService {
 
                 // Count current assignments
                 long currentMain = userTeam.getCyclistAssignments().stream()
-                                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToStage() == null)
+                                .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
                                 .count();
 
                 long currentReserve = userTeam.getCyclistAssignments().stream()
-                                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getToStage() == null)
+                                .filter(a -> a.getRole() == CyclistRole.RESERVE && a.getToEvent() == null)
                                 .count();
 
                 int maxMain = competition.getMaxMainCyclists();
@@ -276,8 +343,8 @@ public class UserTeamService {
                 CyclistAssignment assignment = CyclistAssignment.builder()
                                 .cyclist(cyclist)
                                 .userTeam(userTeam)
-                                .fromStage(competition.getCurrentStage())
-                                .toStage(null)
+                                .fromEvent(competition.getCurrentStage())
+                                .toEvent(null)
                                 .role(roleToAssign)
                                 .build();
 
@@ -299,8 +366,8 @@ public class UserTeamService {
                                                 assignment.getId(),
                                                 cyclistService.mapToCyclistDTO(assignment.getCyclist()),
                                                 assignment.getRole(),
-                                                assignment.getFromStage(),
-                                                assignment.getToStage()))
+                                                assignment.getFromEvent(),
+                                                assignment.getToEvent()))
                                 .collect(Collectors.toList());
 
                 return new UserTeamDTO(

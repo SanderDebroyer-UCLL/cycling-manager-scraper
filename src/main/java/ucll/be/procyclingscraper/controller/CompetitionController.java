@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.controller;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -37,6 +38,11 @@ public class CompetitionController {
     @GetMapping("/all")
     public List<Competition> getAllCompetitions() {
         return competitionService.getAllCompetitions();
+    }
+
+    @GetMapping("/results/{competitionId}")
+    public Boolean getResults(@PathVariable Long competitionId) throws IOException {
+       return competitionService.getResults(competitionId);
     }
 
     @PostMapping()
