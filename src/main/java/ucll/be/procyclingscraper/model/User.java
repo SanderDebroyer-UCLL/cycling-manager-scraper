@@ -50,6 +50,14 @@ public class User implements UserDetails {
     @JsonIgnoreProperties("user") // ignore user inside userTeams when serializing User
     private List<UserTeam> userTeams;
 
+    @OneToMany(mappedBy = "user")
+    @JsonManagedReference("user_stage_points")
+    private List<StagePoints> stagePoints;
+
+    @OneToMany(mappedBy = "user")
+    @JsonManagedReference("user_race_points")
+    private List<RacePoints> racePoints;
+
     public User(String firstName, String lastName, String email, String password) {
         setFirstName(firstName);
         setLastName(lastName);

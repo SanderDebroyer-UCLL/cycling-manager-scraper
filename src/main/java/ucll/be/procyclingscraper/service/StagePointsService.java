@@ -163,6 +163,7 @@ public class StagePointsService {
                             .stageResult(matchingStageResult)
                             .value(points)
                             .reason(reason)
+                            .user(userTeam.getUser())
                             .build();
 
                     stagePointsRepository.save(stagePoints);

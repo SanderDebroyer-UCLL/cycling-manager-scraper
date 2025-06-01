@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.CreateUserData;
 import ucll.be.procyclingscraper.dto.UserDTO;
+import ucll.be.procyclingscraper.model.RacePoints;
 import ucll.be.procyclingscraper.model.Role;
+import ucll.be.procyclingscraper.model.StagePoints;
 import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.repository.UserRepository;
 
@@ -26,7 +28,12 @@ public class UserService {
     public List<UserDTO> getAllUsers() {
         return userRepo.findAll().stream()
                 .map(user -> new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(),
-                        user.getRole()))
+                        user.getRole(), user.getRacePoints().stream()
+                                .mapToInt(RacePoints::getValue)
+                                .sum()
+                                + user.getStagePoints().stream()
+                                        .mapToInt(StagePoints::getValue)
+                                        .sum()))
                 .toList();
     }
 
@@ -35,7 +42,7 @@ public class UserService {
         if (user == null) {
             return null;
         }
-        return new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole());
+        return new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole(), 0);
     }
 
     public User addUser(CreateUserData userData) throws ServiceException {
@@ -63,7 +70,7 @@ public class UserService {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
-                user.getRole());
+                user.getRole(), 0);
     }
 
 }

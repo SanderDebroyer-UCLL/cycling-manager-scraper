@@ -38,4 +38,9 @@ public class RacePoints {
     @ManyToOne
     @JoinColumn(name = "race_result_id")
     private RaceResult raceResult;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonBackReference("user_race_points")
+    private User user;
 }

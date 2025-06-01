@@ -123,7 +123,7 @@ public class CompetitionService {
                     user.getFirstName(),
                     user.getLastName(),
                     user.getEmail(),
-                    user.getRole())).collect(Collectors.toSet());
+                    user.getRole(), 0)).collect(Collectors.toSet());
 
             // Create CompetitionDTO
             CompetitionDTO dto = new CompetitionDTO(
@@ -181,7 +181,7 @@ public class CompetitionService {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
-                user.getRole())).collect(Collectors.toSet());
+                user.getRole(), 0)).collect(Collectors.toSet());
 
         // Create CompetitionDTO
         return new CompetitionDTO(

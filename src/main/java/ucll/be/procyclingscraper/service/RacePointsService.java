@@ -155,6 +155,7 @@ public class RacePointsService {
                         .raceResult(matchingRaceResult)
                         .value(points)
                         .reason(reason)
+                        .user(userTeam.getUser()) // <-- Add this line
                         .build();
 
                 racePointsRepository.save(racePoints);
