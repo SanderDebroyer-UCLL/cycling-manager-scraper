@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.StageResultService;
@@ -40,6 +41,16 @@ public class StageResultController {
     @GetMapping("/scrape/gc")
     public List<TimeResult> scrapeGcPerStage() throws IOException {
         return stageResultService.scrapeTimeResult(ScrapeResultType.GC);
+    }
+
+    @GetMapping("/scrape/points")
+    public List<PointResult> scrapePointsPerStage() {
+        return stageResultService.scrapePointResult(ScrapeResultType.POINTS);
+    }
+
+    @GetMapping("/scrape/kom")
+    public List<PointResult> scrapeKomPerStage() {
+        return stageResultService.scrapePointResult(ScrapeResultType.KOM);
     }
 
     @GetMapping("")
