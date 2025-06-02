@@ -10,7 +10,7 @@ import ucll.be.procyclingscraper.model.Race;
 @Repository
 public interface RaceRepository extends JpaRepository<Race,Long> {
 
-    Race findRaceById(int int1);
+    // Race findRaceById(int int1);
 
     Race findByName(String raceName);
 

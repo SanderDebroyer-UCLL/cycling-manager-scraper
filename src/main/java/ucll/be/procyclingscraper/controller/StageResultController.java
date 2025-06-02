@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,17 +29,17 @@ public class StageResultController {
     private StageResultService stageResultService;
 
     @GetMapping("/scrape/stage")
-    public List<TimeResult> scrapeResults() {
+    public List<TimeResult> scrapeResults() throws IOException {
         return stageResultService.scrapeTimeResult(ScrapeResultType.STAGE);
     }
 
     @GetMapping("/scrape/{raceId}")
-    public List<TimeResult> scrapeResults(@PathVariable Long raceId) {
-        return stageResultService.scrapeTimeResultByRace(ScrapeResultType.STAGE, raceId);
+    public List<TimeResult> scrapeResults(@PathVariable Long raceId) throws IOException {
+        return stageResultService.scrapeTimeResultForRace(ScrapeResultType.STAGE, raceId);
     }
 
     @GetMapping("/scrape/gc")
-    public List<TimeResult> scrapeGcPerStage() {
+    public List<TimeResult> scrapeGcPerStage() throws IOException {
         return stageResultService.scrapeTimeResult(ScrapeResultType.GC);
     }
 
