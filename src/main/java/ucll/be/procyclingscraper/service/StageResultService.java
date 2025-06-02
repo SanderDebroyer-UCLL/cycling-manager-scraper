@@ -21,8 +21,8 @@ import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.repository.*;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -77,7 +77,7 @@ public class StageResultService {
                     Cyclist cyclist = result.getCyclist();
 
                     // Default: time is null
-                    LocalTime time = null;
+                    Duration time = null;
 
                     // If result is a TimeResult, extract the time
                     if (result instanceof TimeResult) {
@@ -85,7 +85,7 @@ public class StageResultService {
                     }
 
                     int point = 0;
-
+                    
                     if (result instanceof PointResult) {
                         point = ((PointResult) result).getPoint();
                     }
@@ -116,83 +116,90 @@ public class StageResultService {
             List<Race> races = raceRepository.findAll(Sort.by("id"));
             
             for (Race race : races) {
-            LocalDate raceStartTime = LocalDate.parse(race.getStartDate());
-            if (raceStartTime.isAfter(LocalDate.now())) {
-                System.out.println("Race " + race.getName() + " has not started yet.");
-                break;
-            }
-                System.out.println("Huidige race: " + race.getName());
-            List<Stage> stages = race.getStages();
-                System.out.println("Fetched stages size: " + stages.size());
-            for (Stage stage : stages) {
-                System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
-                if (resultCount >= MAX_RESULTS) break;
-                List<TimeResult> stageResults = new ArrayList<>();
-
-                Document doc = fetchStageDocument(race, stage, scrapeResultType);
-
-                Elements resultRows = resultRows(doc, stage, scrapeResultType);
-                LocalTime cumulativeTime = null;
-
-                for (Element row : resultRows) {
-                if (resultCount >= MAX_RESULTS)
+                LocalDate raceStartTime = LocalDate.parse(race.getStartDate());
+                if (raceStartTime.isAfter(LocalDate.now())) {
+                    System.out.println("Race " + race.getName() + " has not started yet.");
                     break;
-                String position;
-                String rawTime = "Unknown";
-
-                Element positionElement = row.selectFirst("td:first-child");
-                position = positionElement != null ? positionElement.text() : "Unknown";
-
-                Element timeElement = row.selectFirst("td.time.ar");
-                rawTime = timeElement != null ? timeElement.text() : "Unknown";
-                // System.out.println("Raw time: " + rawTime);
-                Element riderElement = row.selectFirst("td:nth-child(7) a");
-                String riderName = riderElement != null ? riderElement.text() : "Unknown";
-
-                String[] parts = rawTime.split(" ");
-                String time = parts[0];
-
-                
-                if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
-                    System.out.println("Skipping row due to missing data");
-                    continue;
                 }
+                System.out.println("Huidige race: " + race.getName());
+                List<Stage> stages = race.getStages();
+                System.out.println("Fetched stages size: " + stages.size());
+                for (Stage stage : stages) {
+                    System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
+                    if (resultCount >= MAX_RESULTS) break;
+                    List<TimeResult> stageResults = new ArrayList<>();
 
-                LocalTime resultTime;
-                if (cumulativeTime == null) {
-                    // First finisher: treat as absolute time
-                    resultTime = timeHandlerWithCumulative(time, null);
-                    cumulativeTime = resultTime; // Save for next riders
-                } else {
-                    // All others: treat as gap relative to first finisher
-                    resultTime = timeHandlerWithCumulative(time, cumulativeTime);
-                }
+                    Document doc = fetchStageDocument(race, stage, scrapeResultType);
 
-                if (stage.getName().startsWith("Stage 1 |") && scrapeResultType == ScrapeResultType.GC) {
-                    String boniSeconds = "0";
-                    Element boniSecondsElement = row.selectFirst("td.bonis.ar.fs11.cu600 > div > a");
-                    boniSeconds = boniSecondsElement != null ? boniSecondsElement.text() : "0";
-                    resultTime = subtractFromCumulative(resultTime, boniSeconds);
-                }
+                    Elements resultRows = resultRows(doc, stage, scrapeResultType);
 
-                Cyclist cyclist = cyclistService.searchCyclist(riderName);
-                if (cyclist == null) {
-                    System.out.println("Cyclist not found for name: " + riderName);
-                    continue;
-                }
+                    // This is in format PT.....
+                    Duration cumulativeTime = null;
 
-                TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
+                    for (Element row : resultRows) {
+                    if (resultCount >= MAX_RESULTS)
+                        break;
+                    String position;
+                    String rawTime = "Unknown";
 
-                if (time.contains("-")) {
-                    checkForDNFAndMore(position, timeResult);
-                }
-                timeResult = checkForDNFAndMore(position, timeResult);
+                    Element positionElement = row.selectFirst("td:first-child");
+                    position = positionElement != null ? positionElement.text() : "Unknown";
+                    System.out.println("Position: " + position);
 
-                fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
+                    Element timeElement = row.selectFirst("td.time.ar");
+                    rawTime = timeElement != null ? timeElement.text() : "Unknown";
+                    System.out.println("Raw time: " + rawTime);
 
-                saveResult(stage, timeResult, stageResults);
-                resultCount++;
-                }
+                    Element riderElement = row.selectFirst("td:nth-child(7) a");
+                    String riderName = riderElement != null ? riderElement.text() : "Unknown";
+                    System.out.println("Rider Name: " + riderName);
+
+                    String[] parts = rawTime.split(" ");
+                    String time = parts[0];
+                    System.out.println("First part of time: " + time);
+
+                    
+                    if (position.equals("Unknown") || riderName.equals("Unknown") || time.equals("Unknown")) {
+                        System.out.println("Skipping row due to missing data");
+                        continue;
+                    }
+    
+                    Duration resultTime;
+                    if (cumulativeTime == null) {
+                        // First finisher: treat as absolute time
+                        resultTime = timeHandlerWithCumulative(time, cumulativeTime);
+                        cumulativeTime = resultTime; // Save for next riders
+                        System.out.println("New cumulative time: " + cumulativeTime);
+                    } else {
+                        // All others: treat as gap relative to first finisher
+                        resultTime = timeHandlerWithCumulative(time, cumulativeTime);
+                    }
+
+                    if (stage.getName().startsWith("Stage 1 |") && scrapeResultType == ScrapeResultType.GC) {
+                        String boniSeconds = "0";
+                        Element boniSecondsElement = row.selectFirst("td.bonis.ar.fs11.cu600 > div > a");
+                        boniSeconds = boniSecondsElement != null ? boniSecondsElement.text() : "0";
+                        resultTime = subtractFromCumulative(resultTime, boniSeconds);
+                    }
+
+                    Cyclist cyclist = cyclistService.searchCyclist(riderName);
+                    if (cyclist == null) {
+                        System.out.println("Cyclist not found for name: " + riderName);
+                        continue;
+                    }
+
+                    TimeResult timeResult = getOrCreateTimeResult(stage, cyclist, scrapeResultType);
+
+                    if (time.contains("-")) {
+                        checkForDNFAndMore(position, timeResult);
+                    }
+                    timeResult = checkForDNFAndMore(position, timeResult);
+
+                    fillTimeResultFields(timeResult, position, resultTime, scrapeResultType);
+
+                    saveResult(stage, timeResult, stageResults);
+                    resultCount++;
+                    }
                 if (scrapeResultType == ScrapeResultType.GC) {
                 // Reset results for each stage to avoid accumulating across stages
                 stageResults.sort((r1, r2) -> r1.getTime().compareTo(r2.getTime()));
@@ -242,7 +249,7 @@ public class StageResultService {
                 Document doc = fetchStageDocument(race, stage, scrapeResultType);
 
                 Elements resultRows = resultRows(doc, stage, scrapeResultType);
-                LocalTime cumulativeTime = LocalTime.MIDNIGHT;
+                Duration cumulativeTime = Duration.ZERO;
 
                 for (Element row : resultRows) {
                     if (resultCount >= MAX_RESULTS)
@@ -267,8 +274,8 @@ public class StageResultService {
                         continue;
                     }
 
-                    LocalTime resultTime;
-                    if (cumulativeTime.equals(LocalTime.MIDNIGHT)) {
+                    Duration resultTime;
+                    if (cumulativeTime.equals(Duration.ZERO)) {
                         // First finisher: treat as absolute time
                         resultTime = timeHandlerWithCumulative(time, null);
                         cumulativeTime = resultTime; // Save for next riders
@@ -387,7 +394,7 @@ public class StageResultService {
         return timeResult;
     }
 
-    public void fillTimeResultFields(TimeResult timeResult, String position, LocalTime resultTime,
+    public void fillTimeResultFields(TimeResult timeResult, String position, Duration resultTime,
             ScrapeResultType scrapeResultType) {
         timeResult.setPosition(position);
         timeResult.setTime(resultTime);
@@ -399,24 +406,23 @@ public class StageResultService {
         results.add(timeResult);
     }
     
-    public LocalTime timeHandlerWithCumulative(String time, LocalTime firstFinisherTime) {
+    public Duration timeHandlerWithCumulative(String time, Duration firstFinisherTime) {
         System.out.println("First Finisher Time: " + firstFinisherTime);
         try {
             String cleanedTime = time.trim();
+            System.out.println("Cleaned Time: " + cleanedTime);
             // If the time is in hh:mm:ss
             if (cleanedTime.matches("\\d{1,2}:\\d{2}:\\d{2}")) {
-                LocalTime inputTime = parseToLocalTime(cleanedTime);
+                Duration inputTime = parseToLocalTime(cleanedTime);
                 return inputTime;
             }
             // If the time is in mm:ss
             else if (cleanedTime.matches("\\d{1,2}:\\d{2}")) {
-                LocalTime parsed = parseToLocalTime(cleanedTime);
+                Duration parsed = parseToLocalTime(cleanedTime);
                 if (firstFinisherTime == null) {
                     return parsed;
                 } else {
-                    LocalTime resultTime = firstFinisherTime
-                            .plusMinutes(parsed.getMinute())
-                            .plusSeconds(parsed.getSecond());
+                    Duration resultTime = firstFinisherTime.plus(parsed);
                     System.out.println("Calculated Time (relative to first): " + resultTime);
                     return resultTime;
                 }
@@ -424,13 +430,11 @@ public class StageResultService {
             // If the time is in m.ss or mm.ss
             else if (cleanedTime.matches("\\d{1,2}\\.\\d{2}")) {
                 cleanedTime = cleanedTime.replace(".", ":");
-                LocalTime gapTime = parseToLocalTime(cleanedTime);
+                Duration gapTime = parseToLocalTime(cleanedTime);
                 if (firstFinisherTime == null) {
                     return gapTime;
                 } else {
-                    LocalTime resultTime = firstFinisherTime
-                            .plusMinutes(gapTime.getMinute())
-                            .plusSeconds(gapTime.getSecond());
+                    Duration resultTime = firstFinisherTime.plus(gapTime);
                     System.out.println("Calculated Time (relative to first): " + resultTime);
                     return resultTime;
                 }
@@ -447,7 +451,7 @@ public class StageResultService {
     }
 
 
-    public LocalTime parseToLocalTime(String timeStr) {
+    public Duration parseToLocalTime(String timeStr) {
         String[] parts = timeStr.split(":");
         int hours = 0, minutes = 0, seconds = 0;
 
@@ -462,7 +466,8 @@ public class StageResultService {
             seconds = Integer.parseInt(parts[0]);
         }
         System.out.println("Parsed Time: " + hours + ":" + minutes + ":" + seconds);
-        return LocalTime.of(hours, minutes, seconds);
+        Duration duration = Duration.ofHours(hours).plusMinutes(minutes).plusSeconds(seconds);
+        return duration;
     }
 
     private TimeResult checkForDNFAndMore(String position, TimeResult timeResult) {
@@ -488,16 +493,19 @@ public class StageResultService {
         timeResultRepository.deleteAll();
     }
 
-    public LocalTime subtractFromCumulative(LocalTime cumulativeTime, String boniSeconds) {
+    public Duration subtractFromCumulative(Duration cumulativeTime, String boniSeconds) {
         try {
             int secondsToSubtract = 0;
+            Duration boniSecDuration = Duration.ZERO;
             String cleaned = boniSeconds.replaceAll("[^\\d]", "");
             if (!cleaned.isEmpty()) {
                 secondsToSubtract = Integer.parseInt(cleaned);
+                boniSecDuration = Duration.ofSeconds(secondsToSubtract);
+
             }
             System.out.println("Cleaned boni seconds: " + secondsToSubtract);
-
-            LocalTime resultTime = cumulativeTime.minusSeconds(secondsToSubtract);
+           
+            Duration resultTime = cumulativeTime.minus(boniSecDuration);
             System.out.println("Result time after subtraction: " + resultTime);
             return resultTime;
         } catch (Exception e) {
@@ -586,12 +594,8 @@ public class StageResultService {
                         }
                     }
                     
-                    numericResults.sort(
-                        Comparator.comparing(TimeResult::getTime)
-                        .thenComparing(r -> {
-                            return Integer.parseInt(r.getPosition());   
-                        })
-                    );
+                    // Sort only by position (as integer), ascending
+                    numericResults.sort(Comparator.comparing(TimeResult::getTime));
                     
                     int positionCounter = 1;
                     for (TimeResult numericResult: numericResults) {
@@ -644,5 +648,14 @@ public class StageResultService {
         List<TimeResult> stageTimeResultsGC = timeResultRepository.findTimeResultsByStageIdAndScrapeResultTypeAndCyclistIdIn(stageId, ScrapeResultType.GC, youthCyclistIds);
         System.out.println("Number of GC results for stage ID " + stageId + ": " + stageTimeResultsGC.size());
         return stageTimeResultsGC;
+    }
+
+    public String getHoursMinSecFromDuration(Duration duration) {
+        long seconds = duration.getSeconds();
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long secs = seconds % 60;
+
+        return String.format("%02d:%02d:%02d", hours, minutes, secs);
     }
 }

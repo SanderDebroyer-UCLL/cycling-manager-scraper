@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.model;
 
+import java.time.Duration;
 import java.time.LocalTime;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -23,7 +24,7 @@ public class RaceResult {
 
     private String position;
 
-    private LocalTime time;
+    private Duration time;
 
     @Enumerated(EnumType.STRING)
     private RaceStatus raceStatus;

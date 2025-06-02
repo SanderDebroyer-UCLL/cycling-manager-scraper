@@ -1,12 +1,12 @@
 package ucll.be.procyclingscraper.service;
 
 import java.io.IOException;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.Duration;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -85,7 +85,7 @@ public class RaceResultService {
                         .get();
 
                 Elements raceResultRows = doc.select("table.results tbody > tr");
-                LocalTime cumulativeTime = LocalTime.MIDNIGHT;
+                Duration cumulativeTime = Duration.ZERO;
                 List<String> ridersToAvoid = Arrays.asList("GUALDI Simone");
 
                 for (Element row : raceResultRows) {
@@ -99,7 +99,7 @@ public class RaceResultService {
                         continue;
                     }
 
-                    LocalTime resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime);
+                    Duration resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime);
                     if (resultTime != null) {
                         cumulativeTime = resultTime;
                     }
