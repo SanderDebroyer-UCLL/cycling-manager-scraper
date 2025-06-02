@@ -37,7 +37,7 @@ public class ScraperScheduler {
 
         stageService.scrapeStages();
 
-        stageResultService.getStageResultsForAllStagesICompetitions();
+        stageResultService.getStageResultsForAllStagesInCompetitions();
     }
 
     @Scheduled(cron = "0 * 2 * * *")

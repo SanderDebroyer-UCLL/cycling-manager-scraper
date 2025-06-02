@@ -7,14 +7,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.CreateUserData;
+import ucll.be.procyclingscraper.dto.UserDTO;
+import ucll.be.procyclingscraper.model.RacePoints;
 import ucll.be.procyclingscraper.model.Role;
+import ucll.be.procyclingscraper.model.StagePoints;
 import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.repository.UserRepository;
 
-
 @Service
 public class UserService {
-    
+
     private UserRepository userRepo;
     private PasswordEncoder passwordEncoder;
 
@@ -23,12 +25,24 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public List<User> getAllUsers() {
-        return userRepo.findAll();
+    public List<UserDTO> getAllUsers() {
+        return userRepo.findAll().stream()
+                .map(user -> new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(),
+                        user.getRole(), user.getRacePoints().stream()
+                                .mapToInt(RacePoints::getValue)
+                                .sum()
+                                + user.getStagePoints().stream()
+                                        .mapToInt(StagePoints::getValue)
+                                        .sum()))
+                .toList();
     }
 
-    public User getLoggedInUser(String email) {
-        return userRepo.findUserByEmail(email);
+    public UserDTO getLoggedInUser(String email) {
+        User user = userRepo.findUserByEmail(email);
+        if (user == null) {
+            return null;
+        }
+        return new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole(), 0);
     }
 
     public User addUser(CreateUserData userData) throws ServiceException {
@@ -44,9 +58,19 @@ public class UserService {
         newUser.setEmail(userData.getEmail());
         newUser.setPassword(passwordEncoder.encode(userData.getPassword()));
         newUser.setRole(Role.USER);
-        
+
         userRepo.save(newUser);
 
         return newUser;
     }
+
+    public UserDTO mapToUserDTO(User user) {
+        return new UserDTO(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(), 0);
+    }
+
 }

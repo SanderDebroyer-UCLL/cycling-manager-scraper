@@ -13,18 +13,23 @@ import ucll.be.procyclingscraper.dto.RaceResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.service.RaceResultService;
 
-
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/raceResults")
 public class RaceResultController {
-    
-    @Autowired 
+
+    @Autowired
     private RaceResultService raceResultService;
 
     @GetMapping("/scrape")
     public List<RaceResult> getOneDayRaceResult() throws IOException {
         return raceResultService.scrapeOneDayRaceResults();
+    }
+
+    @GetMapping("/scrape/{raceId}")
+    public List<RaceResult> getOneDayRaceResultById(@PathVariable Long raceId) throws IOException {
+        System.out.println("I entered the controller");
+        return raceResultService.scrapeOneDayRaceResultsById(raceId);
     }
 
     @GetMapping()

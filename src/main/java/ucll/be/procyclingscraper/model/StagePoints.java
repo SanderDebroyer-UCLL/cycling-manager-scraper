@@ -39,4 +39,8 @@ public class StagePoints {
     @JoinColumn(name = "stage_result_id")
     private StageResult stageResult;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonBackReference("user_stage_points")
+    private User user;
 }
