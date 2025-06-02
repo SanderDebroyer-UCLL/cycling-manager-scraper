@@ -126,6 +126,12 @@ public class RacePointsService {
 
                 if (resultOption.isPresent()) {
                     RaceResult result = resultOption.get();
+                    if ("OTL".equals(result.getPosition()) ||
+                            "DNF".equals(result.getPosition()) ||
+                            "DQS".equals(result.getPosition()) ||
+                            "DNS".equals(result.getPosition())) {
+                        continue; // Skip these results
+                    }
                     position = Integer.parseInt(result.getPosition());
                     points = calculateRacePoints(position); // You'll need to implement this method
                 } else {
@@ -145,7 +151,7 @@ public class RacePointsService {
                 String reason = "RACE - position " + position + " - cyclist " + cyclist.getName()
                         + " - user " + userTeam.getUser().getUsername();
 
-                boolean exists = racePointsRepository.existsByRaceResultAndReason(matchingRaceResult, reason);
+                boolean exists = racePointsRepository.existsByRaceIdAndReason(raceId, reason);
                 if (exists) {
                     continue;
                 }
@@ -155,6 +161,7 @@ public class RacePointsService {
                         .raceResult(matchingRaceResult)
                         .value(points)
                         .reason(reason)
+                        .raceId(raceId)
                         .user(userTeam.getUser()) // <-- Add this line
                         .build();
 
@@ -258,47 +265,29 @@ public class RacePointsService {
 
         List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
 
-        List<RacePoints> racePointsList = racePointsRepository.findByCompetition_idAndRaceResult_Race_id(
-                competitionId,
-                raceId);
-
         List<PointsPerUserDTO> result = new ArrayList<>();
 
+        System.out.println(userTeams.size() + " user teams found for competition " + competitionId);
+
         for (UserTeam userTeam : userTeams) {
-            int totalPoints = 0;
+            int totalPoints = userTeam.getUser().getRacePoints().stream()
+                    .filter(rp -> rp.getRaceResult().getRace().getId().equals(raceId)) // filter by race
+                    .mapToInt(RacePoints::getValue)
+                    .sum();
 
-            // Get active MAIN cyclist assignments
-            List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
-                    .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
-                    .toList();
-
-            for (CyclistAssignment assignment : mainAssignments) {
-                Cyclist cyclist = assignment.getCyclist();
-
-                List<RacePoints> cyclistRacePoints = racePointsList.stream()
-                        .filter(rp -> rp.getRaceResult().getCyclist().getId().equals(cyclist.getId()))
-                        .toList();
-
-                if (!cyclistRacePoints.isEmpty()) {
-                    totalPoints += cyclistRacePoints.stream().mapToInt(RacePoints::getValue).sum();
-                }
-            }
+            System.out.println("User " + userTeam.getUser().getUsername() + " has " + totalPoints);
 
             result.add(new PointsPerUserDTO(
                     totalPoints,
                     userTeam.getUser().getFirstName() + " " + userTeam.getUser().getLastName(),
                     userTeam.getUser().getId()));
         }
-
         return result;
     }
 
     public MainReserveCyclistPointsDTO getAllRacePoints(Long competitionId, Long userId) {
 
         UserTeam userTeam = userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId);
-
-        System.out.println(userTeam.getCyclistAssignments().size() + " cyclist assignments found for user "
-                + userId + " in competition " + competitionId);
 
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
@@ -308,8 +297,6 @@ public class RacePointsService {
                 .toList();
 
         Set<RacePoints> racePoints = competition.getRacePoints();
-
-        System.out.println(raceResults.size() + " race results found for competition " + competitionId);
 
         // Active Cyclist Assignments
         List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()

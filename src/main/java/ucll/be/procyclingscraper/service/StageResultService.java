@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,7 +201,7 @@ public class StageResultService {
     public List<PointResult> scrapePointResult(ScrapeResultType scrapeResultType) {
         List<PointResult> results = new ArrayList<>();
         int resultCount = 0;
-        final int MAX_RESULTS = 1000;
+        final int MAX_RESULTS = 10000;
         try {
             List<Race> races = raceRepository.findAll();
 
@@ -358,7 +359,7 @@ public class StageResultService {
 
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
-        System.out.println(" Starting scraping...");
+        System.out.println("Starting scraping...");
         List<Race> races = raceRepository.findAll();
 
         for (Race race : races) {
@@ -373,9 +374,10 @@ public class StageResultService {
         return allResults;
     }
 
-    private static final int MAX_RESULTS = 1000;
+    private static final int MAX_RESULTS = 10000;
 
-    private List<TimeResult> scrapeTimeResultByRace(ScrapeResultType scrapeResultType, List<Stage> stages, Race race) throws IOException {
+    private List<TimeResult> scrapeTimeResultByRace(ScrapeResultType scrapeResultType, List<Stage> stages, Race race)
+            throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
         int resultCount = 0;
 
@@ -470,10 +472,10 @@ public class StageResultService {
         }
         return allResults;
     }
-    
+
     public List<TimeResult> scrapeTimeResultForRace(ScrapeResultType scrapeResultType, Long raceId) throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
-        System.out.println(" Starting scraping for race ID: " + raceId);
+        System.out.println("Starting scraping for race ID: " + raceId);
         
         Race race;
         if (raceId != null) {
@@ -649,7 +651,7 @@ public class StageResultService {
 
     private Elements resultRows(Document doc, Stage stage, ScrapeResultType scrapeResultType) {
         Elements tables = doc.select("table.results");
-        System.out.println(" Number of tables found: " + tables.size());
+        System.out.println("Number of tables found: " + tables.size());
 
         Elements resultRows = new Elements();
 
@@ -694,4 +696,5 @@ public class StageResultService {
 
         return resultRows;
     }
+
 }
