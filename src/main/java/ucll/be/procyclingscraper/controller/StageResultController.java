@@ -46,12 +46,12 @@ public class StageResultController {
         return stageResultService.findAllResults();
     }
 
-    @GetMapping("/stageResult/points/{id}")
+    @GetMapping("/points/{id}")
     public List<Cyclist> getStagePointsFromStageId(@PathVariable Long id) {
         return stageResultService.findCyclistInByStageId(id, "POINTS");
     }
 
-    @GetMapping("/stageResult/kom/{id}")
+    @GetMapping("/kom/{id}")
     public List<Cyclist> getStageKomFromStageId(@PathVariable Long id) {
         return stageResultService.findCyclistInByStageId(id, "KOM");
     }
