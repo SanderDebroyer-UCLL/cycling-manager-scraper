@@ -1,18 +1,25 @@
 package ucll.be.procyclingscraper.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ucll.be.procyclingscraper.dto.CompetitionDTO;
 import ucll.be.procyclingscraper.dto.CompetitionModel;
 import ucll.be.procyclingscraper.dto.CountNotification;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.dto.OrderNotification;
+import ucll.be.procyclingscraper.dto.RaceDTO;
+import ucll.be.procyclingscraper.dto.StageDTO;
 import ucll.be.procyclingscraper.dto.StatusNotification;
+import ucll.be.procyclingscraper.dto.UserDTO;
 import ucll.be.procyclingscraper.dto.UserModel;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.CompetitionPick;
@@ -40,6 +47,18 @@ public class CompetitionService {
     @Autowired
     private RaceRepository raceRepository;
 
+    @Autowired
+    private StageResultService stageResultService;
+
+    @Autowired
+    private StagePointsService stagePointsService;
+
+    @Autowired
+    private RaceResultService raceResultService;
+
+    @Autowired
+    private RacePointsService racePointsService;
+
     CompetitionService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -48,14 +67,133 @@ public class CompetitionService {
         return competitionRepository.findAll();
     }
 
-    public Set<Competition> getCompetitions(String email) {
-        User currentUser = userRepository.findUserByEmail(email);
-        Set<Competition> competitions = currentUser.getCompetitions();
-        return competitions;
+    public Boolean getResults(Long competitionId) throws IOException {
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+
+        if (!competition.getRaces().isEmpty()
+                && !competition.getRaces().stream().findFirst().get().getStages().isEmpty()) {
+            stageResultService.getStageResultsForAllStagesInCompetition(competitionId);
+            stagePointsService.createStagePointsForAllExistingResults();
+        } else if (!competition.getRaces().isEmpty()) {
+            raceResultService.getRaceResultsForAllRacesInCompetition(competitionId);
+            racePointsService.createRacePointsForAllExistingResults();
+        } else {
+            throw new IllegalArgumentException("Competition with ID " + competitionId + " has no races or stages.");
+        }
+        return true;
     }
 
-    public Competition getCompetitionById(Long id) {
-        return competitionRepository.findById(id).orElse(null);
+    public Set<CompetitionDTO> getCompetitions(String email) {
+        User currentUser = userRepository.findUserByEmail(email);
+        Set<Competition> competitions = currentUser.getCompetitions();
+
+        Set<CompetitionDTO> competitionDTOs = new HashSet<>();
+        for (Competition competition : competitions) {
+
+            // Convert races with nested stages
+            Set<RaceDTO> raceDTOs = competition.getRaces().stream().map(race -> {
+                List<StageDTO> stageDTOs = race.getStages().stream().map(stage -> new StageDTO(
+                        stage.getId(),
+                        stage.getName(),
+                        stage.getDeparture(),
+                        stage.getArrival(),
+                        stage.getDate().toString(), // format if needed
+                        stage.getStartTime(),
+                        stage.getDistance(),
+                        stage.getStageUrl(),
+                        stage.getVerticalMeters(),
+                        stage.getParcoursType())).collect(Collectors.toList());
+
+                return new RaceDTO(
+                        race.getId(),
+                        race.getName(),
+                        race.getNiveau(),
+                        race.getStartDate().toString(),
+                        race.getEndDate().toString(),
+                        race.getDistance(),
+                        race.getRaceUrl(),
+                        race.getCompetitions().stream().map(c -> c.getId()).collect(Collectors.toList()),
+                        stageDTOs);
+            }).collect(Collectors.toSet());
+
+            // Convert users
+            Set<UserDTO> userDTOs = competition.getUsers().stream().map(user -> new UserDTO(
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getRole(), 0)).collect(Collectors.toSet());
+
+            // Create CompetitionDTO
+            CompetitionDTO dto = new CompetitionDTO(
+                    competition.getId(),
+                    competition.getName(),
+                    raceDTOs,
+                    userDTOs,
+                    competition.getCompetitionStatus(),
+                    competition.getMaxMainCyclists(),
+                    competition.getMaxReserveCyclists(),
+                    competition.getCurrentPick(),
+                    competition.getCompetitionPicks());
+
+            competitionDTOs.add(dto);
+        }
+
+        return competitionDTOs;
+    }
+
+    public CompetitionDTO getCompetitionById(Long id) {
+        Competition competition = competitionRepository.findById(id).orElse(null);
+        if (competition == null) {
+            return null;
+        }
+
+        // Convert races with nested stages
+        Set<RaceDTO> raceDTOs = competition.getRaces().stream().map(race -> {
+            List<StageDTO> stageDTOs = race.getStages().stream().map(stage -> new StageDTO(
+                    stage.getId(),
+                    stage.getName(),
+                    stage.getDeparture(),
+                    stage.getArrival(),
+                    stage.getDate().toString(),
+                    stage.getStartTime(),
+                    stage.getDistance(),
+                    stage.getStageUrl(),
+                    stage.getVerticalMeters(),
+                    stage.getParcoursType())).collect(Collectors.toList());
+
+            return new RaceDTO(
+                    race.getId(),
+                    race.getName(),
+                    race.getNiveau(),
+                    race.getStartDate().toString(),
+                    race.getEndDate().toString(),
+                    race.getDistance(),
+                    race.getRaceUrl(),
+                    race.getCompetitions().stream().map(c -> c.getId()).collect(Collectors.toList()),
+                    stageDTOs);
+        }).collect(Collectors.toSet());
+
+        // Convert users
+        Set<UserDTO> userDTOs = competition.getUsers().stream().map(user -> new UserDTO(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(), 0)).collect(Collectors.toSet());
+
+        // Create CompetitionDTO
+        return new CompetitionDTO(
+                competition.getId(),
+                competition.getName(),
+                raceDTOs,
+                userDTOs,
+                competition.getCompetitionStatus(),
+                competition.getMaxMainCyclists(),
+                competition.getMaxReserveCyclists(),
+                competition.getCurrentPick(),
+                competition.getCompetitionPicks());
     }
 
     @Transactional
@@ -74,6 +212,7 @@ public class CompetitionService {
         CountNotification notification = new CountNotification();
         notification.setMaxMainCyclists(maxMainCyclists);
         notification.setMaxReserveCyclists(maxReserveCyclists);
+        notification.setCompetitionId(competitionId);
         return notification;
     }
 
@@ -157,8 +296,7 @@ public class CompetitionService {
                         .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
                         .competitionId(competition.getId())
                         .user(user)
-                        .mainCyclists(new ArrayList<>()) // Empty initial list
-                        .reserveCyclists(new ArrayList<>()) // Empty initial list
+                        .cyclistAssignments(new ArrayList<>()) // Empty initial list
                         .build();
 
                 userTeamRepository.save(userTeam);

@@ -7,7 +7,7 @@ import lombok.Setter;
 import jakarta.persistence.*;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 @Getter
@@ -23,7 +23,6 @@ public class Team {
     private String teamUrl;
     
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
-    @JsonManagedReference
+    @JsonBackReference
     private List<Cyclist> cyclists;
-    
 }

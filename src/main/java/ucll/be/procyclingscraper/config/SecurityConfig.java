@@ -14,7 +14,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import ucll.be.procyclingscraper.security.JwtAuthEntryPoint;
 import ucll.be.procyclingscraper.security.JwtAuthFilter;
 
-
 @Configuration
 public class SecurityConfig {
 
@@ -28,7 +27,8 @@ public class SecurityConfig {
         // @Autowired
         private PasswordEncoder passwordEncoder;
 
-        public SecurityConfig(JwtAuthFilter filter, JwtAuthEntryPoint jwtAuthEntryPoint, UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+        public SecurityConfig(JwtAuthFilter filter, JwtAuthEntryPoint jwtAuthEntryPoint,
+                        UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
                 this.jwtAuthEntryPoint = jwtAuthEntryPoint;
                 this.filter = filter;
                 this.userDetailsService = userDetailsService;
@@ -36,52 +36,54 @@ public class SecurityConfig {
         }
 
         // @Bean
-        // public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        // public SecurityFilterChain securityFilterChain(HttpSecurity http) throws
+        // Exception {
         // http
-        //     .csrf(csrf -> csrf.disable())
-        //     .headers(headers -> headers
-        //         .frameOptions(frameOptions -> frameOptions.disable()))
-        //     .authorizeHttpRequests(req -> req
-        //         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        //         .requestMatchers("/api/auth/*").permitAll()
-        //         .requestMatchers("/h2-console/**").permitAll()
-                
-        //         .anyRequest()
-        //         .authenticated())
-        //     .exceptionHandling(exception -> exception
-        //         .authenticationEntryPoint(jwtAuthEntryPoint))
-        //     .sessionManagement(management -> management
-        //         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        //     .authenticationProvider(authenticationProvider())
-        //     .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
+        // .csrf(csrf -> csrf.disable())
+        // .headers(headers -> headers
+        // .frameOptions(frameOptions -> frameOptions.disable()))
+        // .authorizeHttpRequests(req -> req
+        // .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        // .requestMatchers("/api/auth/*").permitAll()
+        // .requestMatchers("/h2-console/**").permitAll()
 
-        //     return http.build();
+        // .anyRequest()
+        // .authenticated())
+        // .exceptionHandling(exception -> exception
+        // .authenticationEntryPoint(jwtAuthEntryPoint))
+        // .sessionManagement(management -> management
+        // .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        // .authenticationProvider(authenticationProvider())
+        // .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
+
+        // return http.build();
 
         // }
         
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            http
-                .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers
-                    .frameOptions(frameOptions -> frameOptions.disable()))
-                .authorizeHttpRequests(req -> req
-                    .anyRequest().permitAll() // Allow all routes
-                )
-                .exceptionHandling(exception -> exception
-                    .authenticationEntryPoint(jwtAuthEntryPoint))
-                .sessionManagement(management -> management
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
+                http
+                                .csrf(csrf -> csrf.disable())
+                                .headers(headers -> headers
+                                                .frameOptions(frameOptions -> frameOptions.disable()))
+                                .authorizeHttpRequests(req -> req
+                                                .anyRequest().permitAll() // Allow all routes
+                                )
+                                .exceptionHandling(exception -> exception
+                                                .authenticationEntryPoint(jwtAuthEntryPoint))
+                                .sessionManagement(management -> management
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authenticationProvider(authenticationProvider())
+                                .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
-            return http.build();
+                return http.build();
         }
+
         @Bean
         public AuthenticationProvider authenticationProvider() {
-            DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-            provider.setUserDetailsService(userDetailsService);
-            provider.setPasswordEncoder(passwordEncoder);
-            return provider;
+                DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+                provider.setUserDetailsService(userDetailsService);
+                provider.setPasswordEncoder(passwordEncoder);
+                return provider;
         }
 }

@@ -5,6 +5,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+
+import ucll.be.procyclingscraper.dto.CyclistDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.TeamRepository;
@@ -29,15 +31,28 @@ public class CyclistService {
     @Autowired
     private TeamRepository teamRepository;
 
-    public List<Cyclist> getCyclists() {
-        return cyclistRepository.findAll();
+    public List<CyclistDTO> getCyclists() {
+        List<Cyclist> cyclists = cyclistRepository.findAll();
+        return cyclists.stream()
+                .map(cyclist -> new CyclistDTO(
+                        cyclist.getId(),
+                        cyclist.getName(),
+                        cyclist.getRanking(),
+                        cyclist.getAge(),
+                        cyclist.getCountry(),
+                        cyclist.getCyclistUrl(),
+                        cyclist.getTeam(),
+                        cyclist.getUpcomingRaces(),
+                        ""))
+                .collect(java.util.stream.Collectors.toList());
     }
+
     public List<Cyclist> scrapeCyclists() {
         List<Team> teams = teamRepository.findAll();
         if (teams.isEmpty()) {
             return null;
         }
-        
+
         List<Cyclist> cyclists = new ArrayList<>();
 
         for (Team team : teams) {
@@ -85,10 +100,10 @@ public class CyclistService {
 
     public Cyclist scrapeCyclistDetails(String riderUrl) {
         Cyclist cyclist = cyclistRepository.findByCyclistUrl(riderUrl);
-        if(cyclist == null){
+        if (cyclist == null) {
             cyclist = new Cyclist();
         }
-        
+
         try {
             Document doc = Jsoup.connect(riderUrl)
                     .userAgent(USER_AGENT)
@@ -98,7 +113,9 @@ public class CyclistService {
             cyclist.setName(name);
             System.out.println(name);
 
-            Element ageElement = doc.select("body > div.wrapper > div.content > div.page-content.page-object.default > div:nth-child(2) > div.left.w75.mb_w100 > div.left.w50.mb_w100 > div.rdr-info-cont").first();
+            Element ageElement = doc.select(
+                    "body > div.wrapper > div.content > div.page-content.page-object.default > div:nth-child(2) > div.left.w75.mb_w100 > div.left.w50.mb_w100 > div.rdr-info-cont")
+                    .first();
             if (ageElement != null) {
                 String ageText = ageElement.ownText().trim();
                 String age = extractAge(ageText);
@@ -127,16 +144,17 @@ public class CyclistService {
                 System.err.println("Could not find the ranking element for URL: " + riderUrl);
             }
 
-            Element countryElement = doc.select("body > div.wrapper > div.content > div.page-content.page-object.default > div:nth-child(2) > div.left.w75.mb_w100 > div.left.w50.mb_w100 > div.rdr-info-cont > a").first();
+            Element countryElement = doc.select(
+                    "body > div.wrapper > div.content > div.page-content.page-object.default > div:nth-child(2) > div.left.w75.mb_w100 > div.left.w50.mb_w100 > div.rdr-info-cont > a")
+                    .first();
             if (countryElement != null) {
                 String countryText = countryElement.ownText().trim();
                 System.out.println("Country: " + countryText);
                 cyclist.setCountry(countryText);
-            }
-            else {
+            } else {
                 System.err.println("Could not find the country element for URL: " + riderUrl);
             }
-            
+
             // getUpcomingRaces();
 
         } catch (IOException e) {
@@ -144,6 +162,19 @@ public class CyclistService {
             e.printStackTrace();
         }
         return cyclist;
+    }
+
+    public CyclistDTO mapToCyclistDTO(Cyclist cyclist) {
+        return new CyclistDTO(
+                cyclist.getId(),
+                cyclist.getName(),
+                cyclist.getRanking(),
+                cyclist.getAge(),
+                cyclist.getCountry(),
+                cyclist.getCyclistUrl(),
+                cyclist.getTeam(), // or map to a TeamDTO if needed
+                cyclist.getUpcomingRaces(),
+                "");
     }
 
     private String extractAge(String dobText) {
@@ -200,5 +231,5 @@ public class CyclistService {
         System.out.println("No cyclist found for name: " + riderName);
         return null;
     }
-    
+
 }

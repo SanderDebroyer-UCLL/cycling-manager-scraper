@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import ucll.be.procyclingscraper.dto.CyclistDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.service.CyclistService;
 
@@ -26,7 +28,7 @@ public class CyclistController {
     }
 
     @GetMapping()
-    public List<Cyclist> getCyclists() {
+    public List<CyclistDTO> getCyclists() {
         return cyclistService.getCyclists();
     }
 

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import ucll.be.procyclingscraper.dto.CreateUserData;
+import ucll.be.procyclingscraper.dto.UserDTO;
 import ucll.be.procyclingscraper.model.JwtReq;
 import ucll.be.procyclingscraper.model.JwtRes;
 import ucll.be.procyclingscraper.model.User;
@@ -45,7 +46,7 @@ public class AuthController {
     private UserService userService;
 
     @GetMapping("/user")
-    public User getLoggedInUser(@RequestHeader(name = "Authorization") String token) {
+    public UserDTO getLoggedInUser(@RequestHeader(name = "Authorization") String token) {
         String email = jwtHelper.getUsernameFromToken(token.substring(7));
         return userService.getLoggedInUser(email);
     }

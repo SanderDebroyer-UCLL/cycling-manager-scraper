@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.dto.RaceDTO;
 import ucll.be.procyclingscraper.dto.RaceModel;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.service.RaceService;
@@ -30,7 +31,7 @@ public class RaceController {
     }
 
     @GetMapping()
-    public List<Race> getRaces() {
+    public List<RaceDTO> getRaces() {
         return raceService.getRaces();
     }
 

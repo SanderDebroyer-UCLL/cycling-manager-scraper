@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.hibernate.service.spi.ServiceException;
 
-import ucll.be.procyclingscraper.model.User;
+import ucll.be.procyclingscraper.dto.UserDTO;
 import ucll.be.procyclingscraper.service.UserService;
 
 @RestController
@@ -23,7 +23,7 @@ public class UserController {
     private UserService userService;
 
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         return userService.getAllUsers();
     }
 

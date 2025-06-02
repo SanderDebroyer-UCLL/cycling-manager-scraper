@@ -3,8 +3,8 @@ package ucll.be.procyclingscraper.dto;
 import lombok.Value;
 
 @Value
-public class StagePointsPerUserPerCyclistDTO {
+public class PointsPerUserDTO {
     private int points;
-    private String cyclistName;
+    private String fullName;
     private Long userId;
 }
