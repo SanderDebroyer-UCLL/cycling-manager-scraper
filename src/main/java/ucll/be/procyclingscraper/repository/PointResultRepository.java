@@ -6,7 +6,6 @@ import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
-import ucll.be.procyclingscraper.model.TimeResult;
 
 @Repository
 public interface PointResultRepository extends JpaRepository<PointResult,Long> {    

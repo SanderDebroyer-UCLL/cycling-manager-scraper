@@ -31,16 +31,6 @@ public class StageController {
         return stageService.getStages();
     }
 
-    @GetMapping("/stageResult/points/{id}")
-    public List<Cyclist> getStagePointsFromStageId(@PathVariable Long id) {
-        return stageService.findCyclistInByStageId(id, "POINTS");
-    }
-
-    @GetMapping("/stageResult/kom/{id}")
-    public List<Cyclist> getStageKomFromStageId(@PathVariable Long id) {
-        return stageService.findCyclistInByStageId(id, "KOM");
-    }
-
     @GetMapping("/stageDTOs")
     public List<StageModel> getStageDTOs() {
         return stageService.getStageDTOs();
