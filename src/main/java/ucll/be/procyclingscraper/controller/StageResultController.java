@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
+import ucll.be.procyclingscraper.model.Cyclist;
+import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.StageResultService;
@@ -26,18 +29,28 @@ public class StageResultController {
     private StageResultService stageResultService;
 
     @GetMapping("/scrape/stage")
-    public List<TimeResult> scrapeResults() {
+    public List<TimeResult> scrapeResults() throws IOException {
         return stageResultService.scrapeTimeResult(ScrapeResultType.STAGE);
     }
 
     @GetMapping("/scrape/{raceId}")
-    public List<TimeResult> scrapeResults(@PathVariable Long raceId) {
-        return stageResultService.scrapeTimeResultByRace(ScrapeResultType.STAGE, raceId);
+    public List<TimeResult> scrapeResults(@PathVariable Long raceId) throws IOException {
+        return stageResultService.scrapeTimeResultForRace(ScrapeResultType.STAGE, raceId);
     }
 
     @GetMapping("/scrape/gc")
-    public List<TimeResult> scrapeGcPerStage() {
+    public List<TimeResult> scrapeGcPerStage() throws IOException {
         return stageResultService.scrapeTimeResult(ScrapeResultType.GC);
+    }
+
+    @GetMapping("/scrape/points")
+    public List<PointResult> scrapePointsPerStage() {
+        return stageResultService.scrapePointResult(ScrapeResultType.POINTS);
+    }
+
+    @GetMapping("/scrape/kom")
+    public List<PointResult> scrapeKomPerStage() {
+        return stageResultService.scrapePointResult(ScrapeResultType.KOM);
     }
 
     @GetMapping("/scrape/youth")
@@ -48,6 +61,16 @@ public class StageResultController {
     @GetMapping("")
     public List<TimeResult> getAllResults() {
         return stageResultService.findAllResults();
+    }
+
+    @GetMapping("/points/{id}")
+    public List<Cyclist> getStagePointsFromStageId(@PathVariable Long id) {
+        return stageResultService.findCyclistInByStageId(id, "POINTS");
+    }
+
+    @GetMapping("/kom/{id}")
+    public List<Cyclist> getStageKomFromStageId(@PathVariable Long id) {
+        return stageResultService.findCyclistInByStageId(id, "KOM");
     }
 
     @DeleteMapping("/delete")

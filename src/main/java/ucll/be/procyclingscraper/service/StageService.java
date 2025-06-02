@@ -36,32 +36,49 @@ public class StageService {
     @Autowired
     CyclistRepository cyclistRepository;
 
+    @Autowired
+    CyclistService cyclistService;
+
     public List<Stage> getStages() {
         return stageRepository.findAll();
+    }
+
+    public List<StageModel> getStageDTOs() {
+        List<Stage> stages = stageRepository.findAll();
+        List<StageModel> stageDTOs = new ArrayList<>();
+        for (Stage stage : stages) {
+            StageModel stageModel = new StageModel();
+            stageModel.setId(stage.getId());
+            stageModel.setName(stage.getName());
+            stageModel.setStageUrl(stage.getStageUrl());
+            stageDTOs.add(stageModel);
+        }
+
+        return stageDTOs;
     }
 
     public List<Stage> scrapeStages() {
         List<Race> races = raceRepository.findAll(Sort.by("id"));
         System.out.println("Number of races found in the database: " + races.size());
         List<Stage> allStages = new ArrayList<>();
-    
+
         for (Race race : races) {
             System.out.println("Current processed race: " + race.getName());
             List<Stage> stagesList = new ArrayList<>();
-    
+
             try {
                 Document doc = Jsoup.connect(race.getRaceUrl())
                         .userAgent(USER_AGENT)
                         .get();
-    
+
                 Elements tables = doc.select("table.basic");
                 logger.debug("Number of tables found: {}", tables.size());
-    
+
                 for (Element table : tables) {
                     if (isStagesTable(table)) {
                         Elements stageRows = table.select("tbody > tr");
                         logger.debug("Number of stage rows found: {}", stageRows.size());
-    
+
                         for (int i = 0; i < stageRows.size() - 1; i++) {
                             Element stageRow = stageRows.get(i);
                             Elements cells = stageRow.select("td");
@@ -72,10 +89,10 @@ public class StageService {
                                 if (stageUrl.isEmpty() || stageUrl.isBlank()) {
                                     continue;
                                 }
-                                
+
                                 Stage stage = stageRepository.findByName(stageName);
                                 if (stage == null) {
-                                    stage = new Stage(); 
+                                    stage = new Stage();
                                 }
                                 stage.setStageUrl(stageUrl);
                                 stage.setDate(date);
@@ -84,7 +101,7 @@ public class StageService {
                                 stagesList.add(scrapeStageDetails(stage));
                             }
                         }
-    
+
                         List<Stage> existingStages = race.getStages();
                         existingStages.removeIf(stage -> !stagesList.contains(stage));
                         System.out.println("Existing stages of race" + race.getName() + ": " + existingStages.size());
@@ -94,7 +111,7 @@ public class StageService {
                         break;
                     }
                 }
-    
+
             } catch (IOException e) {
                 logger.error("Error scraping stage details from URL: {}", race.getRaceUrl(), e);
             }
@@ -102,31 +119,31 @@ public class StageService {
         }
         return allStages;
     }
-    
+
     private boolean isStagesTable(Element table) {
         Elements headers = table.select("thead th");
         return headers.size() > 0 && "Date".equals(headers.get(0).text().trim());
     }
-    
+
     private Stage scrapeStageDetails(Stage stage) {
         try {
             Document doc = Jsoup.connect(stage.getStageUrl())
                     .userAgent(USER_AGENT)
                     .get();
-    
+
             Elements infoTable = doc.select("div.w30.right.mb_w100 > div > ul.infolist > li");
-    
+
             for (Element row : infoTable) {
                 Elements cells = row.select("div");
                 if (cells.size() >= 2) {
                     String key = cells.get(0).text().trim();
                     String value = cells.get(1).text().trim();
-                   
+
                     if ("Start time:".equals(key)) {
                         stage.setStartTime(value);
                     } else if ("Distance:".equals(key)) {
                         if (!value.isEmpty()) {
-                        stage.setDistance(Double.parseDouble(value.replaceAll("[^0-9.]", "")));
+                            stage.setDistance(Double.parseDouble(value.replaceAll("[^0-9.]", "")));
                         }
                     } else if ("Parcours type:".equals(key)) {
                         System.out.println("In de if statement");
@@ -138,7 +155,7 @@ public class StageService {
                         }
                     } else if ("Vertical meters:".equals(key)) {
                         if (!value.isEmpty()) {
-                        stage.setVerticalMeters(Double.parseDouble(value.replaceAll("[^0-9.]", "")));
+                            stage.setVerticalMeters(Double.parseDouble(value.replaceAll("[^0-9.]", "")));
                         }
                     } else if ("Departure:".equals(key)) {
                         stage.setDeparture(value);
@@ -147,7 +164,7 @@ public class StageService {
                     }
                 }
             }
-    
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -174,19 +191,5 @@ public class StageService {
             default:
                 stage.setParcoursType(null);
         }
-    }
-
-    public List<StageModel> getStageDTOs() {
-        List<Stage> stages = stageRepository.findAll();
-        List<StageModel> stageDTOs = new ArrayList<>();
-        for (Stage stage: stages) {
-            StageModel stageModel = new StageModel();
-            stageModel.setId(stage.getId());
-            stageModel.setName(stage.getName());
-            stageModel.setStageUrl(stage.getStageUrl());
-            stageDTOs.add(stageModel);
-        }
-
-        return stageDTOs;
     }
 }

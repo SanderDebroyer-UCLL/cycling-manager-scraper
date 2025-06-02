@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.hibernate.service.spi.ServiceException;
 
-import ucll.be.procyclingscraper.model.User;
+import ucll.be.procyclingscraper.dto.UserDTO;
 import ucll.be.procyclingscraper.service.UserService;
 
 @RestController
@@ -23,12 +23,13 @@ public class UserController {
     private UserService userService;
 
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         return userService.getAllUsers();
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleDomainException(MethodArgumentNotValidException ex, WebRequest request) {
+    public ResponseEntity<Map<String, String>> handleDomainException(MethodArgumentNotValidException ex,
+            WebRequest request) {
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("DomainException: ", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

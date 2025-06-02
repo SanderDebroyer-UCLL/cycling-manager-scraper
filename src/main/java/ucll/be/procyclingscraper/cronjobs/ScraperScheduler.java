@@ -1,5 +1,7 @@
 package ucll.be.procyclingscraper.cronjobs;
 
+import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -28,7 +30,7 @@ public class ScraperScheduler {
     private StageResultService stageResultService;
 
     @Scheduled(cron = "0 * 1 * * *")
-    public void runRaceScraper() {
+    public void runRaceScraper() throws IOException {
         teamService.scrape();
 
         cyclistService.scrapeCyclists();
@@ -37,7 +39,7 @@ public class ScraperScheduler {
 
         stageService.scrapeStages();
 
-        stageResultService.getStageResultsForAllStagesICompetitions();
+        stageResultService.getStageResultsForAllStagesInCompetitions();
     }
 
     @Scheduled(cron = "0 * 2 * * *")
