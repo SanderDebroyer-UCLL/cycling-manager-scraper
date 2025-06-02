@@ -39,16 +39,6 @@ public class StageResultController {
     public List<TimeResult> scrapeGcPerStage() {
         return stageResultService.scrapeTimeResult(ScrapeResultType.GC);
     }
-
-    @GetMapping("/scrape/stageResults/points")
-    public List<PointResult> scrapePointsPerStage() {
-        return stageResultService.scrapePointResult(ScrapeResultType.POINTS);
-    }
-
-    @GetMapping("/scrape/stageResults/kom")
-    public List<PointResult> scrapeKomPerStage() {
-        return stageResultService.scrapePointResult(ScrapeResultType.KOM);
-    }
     
     @GetMapping("")
     public List<TimeResult> getAllResults() {
