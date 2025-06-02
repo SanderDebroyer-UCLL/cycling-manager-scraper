@@ -82,9 +82,6 @@ public class UserTeamService {
                         }
                 }
 
-                System.out.println("Stage results found: " + stageResults.size());
-                System.out.println("Race results found: " + raceResults.size());
-
                 // Get all active MAIN cyclists from assignments
                 Set<Cyclist> activeMainCyclists = userTeams.stream()
                                 .flatMap(userTeam -> userTeam.getCyclistAssignments().stream())
@@ -180,8 +177,7 @@ public class UserTeamService {
                 return cyclistDTOs;
         }
 
-        public List<UserTeam> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO,
-                        int currentStage) {
+        public List<UserTeam> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
 
                 UserTeam userTeam = userTeamRepository.findById(userTeamId)
                                 .orElseThrow(() -> new RuntimeException("User team not found with ID: " + userTeamId));
@@ -192,31 +188,46 @@ public class UserTeamService {
                 Set<Long> updatedMain = updatedMainIds.stream().map(Long::parseLong).collect(Collectors.toSet());
                 Set<Long> updatedReserve = updatedReserveIds.stream().map(Long::parseLong).collect(Collectors.toSet());
 
+                Competition competition = competitionRepository.findById(userTeam.getCompetitionId())
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Competition not found with ID: " + userTeam.getCompetitionId()));
+
+                Integer currentEvent = competition.getCurrentEvent();
+
+                System.out.println("Current event: " + currentEvent);
+
                 List<CyclistAssignment> existingAssignments = userTeam.getCyclistAssignments();
 
-                // 1. Mark current assignments as expired if they're not in the updated lists
+                // 1. Handle existing assignments - expire those not in updated lists or with
+                // wrong role
                 for (CyclistAssignment assignment : existingAssignments) {
-                        if (assignment.getToEvent() == null) {
+                        if (assignment.getToEvent() == null) { // Only process active assignments
                                 Long cyclistId = assignment.getCyclist().getId();
-                                boolean stillInMain = updatedMain.contains(cyclistId)
-                                                && assignment.getRole() == CyclistRole.MAIN;
-                                boolean stillInReserve = updatedReserve.contains(cyclistId)
-                                                && assignment.getRole() == CyclistRole.RESERVE;
+                                CyclistRole currentRole = assignment.getRole();
 
-                                if (!(stillInMain || stillInReserve)) {
-                                        assignment.setToEvent(currentStage - 1);
+                                boolean shouldKeepAssignment = false;
+
+                                if (currentRole == CyclistRole.MAIN && updatedMain.contains(cyclistId)) {
+                                        shouldKeepAssignment = true;
+                                } else if (currentRole == CyclistRole.RESERVE && updatedReserve.contains(cyclistId)) {
+                                        shouldKeepAssignment = true;
+                                }
+
+                                if (!shouldKeepAssignment) {
+                                        assignment.setToEvent(currentEvent - 1);
                                 }
                         }
                 }
 
-                // 2. Add new assignments if the cyclist is new or their role changed
+                // 2. Add new assignments for MAIN cyclists
                 for (Long cyclistId : updatedMain) {
-                        boolean alreadyAssigned = existingAssignments.stream()
+                        // Check if cyclist already has an active MAIN assignment
+                        boolean hasActiveMainAssignment = existingAssignments.stream()
                                         .anyMatch(a -> a.getCyclist().getId().equals(cyclistId)
                                                         && a.getRole() == CyclistRole.MAIN
-                                                        && a.getFromEvent() == currentStage);
+                                                        && a.getToEvent() == null);
 
-                        if (!alreadyAssigned) {
+                        if (!hasActiveMainAssignment) {
                                 Cyclist cyclist = cyclistRepository.findById(cyclistId)
                                                 .orElseThrow(() -> new RuntimeException(
                                                                 "Cyclist not found: " + cyclistId));
@@ -225,7 +236,7 @@ public class UserTeamService {
                                                 .userTeam(userTeam)
                                                 .cyclist(cyclist)
                                                 .role(CyclistRole.MAIN)
-                                                .fromEvent(currentStage)
+                                                .fromEvent(currentEvent)
                                                 .toEvent(null)
                                                 .build();
 
@@ -233,13 +244,15 @@ public class UserTeamService {
                         }
                 }
 
+                // 3. Add new assignments for RESERVE cyclists
                 for (Long cyclistId : updatedReserve) {
-                        boolean alreadyAssigned = existingAssignments.stream()
+                        // Check if cyclist already has an active RESERVE assignment
+                        boolean hasActiveReserveAssignment = existingAssignments.stream()
                                         .anyMatch(a -> a.getCyclist().getId().equals(cyclistId)
                                                         && a.getRole() == CyclistRole.RESERVE
-                                                        && a.getFromEvent() == currentStage);
+                                                        && a.getToEvent() == null);
 
-                        if (!alreadyAssigned) {
+                        if (!hasActiveReserveAssignment) {
                                 Cyclist cyclist = cyclistRepository.findById(cyclistId)
                                                 .orElseThrow(() -> new RuntimeException(
                                                                 "Cyclist not found: " + cyclistId));
@@ -248,7 +261,7 @@ public class UserTeamService {
                                                 .userTeam(userTeam)
                                                 .cyclist(cyclist)
                                                 .role(CyclistRole.RESERVE)
-                                                .fromEvent(currentStage)
+                                                .fromEvent(currentEvent)
                                                 .toEvent(null)
                                                 .build();
 
@@ -337,13 +350,13 @@ public class UserTeamService {
                         throw new RuntimeException("No available slot for this cyclist");
                 }
 
-                System.out.println("current stage: " + competition.getCurrentStage());
+                System.out.println("current stage: " + competition.getCurrentEvent());
 
                 // Create new assignment
                 CyclistAssignment assignment = CyclistAssignment.builder()
                                 .cyclist(cyclist)
                                 .userTeam(userTeam)
-                                .fromEvent(competition.getCurrentStage())
+                                .fromEvent(roleToAssign == CyclistRole.MAIN ? 1 : null)
                                 .toEvent(null)
                                 .role(roleToAssign)
                                 .build();

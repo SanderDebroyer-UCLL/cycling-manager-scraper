@@ -310,11 +310,7 @@ public class CompetitionService {
                 System.out.println("Race with ID " + raceId + " not found.");
                 continue;
             }
-            if (race == null) {
-                throw new IllegalArgumentException("Race with ID " + raceId + " not found.");
-            } else {
-                competition.getRaces().add(race);
-            }
+            competition.getRaces().add(race);
         }
 
         // Save updated competition with users, races, and picks
