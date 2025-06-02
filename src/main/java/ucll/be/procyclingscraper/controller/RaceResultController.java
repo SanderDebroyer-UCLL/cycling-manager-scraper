@@ -24,7 +24,6 @@ public class RaceResultController {
 
     @GetMapping("/scrape")
     public List<RaceResult> getOneDayRaceResult() throws IOException {
-        System.out.println("I entered the controller");
         return raceResultService.scrapeOneDayRaceResults();
     }
 
