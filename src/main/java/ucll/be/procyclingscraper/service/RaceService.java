@@ -78,6 +78,10 @@ public class RaceService {
         return raceDTOs;
     }
 
+    public List<Race> getRacesComplete() {
+        return raceRepository.findAll();
+    }
+
     public String getRaceUrlByName(String name) {
         Race race = raceRepository.findByName(name.trim());
         if (race == null) {
@@ -345,6 +349,10 @@ public class RaceService {
             raceDTOs.add(raceModel);
         }
         return raceDTOs;
+    }
+
+    public Race getRaceById(Long id) {
+        return raceRepository.findById(id).orElse(null);
     }
 
 }
