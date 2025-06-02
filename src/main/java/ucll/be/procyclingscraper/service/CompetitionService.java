@@ -304,8 +304,12 @@ public class CompetitionService {
         }
 
         for (String raceId : competitionData.getRaceIds()) {
-            Race race = raceRepository.findRaceById(Integer.parseInt(raceId));
 
+            Race race = raceRepository.findById(Long.parseLong(raceId)).orElse(null);
+            if (race == null) {
+                System.out.println("Race with ID " + raceId + " not found.");
+                continue;
+            }
             if (race == null) {
                 throw new IllegalArgumentException("Race with ID " + raceId + " not found.");
             } else {

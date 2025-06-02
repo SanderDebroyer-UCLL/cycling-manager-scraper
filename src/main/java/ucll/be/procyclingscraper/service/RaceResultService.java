@@ -273,7 +273,11 @@ public class RaceResultService {
     }
 
     public List<RaceResultWithCyclistDTO> getRaceResultByRaceId(String raceId) {
-        Race race = raceRepository.findRaceById(Integer.parseInt(raceId));
+        Race race = raceRepository.findById(Long.parseLong(raceId)).orElse(null);
+        if (race == null) {
+            System.out.println("Race with ID " + raceId + " not found.");
+            return new ArrayList<>();
+        }
         List<RaceResult> raceResults = race.getRaceResult();
 
         return raceResults.stream()
@@ -300,7 +304,7 @@ public class RaceResultService {
     }
 
     public RaceResult getRaceResultByRaceIdAndCyclistId(String raceId, String cyclistId) {
-        Race race = raceRepository.findRaceById(Integer.parseInt(raceId));
+        Race race = raceRepository.findById(Long.parseLong(raceId)).orElse(null);
         Cyclist cyclist = cyclistRepository.findCyclistById(Integer.parseInt(cyclistId));
         RaceResult raceResult = raceResultRepository.findRaceResultByRaceAndCyclist(race, cyclist);
         return raceResult;
