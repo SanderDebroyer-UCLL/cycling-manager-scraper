@@ -39,7 +39,7 @@ public class StageResultController {
     public List<TimeResult> scrapeGcPerStage() {
         return stageResultService.scrapeTimeResult(ScrapeResultType.GC);
     }
-
+    
     @GetMapping("")
     public List<TimeResult> getAllResults() {
         return stageResultService.findAllResults();
