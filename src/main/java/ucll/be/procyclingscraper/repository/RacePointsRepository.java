@@ -13,4 +13,6 @@ public interface RacePointsRepository extends JpaRepository<RacePoints, Long> {
     List<RacePoints> findByCompetition_idAndRaceResult_Race_id(Long competitionId, Long raceId);
 
     boolean existsByRaceResultAndReason(RaceResult raceResult, String reason);
+
+    boolean existsByRaceIdAndReason(Long raceId, String reason);
 }

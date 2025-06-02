@@ -110,7 +110,7 @@ public class StagePointsService {
 
         for (UserTeam userTeam : userTeams) {
             List<Cyclist> teamCyclists = userTeam.getCyclistAssignments().stream()
-                    .filter(a -> a.getRole() == CyclistRole.MAIN && isCyclistActiveInStage(a, currentStageNumber))
+                    .filter(a -> isCyclistActiveInStage(a, currentStageNumber))
                     .map(CyclistAssignment::getCyclist)
                     .toList();
 
@@ -133,8 +133,18 @@ public class StagePointsService {
 
                     if (resultOption.isPresent()) {
                         StageResult result = resultOption.get();
+                        if ("OTL".equals(result.getPosition()) ||
+                                "DNF".equals(result.getPosition()) ||
+                                "DQS".equals(result.getPosition()) ||
+                                "DNS".equals(result.getPosition())) {
+                            continue; // Skip these results
+                        }
                         position = Integer.parseInt(result.getPosition());
                         points = calculatePoints(resultType, position);
+
+                        System.out.println("Calculated points for cyclist " + cyclist.getName() +
+                                " in stage " + stage.getName() + ": " + points);
+
                     } else {
                         points = 0;
                     }
@@ -153,7 +163,12 @@ public class StagePointsService {
                     String reason = resultType.name() + " - position " + position + " - cyclist " + cyclist.getName()
                             + " - user " + userTeam.getUser().getUsername();
 
-                    boolean exists = stagePointsRepository.existsByStageResultAndReason(matchingStageResult, reason);
+                    boolean exists = stagePointsRepository.existsByStageIdAndReason(stageId, reason);
+                    System.out.println("Checking existence for reason: '" + reason + "'");
+                    System.out.println("StageResult ID: " + matchingStageResult.getId());
+                    System.out.println("Exists: "
+                            + stagePointsRepository.existsByStageIdAndReason(stageId, reason));
+
                     if (exists) {
                         continue;
                     }
@@ -163,6 +178,7 @@ public class StagePointsService {
                             .stageResult(matchingStageResult)
                             .value(points)
                             .reason(reason)
+                            .stageId(stageId)
                             .user(userTeam.getUser())
                             .build();
 
@@ -285,31 +301,13 @@ public class StagePointsService {
 
         List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
 
-        List<StagePoints> stagePointsList = stagePointsRepository.findByCompetition_idAndStageResult_Stage_id(
-                competitionId,
-                stageId);
-
         List<PointsPerUserDTO> result = new ArrayList<>();
 
         for (UserTeam userTeam : userTeams) {
-            int totalPoints = 0;
-
-            // Get active MAIN cyclist assignments
-            List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()
-                    .filter(a -> a.getRole() == CyclistRole.MAIN && a.getToEvent() == null)
-                    .toList();
-
-            for (CyclistAssignment assignment : mainAssignments) {
-                Cyclist cyclist = assignment.getCyclist();
-
-                List<StagePoints> cyclistStagePoints = stagePointsList.stream()
-                        .filter(sp -> sp.getStageResult().getCyclist().getId().equals(cyclist.getId()))
-                        .toList();
-
-                if (!cyclistStagePoints.isEmpty()) {
-                    totalPoints += cyclistStagePoints.stream().mapToInt(StagePoints::getValue).sum();
-                }
-            }
+            int totalPoints = userTeam.getUser().getStagePoints().stream()
+                    .filter(sp -> sp.getStageResult().getStage().getId().equals(stageId))
+                    .mapToInt(StagePoints::getValue)
+                    .sum();
 
             result.add(new PointsPerUserDTO(
                     totalPoints,
@@ -333,8 +331,6 @@ public class StagePointsService {
                 .toList();
 
         Set<StagePoints> stagePoints = competition.getStagePoints();
-
-        System.out.println(stageResults.size() + " stage results found for competition " + competitionId);
 
         // Active Cyclist Assignments
         List<CyclistAssignment> mainAssignments = userTeam.getCyclistAssignments().stream()

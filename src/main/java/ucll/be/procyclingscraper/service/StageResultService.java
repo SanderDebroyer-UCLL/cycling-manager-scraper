@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -199,7 +200,7 @@ public class StageResultService {
     public List<PointResult> scrapePointResult(ScrapeResultType scrapeResultType) {
         List<PointResult> results = new ArrayList<>();
         int resultCount = 0;
-        final int MAX_RESULTS = 1000;
+        final int MAX_RESULTS = 10000;
         try {
             List<Race> races = raceRepository.findAll();
 
@@ -361,7 +362,6 @@ public class StageResultService {
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
         System.out.println("Starting scraping...");
-        int resultCount = 0;
         List<Race> races = raceRepository.findAll();
 
         for (Race race : races) {
@@ -376,9 +376,10 @@ public class StageResultService {
         return allResults;
     }
 
-    private static final int MAX_RESULTS = 1000;
+    private static final int MAX_RESULTS = 10000;
 
-    private List<TimeResult> scrapeTimeResultByRace(ScrapeResultType scrapeResultType, List<Stage> stages, Race race) throws IOException {
+    private List<TimeResult> scrapeTimeResultByRace(ScrapeResultType scrapeResultType, List<Stage> stages, Race race)
+            throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
         int resultCount = 0;
 
@@ -451,7 +452,8 @@ public class StageResultService {
             }
             if (scrapeResultType == ScrapeResultType.GC) {
                 // Reset results for each stage to avoid accumulating across stages
-                stageResults.sort((r1, r2) -> r1.getTime().compareTo(r2.getTime()));
+                stageResults
+                        .sort(Comparator.comparing(TimeResult::getTime, Comparator.nullsLast(LocalTime::compareTo)));
                 System.out.println("Sorting results by time for GC stage: " + stage.getName());
                 int positionCounter = 1;
                 for (TimeResult r : stageResults) {
@@ -473,19 +475,15 @@ public class StageResultService {
         return allResults;
     }
 
-    
     public List<TimeResult> scrapeTimeResultForRace(ScrapeResultType scrapeResultType, Long raceId) throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
         System.out.println("Starting scraping...");
-        int resultCount = 0;
         Race race;
         if (raceId != null) {
             race = raceRepository.findById(raceId).get();
-        }
-        else {
+        } else {
             return allResults;
         }
-
 
         LocalDate raceStartTime = LocalDate.parse(race.getStartDate());
         if (raceStartTime.isAfter(LocalDate.now())) {
@@ -494,7 +492,7 @@ public class StageResultService {
         }
         List<Stage> stages = race.getStages();
         allResults.addAll(scrapeTimeResultByRace(scrapeResultType, stages, race));
-        
+
         return allResults;
     }
 
@@ -666,9 +664,9 @@ public class StageResultService {
     private Elements resultRows(Document doc, Stage stage, ScrapeResultType scrapeResultType) {
         Elements tables = doc.select("table.results");
         System.out.println("Number of tables found: " + tables.size());
-    
+
         Elements resultRows = new Elements();
-    
+
         try {
             if (scrapeResultType.equals(ScrapeResultType.GC)) {
                 if (stage.getName().startsWith("Stage 1 |")) {
@@ -695,12 +693,12 @@ public class StageResultService {
             System.out.println("Error while selecting result rows: " + e.getMessage());
             e.printStackTrace();
         }
-    
+
         if (resultRows.isEmpty()) {
             System.out.println("No rows found in the selected table.");
         }
-    
+
         return resultRows;
     }
-    
+
 }
