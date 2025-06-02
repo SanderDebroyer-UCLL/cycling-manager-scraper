@@ -744,20 +744,41 @@ public class StageResultService {
     private Elements resultRows(Document doc, Stage stage, ScrapeResultType scrapeResultType) {
         Elements tables = doc.select("table.results");
         System.out.println("Number of tables found: " + tables.size());
-
-        Elements resultRows;
-
-        if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
-            resultRows = tables.get(0).select("tbody > tr");
-        } else if (scrapeResultType.equals(ScrapeResultType.GC)) {
-            resultRows = tables.get(1).select("tbody > tr");
-        } else {
-            resultRows = tables.get(0).select("tbody > tr");
+    
+        Elements resultRows = new Elements();
+    
+        try {
+            if (scrapeResultType.equals(ScrapeResultType.GC)) {
+                if (stage.getName().startsWith("Stage 1 |")) {
+                    if (tables.size() > 0) {
+                        resultRows = tables.get(0).select("tbody > tr");
+                    } else {
+                        System.out.println("Expected at least 1 table for GC Stage 1, found none.");
+                    }
+                } else {
+                    if (tables.size() > 1) {
+                        resultRows = tables.get(1).select("tbody > tr");
+                    } else {
+                        System.out.println("Expected at least 2 tables for GC, found: " + tables.size());
+                    }
+                }
+            } else {
+                if (tables.size() > 0) {
+                    resultRows = tables.get(0).select("tbody > tr");
+                } else {
+                    System.out.println("Expected at least 1 table for non-GC result, found none.");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error while selecting result rows: " + e.getMessage());
+            e.printStackTrace();
         }
-
+    
         if (resultRows.isEmpty()) {
             System.out.println("No rows found in the selected table.");
         }
+    
         return resultRows;
     }
+    
 }
