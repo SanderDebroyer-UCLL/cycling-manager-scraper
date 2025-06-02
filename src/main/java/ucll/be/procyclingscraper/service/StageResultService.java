@@ -183,8 +183,8 @@ public class StageResultService {
         for (Map.Entry<String, PointResult> entry : riderResultMap.entrySet()) {
             PointResult pointResult = entry.getValue();
             results.add(pointResult);
-            System.out.println(pointResult.getCyclist().getName() + " (ID:" + 
-                              pointResult.getCyclist().getId() + "): " +
+            System.out.println(pointResult.getCyclist().getName() + " (ID:" +
+                    pointResult.getCyclist().getId() + "): " +
                     pointResult.getPoint() + " total points");
         }
 
@@ -404,7 +404,7 @@ public class StageResultService {
 
                 Element timeElement = row.selectFirst("td.time.ar");
                 rawTime = timeElement != null ? timeElement.text() : "Unknown";
-                
+
                 Element riderElement = row.selectFirst("td:nth-child(7) a");
                 String riderName = riderElement != null ? riderElement.text() : "Unknown";
 
@@ -449,7 +449,7 @@ public class StageResultService {
                 saveResult(stage, timeResult, stageResults);
                 resultCount++;
             }
-            
+
             if (scrapeResultType == ScrapeResultType.GC) {
                 stageResults.sort((r1, r2) -> r1.getTime().compareTo(r2.getTime()));
                 System.out.println(" Sorting results by time for GC stage: " + stage.getName());
@@ -464,7 +464,7 @@ public class StageResultService {
                 allResults.addAll(stageResults);
                 stageResults.clear();
             }
-            
+
             if (resultCount >= MAX_RESULTS) {
                 System.out.println(" Reached MAX_RESULTS limit");
                 break;
@@ -476,7 +476,7 @@ public class StageResultService {
     public List<TimeResult> scrapeTimeResultForRace(ScrapeResultType scrapeResultType, Long raceId) throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
         System.out.println("Starting scraping for race ID: " + raceId);
-        
+
         Race race;
         if (raceId != null) {
             Optional<Race> optionalRace = raceRepository.findById(raceId);
@@ -494,11 +494,11 @@ public class StageResultService {
             System.out.println(" Race " + race.getName() + " has not started yet.");
             return allResults;
         }
-        
+
         List<Stage> stages = race.getStages();
         allResults.addAll(scrapeTimeResultByRace(scrapeResultType, stages, race));
         System.out.println(" Finished scraping for race ID: " + raceId + ", found " + allResults.size() + " results");
-        
+
         return allResults;
     }
 
@@ -584,14 +584,16 @@ public class StageResultService {
                 return parseToLocalTime(cleanedTime);
             } else if (cleanedTime.matches("\\d{1,2}:\\d{2}")) {
                 LocalTime parsed = parseToLocalTime(cleanedTime);
-                if (firstFinisherTime == null) return parsed;
+                if (firstFinisherTime == null)
+                    return parsed;
                 return firstFinisherTime
                         .plusMinutes(parsed.getMinute())
                         .plusSeconds(parsed.getSecond());
             } else if (cleanedTime.matches("\\d{1,2}\\.\\d{2}")) {
                 cleanedTime = cleanedTime.replace(".", ":");
                 LocalTime gapTime = parseToLocalTime(cleanedTime);
-                if (firstFinisherTime == null) return gapTime;
+                if (firstFinisherTime == null)
+                    return gapTime;
                 return firstFinisherTime
                         .plusMinutes(gapTime.getMinute())
                         .plusSeconds(gapTime.getSecond());
@@ -670,8 +672,8 @@ public class StageResultService {
                         System.out.println(" Expected at least 2 tables for GC, found: " + tables.size());
                     }
                 }
-            } else if (scrapeResultType.equals(ScrapeResultType.POINTS) || 
-                       scrapeResultType.equals(ScrapeResultType.KOM)) {
+            } else if (scrapeResultType.equals(ScrapeResultType.POINTS) ||
+                    scrapeResultType.equals(ScrapeResultType.KOM)) {
                 if (tables.size() > 2) {
                     resultRows = tables.get(2).select("tbody > tr");
                 } else if (tables.size() > 0) {
