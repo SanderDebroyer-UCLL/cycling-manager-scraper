@@ -46,7 +46,7 @@ public class StageResultController {
     }
 
     @DeleteMapping("/delete")
-    public void deleteAllResults() {
+    public void deleteAllResults() {    
         stageResultService.deleteAllResults();
     }
 
