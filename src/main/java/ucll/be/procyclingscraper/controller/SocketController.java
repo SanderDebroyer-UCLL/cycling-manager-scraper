@@ -37,16 +37,17 @@ public class SocketController {
         return competitionService.updateOrderToCompetition(orderMessage.getUsers(), orderMessage.getCompetitionId());
     }
 
-    @MessageMapping("/pick")    
+    @MessageMapping("/pick")
     @SendTo("/topic/picks")
     public PickNotification handlePick(PickMessage pickMessage) {
-        return userTeamService.addCyclistToUserTeam(pickMessage.getEmail(), pickMessage.getCyclistId() ,pickMessage.getCompetitionId());
+        return userTeamService.addCyclistToUserTeam(pickMessage.getEmail(), pickMessage.getCyclistId(),
+                pickMessage.getCompetitionId());
     }
 
     @MessageMapping("/count")
     @SendTo("/topic/count")
     public CountNotification handleCount(CountMessage countMessage) {
-        return competitionService.handleCyclistCount(countMessage.getMaxMainCyclists(), countMessage.getMaxReserveCyclists(), countMessage.getCompetitionId());
+        return competitionService.handleCyclistCount(countMessage.getMaxMainCyclists(),
+                countMessage.getMaxReserveCyclists(), countMessage.getCompetitionId());
     }
 }
-
