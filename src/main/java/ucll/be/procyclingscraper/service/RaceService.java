@@ -5,6 +5,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.RaceDTO;
@@ -92,7 +93,6 @@ public class RaceService {
 
     public List<Race> scrapeRaces() {
         List<Race> races = new ArrayList<>();
-        List<Stage> stages = new ArrayList<>();
 
         try {
             Document doc = Jsoup.connect(
@@ -153,7 +153,7 @@ public class RaceService {
                         }
                         List<Cyclist> startlist = scrapeAndSaveStartlist(raceUrl + "/startlist", race);
                         race.setStartList(startlist);
-                        race.setStages(stages);
+                        race.setStages(new ArrayList<>());
                         races.add(race);
                         raceRepository.save(race);
                     } catch (Exception e) {
@@ -255,12 +255,25 @@ public class RaceService {
                 } else {
                     System.out.println("Verwerk nationale selectie: " + teamName);
                 }
+    
+                Elements listElements = ridersCont.select("ul li");
+                
+                for (Element listElement : listElements) {
+                    // The rider's name is inside the <a> tag
+                    Element riderAnchor = listElement.selectFirst("a");
+                    String riderName = riderAnchor != null ? riderAnchor.text() : "";
+                    System.out.println("Rider name: " + riderName);
 
-                Elements riderElements = ridersCont.select("ul li a");
+                    // The entire text of the <li> (including asterisks if present)
+                    String liText = listElement.text();
 
-                for (Element riderElement : riderElements) {
-                    String riderName = riderElement.text().toLowerCase();
-                    System.out.println("Extracted Rider Name: " + riderName);
+                    // Check for asterisk (youth indicator) in the list element HTML
+                    boolean hasAsterisk = listElement.html().contains("*");
+                    System.out.println("Asterisk for rider: " + riderName + " - " + hasAsterisk);
+
+                    String asterisks = hasAsterisk ? "*" : "";
+
+                    // System.out.println("Extracted Rider Name: " + riderName);
 
                     String[] nameParts = riderName.trim().split("\s+");
                     String fixedName = "";
@@ -276,6 +289,14 @@ public class RaceService {
                     if (cyclist != null) {
                         System.out.println("Found Cyclist: " + cyclist.getName());
 
+                        if (asterisks.contains("*")) {
+                            System.out.println("Rider has asterisks: " + riderName);
+                            if (!race.getYouthCyclistsIDs().contains(cyclist.getId())) {
+                                race.addToYouthCyclistsIDs(cyclist.getId());
+                                raceRepository.save(race);
+                            } 
+                        }
+    
                         LocalDate currentDate = LocalDate.now();
                         LocalDate startDate = LocalDate.parse(race.getStartDate(),
                                 DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -294,7 +315,7 @@ public class RaceService {
                         System.out.println("Cyclist not found in repository: " + riderName);
 
                         if (!isChampionship && teamName.contains("(NAT)")) {
-                            String riderUrl = riderElement.attr("href");
+                            String riderUrl = listElement.attr("href");
                             if (riderUrl != null && !riderUrl.isEmpty()) {
                                 riderUrl = "https://www.procyclingstats.com/" + riderUrl;
                                 System.out.println("Scraping details from: " + riderUrl);
@@ -308,6 +329,14 @@ public class RaceService {
 
                                 cyclistRepository.save(newCyclist);
                                 startList.add(newCyclist);
+
+                                if (asterisks.contains("*")) {
+                                    if (!race.getYouthCyclistsIDs().contains(newCyclist.getId())) {
+                                        race.addToYouthCyclistsIDs(newCyclist.getId());
+                                        raceRepository.save(race);
+                                    }   
+                                }
+
                                 System.out.println("Nieuwe nationale Renner toegevoegd: " + newCyclist.getName());
 
                                 LocalDate currentDate = LocalDate.now();
@@ -334,7 +363,7 @@ public class RaceService {
     }
 
     public List<RaceModel> getRaceDTOs() {
-        List<Race> races = raceRepository.findAll();
+        List<Race> races = raceRepository.findAll(Sort.by("id"));
         List<RaceModel> raceDTOs = new ArrayList<>();
 
         for (Race race : races) {
