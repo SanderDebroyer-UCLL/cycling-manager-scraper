@@ -379,7 +379,7 @@ public class StageResultService {
         return allResults;
     }
 
-    private static final int MAX_RESULTS = 5000;
+    private static final int MAX_RESULTS = 2000;
 
     // Parent method - handles multiple stages
     private List<TimeResult> scrapeTimeResultByRace(ScrapeResultType scrapeResultType, List<Stage> stages, Race race)

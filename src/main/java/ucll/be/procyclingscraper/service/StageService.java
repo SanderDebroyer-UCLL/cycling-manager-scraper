@@ -66,22 +66,14 @@ public class StageService {
         System.out.println("Number of races found in the database: " + races.size());
         List<Stage> allStages = new ArrayList<>();
 
-        ExecutorService executor = Executors.newFixedThreadPool(8); // You can adjust pool size
-
-        List<CompletableFuture<List<Stage>>> futures = races.stream()
-                .map(race -> CompletableFuture.supplyAsync(() -> scrapeStagesByRaceId(race.getId()), executor))
-                .toList();
-
-        for (CompletableFuture<List<Stage>> future : futures) {
+        for (Race race : races) {
             try {
-                List<Stage> stages = future.get(); // Block until the individual scraping completes
+                List<Stage> stages = scrapeStagesByRaceId(race.getId());
                 allStages.addAll(stages);
             } catch (Exception e) {
-                logger.error("Failed to scrape stages asynchronously", e);
+                logger.error("Failed to scrape stages for race: " + race.getName(), e);
             }
         }
-
-        executor.shutdown(); // Always shutdown executor
 
         return allStages;
     }
