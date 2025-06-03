@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +62,9 @@ public class CompetitionService {
     @Autowired
     private RacePointsService racePointsService;
 
+    @Autowired
+    private StageService stageService;
+
     CompetitionService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -82,6 +88,73 @@ public class CompetitionService {
             throw new IllegalArgumentException("Competition with ID " + competitionId + " has no races or stages.");
         }
         return true;
+    }
+
+    public CompetitionDTO scrapeCompetitionStages(Long competitionId) {
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+
+        Set<Race> races = competition.getRaces();
+
+        ExecutorService executor = Executors.newFixedThreadPool(8); // Tune pool size based on expected load
+
+        List<CompletableFuture<Void>> scrapeFutures = races.stream()
+                .map(race -> CompletableFuture.runAsync(() -> stageService.scrapeStagesByRaceId(race.getId()),
+                        executor))
+                .toList();
+
+        // Wait until all scraping is done
+        CompletableFuture.allOf(scrapeFutures.toArray(new CompletableFuture[0])).join();
+        executor.shutdown(); // Cleanup
+
+        // Re-fetch updated race entities (to make sure we get updated stages from DB)
+        competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new IllegalStateException("Competition disappeared after scraping"));
+
+        // Convert races to DTOs
+        Set<RaceDTO> raceDTOs = competition.getRaces().stream().map(race -> {
+            List<StageDTO> stageDTOs = race.getStages().stream().map(stage -> new StageDTO(
+                    stage.getId(),
+                    stage.getName(),
+                    stage.getDeparture(),
+                    stage.getArrival(),
+                    stage.getDate().toString(),
+                    stage.getStartTime(),
+                    stage.getDistance(),
+                    stage.getStageUrl(),
+                    stage.getVerticalMeters(),
+                    stage.getParcoursType())).collect(Collectors.toList());
+
+            return new RaceDTO(
+                    race.getId(),
+                    race.getName(),
+                    race.getNiveau(),
+                    race.getStartDate().toString(),
+                    race.getEndDate().toString(),
+                    race.getDistance(),
+                    race.getRaceUrl(),
+                    race.getCompetitions().stream().map(Competition::getId).collect(Collectors.toList()),
+                    stageDTOs);
+        }).collect(Collectors.toSet());
+
+        // Convert users
+        Set<UserDTO> userDTOs = competition.getUsers().stream().map(user -> new UserDTO(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(), 0)).collect(Collectors.toSet());
+
+        return new CompetitionDTO(
+                competition.getId(),
+                competition.getName(),
+                raceDTOs,
+                userDTOs,
+                competition.getCompetitionStatus(),
+                competition.getMaxMainCyclists(),
+                competition.getMaxReserveCyclists(),
+                competition.getCurrentPick(),
+                competition.getCompetitionPicks());
     }
 
     public Set<CompetitionDTO> getCompetitions(String email) {

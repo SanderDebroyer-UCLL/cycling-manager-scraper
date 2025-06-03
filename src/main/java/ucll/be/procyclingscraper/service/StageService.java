@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import ucll.be.procyclingscraper.dto.StageModel;
 import ucll.be.procyclingscraper.model.ParcoursType;
 import ucll.be.procyclingscraper.model.Race;
@@ -20,6 +21,9 @@ import ucll.be.procyclingscraper.repository.StageRepository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class StageService {
@@ -60,59 +64,84 @@ public class StageService {
         List<Race> races = raceRepository.findAll();
         List<Stage> allStages = new ArrayList<>();
 
-        for (Race race : races) {
-            System.out.println("race: " + race.getName());
-            List<Stage> stagesList = new ArrayList<>();
+        ExecutorService executor = Executors.newFixedThreadPool(8); // You can adjust pool size
 
+        List<CompletableFuture<List<Stage>>> futures = races.stream()
+                .map(race -> CompletableFuture.supplyAsync(() -> scrapeStagesByRaceId(race.getId()), executor))
+                .toList();
+
+        for (CompletableFuture<List<Stage>> future : futures) {
             try {
-                Document doc = Jsoup.connect(race.getRaceUrl())
-                        .userAgent(USER_AGENT)
-                        .get();
-
-                Elements tables = doc.select("table.basic");
-                logger.debug("Number of tables found: {}", tables.size());
-
-                for (Element table : tables) {
-                    if (isStagesTable(table)) {
-                        Elements stageRows = table.select("tbody > tr");
-                        logger.debug("Number of stage rows found: {}", stageRows.size());
-
-                        for (int i = 0; i < stageRows.size() - 1; i++) {
-                            Element stageRow = stageRows.get(i);
-                            Elements cells = stageRow.select("td");
-                            if (cells.size() >= 4) {
-                                String date = cells.get(0).text();
-                                String stageName = cells.get(3).select("a").text();
-                                String stageUrl = cells.get(3).select("a").attr("abs:href");
-                                if (stageUrl.isEmpty() || stageUrl.isBlank()) {
-                                    continue;
-                                }
-
-                                Stage stage = stageRepository.findByName(stageName);
-                                if (stage == null) {
-                                    stage = new Stage();
-                                }
-                                stage.setStageUrl(stageUrl);
-                                stage.setDate(date);
-                                stage.setName(stageName);
-                                logger.info("Scraped stage URL: {}", stageUrl);
-                                stagesList.add(scrapeStageDetails(stage));
-                            }
-                        }
-
-                        List<Stage> existingStages = race.getStages();
-                        existingStages.removeIf(stage -> !stagesList.contains(stage));
-                        race.setStages(stagesList);
-                        raceRepository.save(race);
-                        break;
-                    }
-                }
-
-            } catch (IOException e) {
-                logger.error("Error scraping stage details from URL: {}", race.getRaceUrl(), e);
+                List<Stage> stages = future.get(); // Block until the individual scraping completes
+                allStages.addAll(stages);
+            } catch (Exception e) {
+                logger.error("Failed to scrape stages asynchronously", e);
             }
-            allStages.addAll(stagesList);
         }
+
+        executor.shutdown(); // Always shutdown executor
+
+        return allStages;
+    }
+
+    @Transactional
+    public List<Stage> scrapeStagesByRaceId(Long raceId) {
+        List<Stage> allStages = new ArrayList<>();
+
+        Race race = raceRepository.findById(raceId)
+                .orElseThrow(() -> new IllegalArgumentException());
+        System.out.println("race: " + race.getName());
+        List<Stage> stagesList = new ArrayList<>();
+
+        try {
+            Document doc = Jsoup.connect(race.getRaceUrl())
+                    .userAgent(USER_AGENT)
+                    .get();
+
+            Elements tables = doc.select("table.basic");
+            logger.debug("Number of tables found: {}", tables.size());
+
+            for (Element table : tables) {
+                if (isStagesTable(table)) {
+                    Elements stageRows = table.select("tbody > tr");
+                    logger.debug("Number of stage rows found: {}", stageRows.size());
+
+                    for (int i = 0; i < stageRows.size() - 1; i++) {
+                        Element stageRow = stageRows.get(i);
+                        Elements cells = stageRow.select("td");
+                        if (cells.size() >= 4) {
+                            String date = cells.get(0).text();
+                            String stageName = cells.get(3).select("a").text();
+                            String stageUrl = cells.get(3).select("a").attr("abs:href");
+                            if (stageUrl.isEmpty() || stageUrl.isBlank()) {
+                                continue;
+                            }
+
+                            Stage stage = stageRepository.findByName(stageName);
+                            if (stage == null) {
+                                stage = new Stage();
+                            }
+                            stage.setStageUrl(stageUrl);
+                            stage.setDate(date);
+                            stage.setName(stageName);
+                            logger.info("Scraped stage URL: {}", stageUrl);
+                            stagesList.add(scrapeStageDetails(stage));
+                        }
+                    }
+
+                    List<Stage> existingStages = race.getStages();
+                    existingStages.removeIf(stage -> !stagesList.contains(stage));
+                    race.setStages(stagesList);
+                    raceRepository.save(race);
+                    break;
+                }
+            }
+
+        } catch (IOException e) {
+            logger.error("Error scraping stage details from URL: {}", race.getRaceUrl(), e);
+        }
+        allStages.addAll(stagesList);
+
         return allStages;
     }
 
