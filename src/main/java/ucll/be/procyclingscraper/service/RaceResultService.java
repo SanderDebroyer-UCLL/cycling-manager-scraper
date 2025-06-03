@@ -124,7 +124,7 @@ public class RaceResultService {
                     .get();
 
             Elements raceResultRows = doc.select("table.results tbody > tr");
-            LocalTime cumulativeTime = LocalTime.MIDNIGHT;
+            Duration cumulativeTime = Duration.ZERO; // Initialize cumulative time
             List<String> ridersToAvoid = Arrays.asList("GUALDI Simone");
 
             for (Element row : raceResultRows) {
@@ -140,7 +140,7 @@ public class RaceResultService {
                     continue;
                 }
 
-                LocalTime resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime);
+                Duration resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime);
                 if (resultTime != null) {
                     cumulativeTime = resultTime;
                 }
