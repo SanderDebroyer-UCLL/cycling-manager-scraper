@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.controller;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,8 +11,8 @@ import ucll.be.procyclingscraper.service.TeamService;
 
 import java.util.List;
 
-
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/teams")
 public class TeamController {
 
@@ -25,7 +26,7 @@ public class TeamController {
     public List<Team> scrape() {
         return teamService.scrape();
     }
-    
+
     @GetMapping()
     public List<Team> getTeams() {
         return teamService.getTeams();
@@ -35,5 +36,5 @@ public class TeamController {
     public List<TeamModel> getTeamDTOs() {
         return teamService.getTeamDTOs();
     }
-    
+
 }
