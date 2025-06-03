@@ -41,6 +41,8 @@ public class Race {
         inverseJoinColumns = @JoinColumn(name = "cyclist_id")
     )
     private List<Cyclist> startList;
+    
+    private List<Long> youthCyclistsIDs = new ArrayList<>();
 
     @JsonIgnore
     @ManyToMany(mappedBy = "races")
@@ -56,5 +58,9 @@ public class Race {
 
     public void addRaceResult(RaceResult raceResult) {
         this.raceResult.add(raceResult);
+    }
+
+    public void addToYouthCyclistsIDs(Long cyclistId) {
+        this.youthCyclistsIDs.add(cyclistId);
     }
 }

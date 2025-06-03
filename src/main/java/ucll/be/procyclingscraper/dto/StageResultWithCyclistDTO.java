@@ -1,5 +1,6 @@
 package ucll.be.procyclingscraper.dto;
 
+import java.time.Duration;
 import java.time.LocalTime;
 
 import lombok.AllArgsConstructor;
@@ -15,7 +16,7 @@ public class StageResultWithCyclistDTO {
     private Long id;
     private String position;
     private RaceStatus raceStatus;
-    private LocalTime time;
+    private Duration time;
     private int point;
     private ScrapeResultType scrapeResultType;
     private int totalPoints;

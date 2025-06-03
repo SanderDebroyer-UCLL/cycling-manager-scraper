@@ -64,6 +64,11 @@ public class StageResultController {
         return stageResultService.scrapePointResult(ScrapeResultType.KOM);
     }
 
+    @GetMapping("/scrape/youth")
+    public List<TimeResult> scrapeYouthPerStageTest() {
+        return stageResultService.calculateYouthTimeResult(ScrapeResultType.YOUTH);
+    }
+    
     @GetMapping("")
     public List<TimeResult> getAllResults() {
         return stageResultService.findAllResults();

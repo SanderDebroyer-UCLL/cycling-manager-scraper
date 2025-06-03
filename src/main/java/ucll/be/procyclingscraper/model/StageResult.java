@@ -43,8 +43,4 @@ public abstract class StageResult {
     @OneToMany(mappedBy = "stageResult", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("stage_result_points")
     private Set<StagePoints> stagePoints = new HashSet<>();
-
-    public int getTotalPoints() {
-        return stagePoints.stream().mapToInt(StagePoints::getValue).sum();
-    }
 }
