@@ -23,11 +23,13 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 public class StageResultService {
@@ -394,7 +396,7 @@ public class StageResultService {
                     if (stage.getName().startsWith("Stage 1 |")) {
                         resultRows = resultRows(doc, stage, ScrapeResultType.GC);
                     } else {
-                        
+                        allResults.addAll(getTTTResultByDifference(stage, doc, scrapeResultType));
                     }
                 }
             for (Element row : resultRows) {
@@ -480,6 +482,68 @@ public class StageResultService {
     }
 
     
+    private List<TimeResult> getTTTResultByDifference(Stage stage, Document doc, ScrapeResultType scrapeResultType) throws IOException {
+        List<TimeResult> results = new ArrayList<>();
+
+        // Find the previous stage in the same race
+        Race race = stage.getRace();
+        List<Stage> stages = race.getStages();
+        int stageIndex = stages.indexOf(stage);
+
+        if (stageIndex <= 0) {
+            System.out.println("No previous stage found for TTT difference calculation.");
+            return results;
+        }
+
+        Stage previousStage = stages.get(stageIndex - 1);
+
+        // Fetch GC results for previous and current stage
+        List<TimeResult> prevGcResults = timeResultRepository.findByStageAndScrapeResultType(previousStage, ScrapeResultType.GC);
+        scrapeTimeResultForRace(ScrapeResultType.GC, race.getId());
+        List<TimeResult> currGcResults = timeResultRepository.findByStageAndScrapeResultType(stage, ScrapeResultType.GC);
+
+        // Map cyclistId to TimeResult for fast lookup
+        Map<Long, TimeResult> prevGcMap = prevGcResults.stream()
+                .filter(r -> r.getCyclist() != null)
+                .collect(Collectors.toMap(r -> r.getCyclist().getId(), r -> r));
+        Map<Long, TimeResult> currGcMap = currGcResults.stream()
+                .filter(r -> r.getCyclist() != null)
+                .collect(Collectors.toMap(r -> r.getCyclist().getId(), r -> r));
+
+        for (Map.Entry<Long, TimeResult> entry : currGcMap.entrySet()) {
+            Long cyclistId = entry.getKey();
+            TimeResult currResult = entry.getValue();
+            TimeResult prevResult = prevGcMap.get(cyclistId);
+
+            if (prevResult == null) {
+                System.out.println("No previous GC result for cyclist: " + (currResult.getCyclist() != null ? currResult.getCyclist().getName() : "Unknown"));
+                continue;
+            }
+
+            LocalTime prevTime = prevResult.getTime();
+            LocalTime currTime = currResult.getTime();
+
+            if (prevTime == null || currTime == null) {
+                System.out.println("Null time for cyclist: " + currResult.getCyclist().getName());
+                continue;
+            }
+
+            // Calculate stage result as the difference
+            int secondsDiff = (int) java.time.Duration.between(prevTime, currTime).getSeconds();
+            if (secondsDiff < 0) secondsDiff = 0; // Defensive: should not be negative
+
+            LocalTime stageTime = LocalTime.ofSecondOfDay(secondsDiff);
+
+            TimeResult stageResult = getOrCreateTimeResult(stage, currResult.getCyclist(), ScrapeResultType.STAGE);
+            fillTimeResultFields(stageResult, currResult.getPosition(), stageTime, ScrapeResultType.STAGE);
+            stageResult.setRaceStatus(currResult.getRaceStatus());
+
+            saveResult(stage, stageResult, results);
+        }
+
+        return results;
+    }
+
     public List<TimeResult> scrapeTimeResultForRace(ScrapeResultType scrapeResultType, Long raceId) throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
         System.out.println("Starting scraping...");
@@ -708,5 +772,18 @@ public class StageResultService {
     
         return resultRows;
     }
-    
+
+    public void scrapeAllResultsForRace(Long raceId) throws IOException {
+        Race race = raceRepository.findById(raceId).orElse(null);
+
+        if (race != null) {
+            scrapeTimeResultByRace(ScrapeResultType.STAGE, race.getStages(), race);
+            scrapeTimeResultByRace(ScrapeResultType.GC, race.getStages(), race);
+
+
+        } else {
+            System.out.println("Race not found with ID: " + raceId);
+        }
+    }
+
 }
