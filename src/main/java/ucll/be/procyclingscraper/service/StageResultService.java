@@ -414,7 +414,10 @@ public class StageResultService {
             Document doc = fetchStageDocument(race, stage, scrapeResultType);
 
             Elements resultRows = resultRows(doc, stage, scrapeResultType);
-
+            if (resultRows == null || resultRows.isEmpty()) {
+                System.out.println(" No rows found in the selected table for stage: " + stage.getName());
+                return stageResults;
+            }
             // This is in format PT.....
             Duration cumulativeTime = null;
 
@@ -662,7 +665,7 @@ public class StageResultService {
                 if (firstFinisherTime == null) {
                     return parsed;
                 } else {
-                    Duration resultTime = firstFinisherTime.plus(parsed);
+                    Duration resultTime = firstFinisherTime.plus(parsed.minus(parseToDuration("0:00")));
                     System.out.println("Calculated Time (relative to first): " + resultTime);
                     return resultTime;
                 }
@@ -674,7 +677,7 @@ public class StageResultService {
                 if (firstFinisherTime == null) {
                     return gapTime;
                 } else {
-                    Duration resultTime = firstFinisherTime.plus(gapTime);
+                    Duration resultTime = firstFinisherTime.plus(gapTime.minus(parseToDuration("0:00")));
                     System.out.println("Calculated Time (relative to first): " + resultTime);
                     return resultTime;
                 }
@@ -743,9 +746,9 @@ public class StageResultService {
         System.out.println("Number of tables found: " + tables.size());
 
         Elements resultRows = null;
-        if (tables.isEmpty()) {
+        if (tables.isEmpty() || tables.size() < 1) {
             System.out.println("No tables found in the document.");
-            return null;
+            return resultRows;
         }
 
         if (scrapeResultType.equals(ScrapeResultType.GC) && stage.getName().startsWith("Stage 1 |")) {
