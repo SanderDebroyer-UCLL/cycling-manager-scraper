@@ -35,6 +35,11 @@ public class CompetitionController {
     @Autowired
     private JwtHelper jwtHelper;
 
+    @GetMapping("/scrape/{competitionId}")
+    public CompetitionDTO scrapeCompetition(@PathVariable Long competitionId) {
+        return competitionService.scrapeCompetitionStages(competitionId);
+    }
+
     @GetMapping("/all")
     public List<Competition> getAllCompetitions() {
         return competitionService.getAllCompetitions();
@@ -42,7 +47,7 @@ public class CompetitionController {
 
     @GetMapping("/results/{competitionId}")
     public Boolean getResults(@PathVariable Long competitionId) throws IOException {
-       return competitionService.getResults(competitionId);
+        return competitionService.getResults(competitionId);
     }
 
     @PostMapping()
