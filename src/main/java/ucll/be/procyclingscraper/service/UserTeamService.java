@@ -89,8 +89,6 @@ public class UserTeamService {
                                 .map(CyclistAssignment::getCyclist)
                                 .collect(Collectors.toSet());
 
-                System.out.println("Active main cyclists: " + activeMainCyclists.size());
-
                 // Find cyclists with DNS/DNF from stage results
                 Set<Cyclist> cyclistsWithDNSFromStages = stageResults.stream()
                                 .filter(sr -> activeMainCyclists.contains(sr.getCyclist()))
@@ -123,8 +121,6 @@ public class UserTeamService {
                 Set<Cyclist> cyclistsWithDNS = new HashSet<>();
                 cyclistsWithDNS.addAll(cyclistsWithDNSFromStages);
                 cyclistsWithDNS.addAll(cyclistsWithDNSFromRaces);
-
-                System.out.println("Cyclists with DNS/DNF: " + cyclistsWithDNS.size());
 
                 // Map to DTOs with reason (check both stage and race results)
                 List<CyclistDTO> cyclistDTOs = cyclistsWithDNS.stream()

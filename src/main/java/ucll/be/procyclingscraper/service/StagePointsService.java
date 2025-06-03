@@ -306,29 +306,28 @@ public class StagePointsService {
         List<User> users = userTeams.stream()
                 .map(UserTeam::getUser)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         // Only stage points relevant to the stage
         List<StagePoints> stagePointsList = users.stream()
                 .peek(user -> System.out.println("User: " + user.getUsername()))
                 .flatMap(user -> user.getStagePoints().stream())
                 .filter(sp -> stageId.equals(sp.getStageResult().getStage().getId()))
-                .collect(Collectors.toList());
+                .toList();
 
-        // Create a map for efficient lookup: userId -> cyclistId -> StagePoints
+        // Map for efficient lookup: userId -> cyclistId -> StagePoints
         Map<Long, Map<Long, List<StagePoints>>> userCyclistPointsMap = stagePointsList.stream()
                 .collect(Collectors.groupingBy(
                         sp -> sp.getUser().getId(),
                         Collectors.groupingBy(sp -> sp.getStageResult().getCyclist().getId())));
 
-        MainReserveCyclistPointsDTO result = new MainReserveCyclistPointsDTO(
-                Collections.emptyList(), Collections.emptyList());
+        List<PointsPerUserPerCyclistDTO> allMainCyclists = new ArrayList<>();
+        List<PointsPerUserPerCyclistDTO> allReserveCyclists = new ArrayList<>();
 
         for (UserTeam userTeam : userTeams) {
             User user = userTeam.getUser();
             Long userId = user.getId();
 
-            // Get user's points map for efficient lookup
             Map<Long, List<StagePoints>> cyclistPointsMap = userCyclistPointsMap.getOrDefault(userId,
                     Collections.emptyMap());
 
@@ -336,24 +335,21 @@ public class StagePointsService {
                     .filter(ca -> ca.getRole() == CyclistRole.MAIN)
                     .map(CyclistAssignment::getCyclist)
                     .map(cyclist -> createStagePointsDTO(cyclist, cyclistPointsMap, userId, true))
-                    .filter(dto -> dto.getPoints() > 0) // Only show cyclists with points
+                    .filter(dto -> dto.getPoints() > 0)
                     .toList();
-
-            System.out.println("Main cyclists for user " + user.getUsername() + ": " + mainCyclists);
 
             List<PointsPerUserPerCyclistDTO> reserveCyclists = userTeam.getCyclistAssignments().stream()
                     .filter(ca -> ca.getRole() == CyclistRole.RESERVE)
                     .map(CyclistAssignment::getCyclist)
                     .map(cyclist -> createStagePointsDTO(cyclist, cyclistPointsMap, userId, false))
-                    .filter(dto -> dto.getPoints() > 0) // Only show cyclists with points
+                    .filter(dto -> dto.getPoints() > 0)
                     .toList();
 
-            // TODO is only giving result for 1 user should add up both lists for all users
-            result = new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
-
+            allMainCyclists.addAll(mainCyclists);
+            allReserveCyclists.addAll(reserveCyclists);
         }
 
-        return result;
+        return new MainReserveCyclistPointsDTO(allMainCyclists, allReserveCyclists);
     }
 
     private PointsPerUserPerCyclistDTO createStagePointsDTO(Cyclist cyclist,
