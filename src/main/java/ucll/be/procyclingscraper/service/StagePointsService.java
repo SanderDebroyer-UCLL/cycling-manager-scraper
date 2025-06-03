@@ -161,7 +161,7 @@ public class StagePointsService {
                             .orElseThrow(() -> new IllegalStateException(
                                     "StageResult not found for cyclist " + cyclist.getName()));
 
-                    String reason = position + "e plaats in" + resultType.name().toLowerCase();
+                    String reason = position + "e plaats in " + getResultTypeInDutch(resultType);
 
                     boolean exists = stagePointsRepository.existsByStageIdAndReason(stageId, reason);
                     System.out.println("Checking existence for reason: '" + reason + "'");
@@ -295,6 +295,16 @@ public class StagePointsService {
         CompletableFuture.allOf(mainCyclistsFuture, reserveCyclistsFuture).join();
 
         return new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
+    }
+
+    private String getResultTypeInDutch(ScrapeResultType resultType) {
+        return switch (resultType) {
+            case STAGE -> "etappe";
+            case GC -> "algemeen klassement";
+            case POINTS -> "puntenklassement";
+            case KOM -> "bergklassement";
+            case YOUTH -> "jongerenklassement";
+        };
     }
 
     public MainReserveCyclistPointsDTO getStagePointsForStage(Long competitionId, Long stageId) {
