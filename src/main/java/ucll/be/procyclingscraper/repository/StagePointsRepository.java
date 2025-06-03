@@ -13,4 +13,6 @@ public interface StagePointsRepository extends JpaRepository<StagePoints, Long> 
     List<StagePoints> findByCompetition_idAndStageResult_Stage_id(Long competitionId, Long stageId);
 
     boolean existsByStageResultAndReason(StageResult stageResult, String reason);
+
+    boolean existsByStageIdAndReason(Long stageId, String reason);
 }

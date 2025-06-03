@@ -71,7 +71,7 @@ public class Competition {
     @JoinTable(name = "competition_race", joinColumns = @JoinColumn(name = "competition_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "race_id", referencedColumnName = "id"))
     private Set<Race> races = new HashSet<>();
 
-    public Integer getCurrentStage() {
+    public Integer getCurrentEvent() {
         List<Stage> stages = new ArrayList<>();
         java.time.LocalDate today = java.time.LocalDate.now();
         DateTimeFormatter formatterStage = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -82,10 +82,6 @@ public class Competition {
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No race found"))
                     .getStages();
-            if (stages == null || stages.isEmpty()) {
-                System.out.println("Stages are not set for this competition.");
-                return null;
-            }
 
             return stages.stream()
                     .sorted((s1, s2) -> java.time.LocalDate.parse(s1.getDate() + "/" + today.getYear(), formatterStage)
@@ -98,7 +94,7 @@ public class Competition {
                     })
                     .collect(java.util.stream.Collectors.toList())
                     .lastIndexOf(true) + 1;
-        } else if (this.races.size() > 1) {
+        } else if (!this.races.isEmpty()) {
             return this.races.stream()
                     .sorted((s1, s2) -> java.time.LocalDate.parse(s1.getStartDate(), formatterRace)
                             .compareTo(java.time.LocalDate.parse(s2.getStartDate(), formatterRace)))

@@ -29,6 +29,8 @@ public class RacePoints {
 
     private String reason; // "Race Parais-Roubaix 1st place",
 
+    private Long raceId; // The ID of the
+
     @JsonBackReference("competition_race_points")
     @ManyToOne
     @JoinColumn(name = "competition_id")

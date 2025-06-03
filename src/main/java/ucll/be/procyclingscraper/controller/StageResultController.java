@@ -33,9 +33,20 @@ public class StageResultController {
         return stageResultService.scrapeTimeResult(ScrapeResultType.STAGE);
     }
 
+    @GetMapping("/scrape/race/{raceId}")
+    public List<TimeResult> scrapeResults(@PathVariable Long raceId) throws IOException {
+        return stageResultService.scrapeTimeResultForRace(ScrapeResultType.STAGE, raceId);
+    }
+
+    //TODO: remover later after testing
     @GetMapping("/scrape/{raceId}")
-    public void scrapeResults(@PathVariable Long raceId) throws IOException {
+    public void scrapeAllResultsForRace(@PathVariable Long raceId) throws IOException {
         stageResultService.scrapeAllResultsForRace(raceId);
+    }
+
+    @GetMapping("/scrape/stage/{stageId}")
+    public List<TimeResult> scrapeTimeResultsForStage(@PathVariable Long stageId) throws IOException {
+        return stageResultService.scrapeTimeResultsForStage(stageId);
     }
 
     @GetMapping("/scrape/gc")

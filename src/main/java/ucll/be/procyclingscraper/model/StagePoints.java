@@ -29,6 +29,8 @@ public class StagePoints {
 
     private String reason; // e.g., "Stage 1 finish", "Mountain points", etc.
 
+    private Long stageId; // The ID of the stage this point is associated with
+
     @JsonBackReference("competition_stage_points")
     @ManyToOne
     @JoinColumn(name = "competition_id")
