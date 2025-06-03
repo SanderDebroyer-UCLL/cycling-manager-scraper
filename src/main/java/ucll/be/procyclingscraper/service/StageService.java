@@ -7,6 +7,7 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -61,7 +62,8 @@ public class StageService {
     }
 
     public List<Stage> scrapeStages() {
-        List<Race> races = raceRepository.findAll();
+        List<Race> races = raceRepository.findAll(Sort.by("id"));
+        System.out.println("Number of races found in the database: " + races.size());
         List<Stage> allStages = new ArrayList<>();
 
         ExecutorService executor = Executors.newFixedThreadPool(8); // You can adjust pool size
@@ -129,13 +131,15 @@ public class StageService {
                         }
                     }
 
-                    List<Stage> existingStages = race.getStages();
-                    existingStages.removeIf(stage -> !stagesList.contains(stage));
-                    race.setStages(stagesList);
-                    raceRepository.save(race);
-                    break;
+                        List<Stage> existingStages = race.getStages();
+                        existingStages.removeIf(stage -> !stagesList.contains(stage));
+                        System.out.println("Existing stages of race" + race.getName() + ": " + existingStages.size());
+                        race.setStages(stagesList);
+                        System.out.println("Persisting race " + race.getName() + " after stage added");
+                        raceRepository.save(race);
+                        break;
+                    }
                 }
-            }
 
         } catch (IOException e) {
             logger.error("Error scraping stage details from URL: {}", race.getRaceUrl(), e);
