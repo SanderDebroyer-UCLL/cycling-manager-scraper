@@ -348,9 +348,9 @@ public class StagePointsService {
                     .filter(dto -> dto.getPoints() > 0) // Only show cyclists with points
                     .toList();
 
-            System.out.println("Reserve cyclists for user " + user.getUsername() + ": " + reserveCyclists);
-
+            // TODO is only giving result for 1 user should add up both lists for all users
             result = new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
+
         }
 
         return result;
