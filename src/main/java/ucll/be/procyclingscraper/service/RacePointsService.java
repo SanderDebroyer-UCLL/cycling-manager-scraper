@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -15,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
-import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserPerCyclistDTO;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.Cyclist;
@@ -24,6 +25,7 @@ import ucll.be.procyclingscraper.model.CyclistRole;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.RacePoints;
 import ucll.be.procyclingscraper.model.RaceResult;
+import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.model.UserTeam;
 import ucll.be.procyclingscraper.repository.CompetitionRepository;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
@@ -148,8 +150,7 @@ public class RacePointsService {
                         .orElseThrow(() -> new IllegalStateException(
                                 "RaceResult not found for cyclist " + cyclist.getName()));
 
-                String reason = "RACE - position " + position + " - cyclist " + cyclist.getName()
-                        + " - user " + userTeam.getUser().getUsername();
+                String reason = position + "e";
 
                 boolean exists = racePointsRepository.existsByRaceIdAndReason(raceId, reason);
                 if (exists) {
@@ -162,7 +163,7 @@ public class RacePointsService {
                         .value(points)
                         .reason(reason)
                         .raceId(raceId)
-                        .user(userTeam.getUser()) // <-- Add this line
+                        .user(userTeam.getUser())
                         .build();
 
                 racePointsRepository.save(racePoints);
@@ -227,7 +228,7 @@ public class RacePointsService {
 
                     synchronized (mainCyclists) {
                         mainCyclists.add(new PointsPerUserPerCyclistDTO(
-                                totalPoints, cyclist.getName(), cyclist.getId(), isCyclistActive,
+                                totalPoints, cyclist.getName(), cyclist.getId(), null, isCyclistActive,
                                 userTeam.getUser().getId()));
                     }
                 }
@@ -249,7 +250,7 @@ public class RacePointsService {
 
                     synchronized (reserveCyclists) {
                         reserveCyclists.add(new PointsPerUserPerCyclistDTO(
-                                totalPoints, cyclist.getName(), cyclist.getId(), isCyclistActive,
+                                totalPoints, cyclist.getName(), cyclist.getId(), null, isCyclistActive,
                                 userTeam.getUser().getId()));
                     }
                 }
@@ -261,28 +262,81 @@ public class RacePointsService {
         return new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
     }
 
-    public List<PointsPerUserDTO> getRacePointsForRace(Long competitionId, Long raceId) {
-
+    public MainReserveCyclistPointsDTO getRacePointsForRace(Long competitionId, Long raceId) {
         List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
 
-        List<PointsPerUserDTO> result = new ArrayList<>();
+        List<User> users = userTeams.stream()
+                .map(UserTeam::getUser)
+                .distinct()
+                .collect(Collectors.toList());
 
-        System.out.println(userTeams.size() + " user teams found for competition " + competitionId);
+        System.out.println("Found " + users.size() + " users for competition " + competitionId);
 
+        // Only race points relevant to the race
+        List<RacePoints> racePointsList = users.stream()
+                .peek(user -> System.out.println("User: " + user.getUsername()))
+                .flatMap(user -> user.getRacePoints().stream())
+                .filter(rp -> raceId.equals(rp.getRaceId()))
+                .collect(Collectors.toList());
+
+        System.out.println("Found " + racePointsList.size() + " race points for race " + raceId);
+
+        // Create a map for efficient lookup: userId -> cyclistId -> RacePoints
+        Map<Long, Map<Long, List<RacePoints>>> userCyclistPointsMap = racePointsList.stream()
+                .collect(Collectors.groupingBy(
+                        rp -> rp.getUser().getId(),
+                        Collectors.groupingBy(rp -> rp.getRaceResult().getCyclist().getId())));
+        MainReserveCyclistPointsDTO result = new MainReserveCyclistPointsDTO(
+                Collections.emptyList(), Collections.emptyList());
         for (UserTeam userTeam : userTeams) {
-            int totalPoints = userTeam.getUser().getRacePoints().stream()
-                    .filter(rp -> rp.getRaceResult().getRace().getId().equals(raceId)) // filter by race
-                    .mapToInt(RacePoints::getValue)
-                    .sum();
+            User user = userTeam.getUser();
+            Long userId = user.getId();
 
-            System.out.println("User " + userTeam.getUser().getUsername() + " has " + totalPoints);
+            // Get user's points map for efficient lookup
+            Map<Long, List<RacePoints>> cyclistPointsMap = userCyclistPointsMap.getOrDefault(userId,
+                    Collections.emptyMap());
 
-            result.add(new PointsPerUserDTO(
-                    totalPoints,
-                    userTeam.getUser().getFirstName() + " " + userTeam.getUser().getLastName(),
-                    userTeam.getUser().getId()));
+            List<PointsPerUserPerCyclistDTO> mainCyclists = userTeam.getCyclistAssignments().stream()
+                    .filter(ca -> ca.getRole() == CyclistRole.MAIN)
+                    .map(CyclistAssignment::getCyclist)
+                    .map(cyclist -> createPointsDTO(cyclist, cyclistPointsMap, userId, true))
+                    .filter(dto -> dto.getPoints() > 0) // Only show cyclists with points
+                    .toList();
+
+            List<PointsPerUserPerCyclistDTO> reserveCyclists = userTeam.getCyclistAssignments().stream()
+                    .filter(ca -> ca.getRole() == CyclistRole.RESERVE) // Fixed: was MAIN, should be RESERVE
+                    .map(CyclistAssignment::getCyclist)
+                    .map(cyclist -> createPointsDTO(cyclist, cyclistPointsMap, userId, false))
+                    .filter(dto -> dto.getPoints() > 0) // Only show cyclists with points
+                    .toList();
+
+            result = new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
         }
+
         return result;
+    }
+
+    private PointsPerUserPerCyclistDTO createPointsDTO(Cyclist cyclist,
+            Map<Long, List<RacePoints>> cyclistPointsMap,
+            Long userId,
+            boolean isMain) {
+        List<RacePoints> cyclistPoints = cyclistPointsMap.getOrDefault(cyclist.getId(), Collections.emptyList());
+
+        int points = cyclistPoints.stream()
+                .mapToInt(RacePoints::getValue)
+                .sum();
+
+        String reason = cyclistPoints.stream()
+                .map(RacePoints::getReason)
+                .collect(Collectors.joining(", "));
+
+        return new PointsPerUserPerCyclistDTO(
+                points,
+                cyclist.getName(),
+                cyclist.getId(),
+                reason.isEmpty() ? null : reason,
+                isMain,
+                userId);
     }
 
     public MainReserveCyclistPointsDTO getAllRacePoints(Long competitionId, Long userId) {
@@ -338,7 +392,7 @@ public class RacePointsService {
                             totalPoints,
                             cyclist.getName(),
                             cyclist.getId(),
-                            isCyclistActive,
+                            null, isCyclistActive,
                             userTeam.getUser().getId()));
                 }
             }
@@ -361,7 +415,7 @@ public class RacePointsService {
                             totalPoints,
                             cyclist.getName(),
                             cyclist.getId(),
-                            isCyclistActive,
+                            null, isCyclistActive,
                             userTeam.getUser().getId()));
                 }
             }
@@ -440,5 +494,4 @@ public class RacePointsService {
                 return 0;
         }
     }
-
 }

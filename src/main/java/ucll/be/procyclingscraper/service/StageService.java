@@ -22,9 +22,6 @@ import ucll.be.procyclingscraper.repository.StageRepository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Service
 public class StageService {
@@ -123,15 +120,15 @@ public class StageService {
                         }
                     }
 
-                        List<Stage> existingStages = race.getStages();
-                        existingStages.removeIf(stage -> !stagesList.contains(stage));
-                        System.out.println("Existing stages of race" + race.getName() + ": " + existingStages.size());
-                        race.setStages(stagesList);
-                        System.out.println("Persisting race " + race.getName() + " after stage added");
-                        raceRepository.save(race);
-                        break;
-                    }
+                    List<Stage> existingStages = race.getStages();
+                    existingStages.removeIf(stage -> !stagesList.contains(stage));
+                    System.out.println("Existing stages of race" + race.getName() + ": " + existingStages.size());
+                    race.setStages(stagesList);
+                    System.out.println("Persisting race " + race.getName() + " after stage added");
+                    raceRepository.save(race);
+                    break;
                 }
+            }
 
         } catch (IOException e) {
             logger.error("Error scraping stage details from URL: {}", race.getRaceUrl(), e);

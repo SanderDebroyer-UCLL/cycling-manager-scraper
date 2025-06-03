@@ -23,7 +23,6 @@ import ucll.be.procyclingscraper.repository.*;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
