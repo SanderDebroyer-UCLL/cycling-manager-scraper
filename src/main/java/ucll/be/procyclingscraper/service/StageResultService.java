@@ -201,7 +201,7 @@ public class StageResultService {
     public List<PointResult> scrapePointResult(ScrapeResultType scrapeResultType) {
         List<PointResult> results = new ArrayList<>();
         int resultCount = 0;
-        final int MAX_RESULTS = 10000;
+        final int MAX_RESULTS = 2000;
         try {
             List<Race> races = raceRepository.findAll();
 
@@ -374,7 +374,7 @@ public class StageResultService {
         return allResults;
     }
 
-    private static final int MAX_RESULTS = 10000;
+    private static final int MAX_RESULTS = 2000;
 
     private List<TimeResult> scrapeTimeResultByRace(ScrapeResultType scrapeResultType, List<Stage> stages, Race race)
             throws IOException {
