@@ -13,7 +13,6 @@ import ucll.be.procyclingscraper.dto.RaceModel;
 import ucll.be.procyclingscraper.dto.StageDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.Race;
-import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.model.Team;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
@@ -263,9 +262,6 @@ public class RaceService {
                     Element riderAnchor = listElement.selectFirst("a");
                     String riderName = riderAnchor != null ? riderAnchor.text() : "";
                     System.out.println("Rider name: " + riderName);
-
-                    // The entire text of the <li> (including asterisks if present)
-                    String liText = listElement.text();
 
                     // Check for asterisk (youth indicator) in the list element HTML
                     boolean hasAsterisk = listElement.html().contains("*");
