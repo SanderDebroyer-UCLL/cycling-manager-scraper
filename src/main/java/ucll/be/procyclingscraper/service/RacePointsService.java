@@ -427,6 +427,10 @@ public class RacePointsService {
     }
 
     private boolean isCyclistActiveInRace(CyclistAssignment assignment, int raceNumber) {
+        if (assignment.getFromEvent() == null && assignment.getToEvent() == null) {
+            return false;
+        }
+
         if (assignment.getFromEvent() != null && raceNumber < assignment.getFromEvent()) {
             return false;
         }
