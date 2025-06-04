@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.StagePointResultDTO;
 import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.Cyclist;
@@ -258,6 +259,46 @@ public class StageResultService {
 
     public List<Cyclist> findCyclistInByStageId(Long stage_id, String type) {
         return cyclistRepository.findCyclistsByStageIdAndResultType(stage_id, type);
+    }
+
+    public List<StagePointResultDTO> findCyclistInByStageIdAndTypeDto(Long stageId, String type) {
+        List<Cyclist> cyclists = cyclistRepository.findCyclistsByStageIdAndResultType(stageId, type);
+        ArrayList<StagePointResultDTO> results = new ArrayList<>();
+        for (Cyclist cyclist : cyclists) {
+            // Find the corresponding StageResult for this cyclist, stage, and type
+            StageResult stageResult = null;
+            List<StageResult> stageResults = cyclist.getResults();
+            if (stageResults != null) {
+                for (StageResult result : stageResults) {
+                    if (result.getStage().getId().equals(stageId) &&
+                        result.getScrapeResultType().name().equalsIgnoreCase(type)) {
+                        stageResult = result;
+                        break;
+                    }
+                }
+            }
+
+            Integer point = null;
+            String position = null;
+            if (stageResult instanceof PointResult) {
+                point = ((PointResult) stageResult).getPoint();
+            }
+            if (stageResult != null) {
+                position = stageResult.getPosition();
+            }
+
+            StagePointResultDTO dto = new StagePointResultDTO(
+                cyclist.getId(),
+                position,
+                cyclist.getName(),
+                point,
+                stageResult.getStage().getId(),
+                stageResult.getStage().getName(),
+                stageResult.getStage().getStageUrl()
+            );
+            results.add(dto);
+        }
+        return results;
     }
 
     public void getStageResultsForAllStagesInCompetitions() throws IOException {
