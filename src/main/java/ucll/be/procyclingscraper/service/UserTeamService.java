@@ -173,7 +173,7 @@ public class UserTeamService {
                 return cyclistDTOs;
         }
 
-        public List<UserTeam> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
+        public List<UserTeamDTO> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
 
                 UserTeam userTeam = userTeamRepository.findById(userTeamId)
                                 .orElseThrow(() -> new RuntimeException("User team not found with ID: " + userTeamId));
@@ -210,7 +210,7 @@ public class UserTeamService {
                                 }
 
                                 if (!shouldKeepAssignment) {
-                                        assignment.setToEvent(currentEvent - 1);
+                                        assignment.setToEvent(currentEvent);
                                 }
                         }
                 }
@@ -257,7 +257,7 @@ public class UserTeamService {
                                                 .userTeam(userTeam)
                                                 .cyclist(cyclist)
                                                 .role(CyclistRole.RESERVE)
-                                                .fromEvent(currentEvent)
+                                                .fromEvent(currentEvent + 1) // Reserve cyclists start from next event
                                                 .toEvent(null)
                                                 .build();
 
@@ -265,8 +265,8 @@ public class UserTeamService {
                         }
                 }
 
-                userTeamRepository.save(userTeam);
-                return List.of(userTeam);
+                UserTeam savedUserTeam = userTeamRepository.save(userTeam);
+                return List.of(mapToUserTeamDTO(savedUserTeam));
         }
 
         @Transactional
