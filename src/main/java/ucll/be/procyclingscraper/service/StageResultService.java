@@ -869,6 +869,17 @@ public class StageResultService {
             if (cleanedTime.matches(",,")) {
                 return latestFinisher;
             }
+            // Match format: "31.58,21" => 31 min, 58 sec, 21 hundredths
+            else if (cleanedTime.matches("\\d{1,2}\\.\\d{2},\\d{1,3}")) {
+                Duration parsed = parseF1ToDuration(cleanedTime);
+                if (firstFinisherTime == null) {
+                    return parsed;
+                } else {
+                    Duration resultTime = firstFinisherTime.plus(parsed.minus(parseToDuration("0:00")));
+                    System.out.println("Calculated Time (relative to first, F1): " + resultTime);
+                    return resultTime;
+                }
+            }
             else if (cleanedTime.matches("\\d{1,2}:\\d{2}:\\d{2}")) {
                 Duration inputTime = parseToDuration(cleanedTime);
                 return inputTime;
