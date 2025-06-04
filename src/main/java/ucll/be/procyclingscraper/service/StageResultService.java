@@ -361,7 +361,7 @@ public class StageResultService {
                 .collect(Collectors.toList());
     }
 
-    private static final int RACE_LIMIT = 999;
+    private static final int RACE_LIMIT = 10;
 
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
@@ -386,7 +386,7 @@ public class StageResultService {
         return allResults;
     }
 
-    private static final int MAX_RESULTS = 200;
+    private static final int MAX_RESULTS = 1000;
 
     // Parent method - handles multiple stages
     private List<TimeResult> scrapeTimeResultByRace(ScrapeResultType scrapeResultType, List<Stage> stages, Race race)
