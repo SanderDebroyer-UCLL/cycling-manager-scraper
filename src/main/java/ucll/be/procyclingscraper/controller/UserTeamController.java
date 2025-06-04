@@ -11,7 +11,6 @@ import java.util.List;
 import ucll.be.procyclingscraper.dto.CyclistDTO;
 import ucll.be.procyclingscraper.dto.UpdateUserTeamDTO;
 import ucll.be.procyclingscraper.dto.UserTeamDTO;
-import ucll.be.procyclingscraper.model.UserTeam;
 import ucll.be.procyclingscraper.security.JwtHelper;
 import ucll.be.procyclingscraper.service.UserTeamService;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -41,7 +40,7 @@ public class UserTeamController {
     }
 
     @PutMapping("/update/{userTeamId}")
-    public List<UserTeam> putMethodName(@PathVariable Long userTeamId, @RequestBody UpdateUserTeamDTO updateUserTeamDTO,
+    public List<UserTeamDTO> putMethodName(@PathVariable Long userTeamId, @RequestBody UpdateUserTeamDTO updateUserTeamDTO,
             @RequestHeader(name = "Authorization") String token) {
         String email = jwtHelper.getUsernameFromToken(token.substring(7));
         return userTeamService.updateUserTeam(userTeamId, email, updateUserTeamDTO);

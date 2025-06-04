@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
+import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.model.StagePoints;
 import ucll.be.procyclingscraper.service.StagePointsService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,4 +47,10 @@ public class StagePointsController {
             @RequestParam Long userId) {
         return stagePointsService.getAllStagePoints(competitionId, userId);
     }
+
+    @GetMapping("/all/users/{competitionId}")
+    public List<PointsPerUserDTO> getAllStagePointsForAllUsers(@PathVariable Long competitionId) {
+        return stagePointsService.getAllStagePointsForAllUsers(competitionId);
+    }
+
 }

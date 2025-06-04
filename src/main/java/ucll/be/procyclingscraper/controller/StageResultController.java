@@ -8,11 +8,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import ucll.be.procyclingscraper.dto.StagePointResultDTO;
 import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
-import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
-import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.StageResultService;
 
@@ -63,20 +62,20 @@ public class StageResultController {
     public List<TimeResult> scrapeYouthPerStageTest() {
         return stageResultService.calculateYouthTimeResult(ScrapeResultType.YOUTH);
     }
-    
+
     @GetMapping("")
     public List<TimeResult> getAllResults() {
         return stageResultService.findAllResults();
     }
 
     @GetMapping("/points/{id}")
-    public List<Cyclist> getStagePointsFromStageId(@PathVariable Long id) {
-        return stageResultService.findCyclistInByStageId(id, "POINTS");
+    public List<StagePointResultDTO> getStagePointsFromStageId(@PathVariable Long id) {
+        return stageResultService.findCyclistInByStageIdAndTypeDto(id, "POINTS");
     }
 
     @GetMapping("/kom/{id}")
-    public List<Cyclist> getStageKomFromStageId(@PathVariable Long id) {
-        return stageResultService.findCyclistInByStageId(id, "KOM");
+    public List<StagePointResultDTO> getStageKomFromStageId(@PathVariable Long id) {
+        return stageResultService.findCyclistInByStageIdAndTypeDto(id, "KOM");
     }
 
     @DeleteMapping("/delete")
