@@ -415,11 +415,15 @@ public class StageResultService {
     private List<TimeResult> scrapeTimeResultByStage(ScrapeResultType scrapeResultType, Stage stage, Race race,
             int maxResults)
             throws IOException {
-        System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
-        List<TimeResult> stageResults = new ArrayList<>();
-        int resultCount = 0;
+            System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
+            List<TimeResult> stageResults = new ArrayList<>();
+            int resultCount = 0;
             Duration latestFinisher = null;
-
+            LocalDate raceStartTime = LocalDate.parse(race.getStartDate());
+            if (raceStartTime.isAfter(LocalDate.now())) {
+                System.out.println(" stage " + stage.getName() + " has not started yet.");
+                return stageResults;
+            }
             Document doc = fetchStageDocument(race, stage, scrapeResultType);
 
             Elements resultRows = resultRows(doc, stage, scrapeResultType);
@@ -788,7 +792,7 @@ public class StageResultService {
             }
         }
 
-        if (resultRows.isEmpty()) {
+        if (resultRows == null || resultRows.isEmpty()) {
             System.out.println(" No rows found in the selected table.");
         } else {
             System.out.println(" Found " + resultRows.size() + " result rows");
