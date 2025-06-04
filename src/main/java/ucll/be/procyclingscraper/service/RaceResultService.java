@@ -126,6 +126,7 @@ public class RaceResultService {
             Elements raceResultRows = doc.select("table.results tbody > tr");
             Duration cumulativeTime = Duration.ZERO; // Initialize cumulative time
             List<String> ridersToAvoid = Arrays.asList("GUALDI Simone");
+            Duration latestFinisher = null;
 
             for (Element row : raceResultRows) {
                 HashMap<String, String> resultData = getResultsTableData(row);
@@ -140,12 +141,12 @@ public class RaceResultService {
                     continue;
                 }
 
-                Duration resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime);
+                Duration resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime, latestFinisher);
                 if (resultTime != null) {
                     cumulativeTime = resultTime;
                 }
                 System.out.println("Parsed Time: " + resultTime);
-
+                latestFinisher = resultTime;
                 if (ridersToAvoid.contains(riderName)) {
                     System.out.println("Skipping rider: " + riderName);
                     continue;
@@ -200,6 +201,7 @@ public class RaceResultService {
                 Elements raceResultRows = doc.select("table.results tbody > tr");
                 Duration cumulativeTime = Duration.ZERO;
                 List<String> ridersToAvoid = Arrays.asList("GUALDI Simone");
+                Duration latestFinisher = null;
 
                 for (Element row : raceResultRows) {
                     HashMap<String, String> resultData = getResultsTableData(row);
@@ -212,10 +214,11 @@ public class RaceResultService {
                         continue;
                     }
 
-                    Duration resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime);
+                    Duration resultTime = resultService.timeHandlerWithCumulative(time, cumulativeTime, latestFinisher);
                     if (resultTime != null) {
                         cumulativeTime = resultTime;
                     }
+                    latestFinisher = resultTime;
                     System.out.println("Parsed Time: " + resultTime);
 
                     if (ridersToAvoid.contains(riderName)) {
