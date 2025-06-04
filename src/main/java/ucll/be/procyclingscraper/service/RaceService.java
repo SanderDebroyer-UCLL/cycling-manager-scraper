@@ -311,7 +311,9 @@ public class RaceService {
                         System.out.println("Cyclist not found in repository: " + riderName);
 
                         if (!isChampionship && teamName.contains("(NAT)")) {
-                            String riderUrl = listElement.attr("href");
+                            System.out.println("Nationaal team gevonden: " + teamName);
+                            String riderUrl = riderAnchor.attr("href");
+                            // System.out.println(riderUrl);
                             if (riderUrl != null && !riderUrl.isEmpty()) {
                                 riderUrl = "https://www.procyclingstats.com/" + riderUrl;
                                 System.out.println("Scraping details from: " + riderUrl);
