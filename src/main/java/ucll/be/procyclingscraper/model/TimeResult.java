@@ -2,7 +2,6 @@ package ucll.be.procyclingscraper.model;
 
 import java.time.Duration;
 
-
 import jakarta.persistence.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

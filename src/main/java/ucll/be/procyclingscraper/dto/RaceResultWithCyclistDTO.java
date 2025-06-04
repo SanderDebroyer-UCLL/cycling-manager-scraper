@@ -1,7 +1,6 @@
 package ucll.be.procyclingscraper.dto;
 
 import java.time.Duration;
-import java.time.LocalTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,5 +20,4 @@ public class RaceResultWithCyclistDTO {
     private Long cyclistId;
     private String cyclistName;
     private String cyclistCountry;
-    // Add more fields as needed
 }

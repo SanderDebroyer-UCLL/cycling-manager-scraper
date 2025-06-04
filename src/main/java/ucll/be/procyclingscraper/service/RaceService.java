@@ -263,9 +263,6 @@ public class RaceService {
                     String riderName = riderAnchor != null ? riderAnchor.text() : "";
                     System.out.println("Rider name: " + riderName);
 
-                    // The entire text of the <li> (including asterisks if present)
-                    String liText = listElement.text();
-
                     // Check for asterisk (youth indicator) in the list element HTML
                     boolean hasAsterisk = listElement.html().contains("*");
                     System.out.println("Asterisk for rider: " + riderName + " - " + hasAsterisk);

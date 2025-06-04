@@ -1,7 +1,6 @@
 package ucll.be.procyclingscraper.model;
 
 import java.time.Duration;
-import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
 
