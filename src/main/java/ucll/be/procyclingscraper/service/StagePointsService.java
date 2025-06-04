@@ -95,6 +95,7 @@ public class StagePointsService {
         }
 
         final int currentStageNumber = tempStageNumber;
+        final boolean isLastStage = currentStageNumber == orderedStages.size();
 
         // 3. Get user teams
         List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
@@ -108,11 +109,21 @@ public class StagePointsService {
         resultTypeToCyclists.put(ScrapeResultType.POINTS,
                 cyclistRepository.findCyclistsByStageIdAndResultType(stageId, ScrapeResultType.POINTS.toString()));
 
+        // Add additional result types for last stage
+        if (isLastStage) {
+            resultTypeToCyclists.put(ScrapeResultType.KOM,
+                    cyclistRepository.findCyclistsByStageIdAndResultType(stageId,
+                            ScrapeResultType.KOM.toString()));
+            resultTypeToCyclists.put(ScrapeResultType.YOUTH,
+                    cyclistRepository.findCyclistsByStageIdAndResultType(stageId, ScrapeResultType.YOUTH.toString()));
+        }
+
         List<StagePoints> allStagePoints = new ArrayList<>();
 
         for (UserTeam userTeam : userTeams) {
             List<Cyclist> teamCyclists = userTeam.getCyclistAssignments().stream()
-                    .filter(a -> isCyclistActiveInStage(a, currentStageNumber))
+                    .filter(a -> a.getRole() == CyclistRole.MAIN
+                            && isCyclistActiveInStage(a, currentStageNumber, orderedStages.size()))
                     .map(CyclistAssignment::getCyclist)
                     .toList();
 
@@ -132,6 +143,7 @@ public class StagePointsService {
 
                     int points;
                     int position = 0;
+                    String reasonPrefix;
 
                     if (resultOption.isPresent()) {
                         StageResult result = resultOption.get();
@@ -142,10 +154,22 @@ public class StagePointsService {
                             continue; // Skip these results
                         }
                         position = Integer.parseInt(result.getPosition());
-                        points = calculatePoints(resultType, position);
+
+                        // Calculate points based on result type and whether it's the last stage
+                        if (isLastStage && (resultType == ScrapeResultType.GC ||
+                                resultType == ScrapeResultType.POINTS ||
+                                resultType == ScrapeResultType.KOM ||
+                                resultType == ScrapeResultType.YOUTH)) {
+                            points = calculateLastStagePoints(resultType, position);
+                            reasonPrefix = "Eindklassement ";
+                        } else {
+                            points = calculatePoints(resultType, position);
+                            reasonPrefix = "";
+                        }
 
                     } else {
                         points = 0;
+                        reasonPrefix = "";
                     }
 
                     if (points <= 0) {
@@ -159,7 +183,7 @@ public class StagePointsService {
                             .orElseThrow(() -> new IllegalStateException(
                                     "StageResult not found for cyclist " + cyclist.getName()));
 
-                    String reason = position + "e plaats in " + getResultTypeInDutch(resultType);
+                    String reason = reasonPrefix + position + "e plaats in " + getResultTypeInDutch(resultType);
 
                     boolean exists = stagePointsRepository.existsByStageIdAndReason(stageId, reason);
 
@@ -184,6 +208,21 @@ public class StagePointsService {
         }
 
         return allStagePoints;
+    }
+
+    // Helper method to calculate points for the last stage based on result type
+    private int calculateLastStagePoints(ScrapeResultType resultType, int position) {
+        switch (resultType) {
+            case GC:
+                return calculatePointsForEndGC(position);
+            case POINTS:
+            case KOM:
+                return calculatePointsForEndPointsAndMountain(position);
+            case YOUTH:
+                return calculatePointsForEndYouth(position);
+            default:
+                return calculatePoints(resultType, position);
+        }
     }
 
     public void createStagePointsForAllExistingResults() {
@@ -494,8 +533,17 @@ public class StagePointsService {
         return new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
     }
 
-    private boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber) {
+    private boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber, int lastStageNumber) {
+
         if (assignment.getFromEvent() == null && assignment.getToEvent() == null) {
+            return false;
+        }
+
+        if (assignment.getFromEvent() != null && assignment.getFromEvent() > lastStageNumber) {
+            return false;
+        }
+
+        if (assignment.getFromEvent() != null && assignment.getFromEvent() > stageNumber) {
             return false;
         }
 
@@ -521,6 +569,117 @@ public class StagePointsService {
             case YOUTH -> calculatePointsForYouth(position);
             default -> 0;
         };
+    }
+
+    private int calculatePointsForEndGC(int position) {
+        switch (position) {
+            case 1:
+                return 300;
+            case 2:
+                return 240;
+            case 3:
+                return 195;
+            case 4:
+                return 165;
+            case 5:
+                return 135;
+            case 6:
+                return 105;
+            case 7:
+                return 90;
+            case 8:
+                return 75;
+            case 9:
+                return 60;
+            case 10:
+                return 51;
+            case 11:
+                return 45;
+            case 12:
+                return 42;
+            case 13:
+                return 39;
+            case 14:
+                return 36;
+            case 15:
+                return 33;
+            case 16:
+                return 30;
+            case 17:
+                return 27;
+            case 18:
+                return 24;
+            case 19:
+                return 21;
+            case 20:
+                return 18;
+            case 21:
+                return 15;
+            case 22:
+                return 12;
+            case 23:
+                return 9;
+            case 24:
+                return 6;
+            case 25:
+                return 3;
+            default:
+                return 0;
+        }
+    }
+
+    private int calculatePointsForEndPointsAndMountain(int position) {
+        switch (position) {
+            case 1:
+                return 150;
+            case 2:
+                return 120;
+            case 3:
+                return 100;
+            case 4:
+                return 80;
+            case 5:
+                return 60;
+            case 6:
+                return 40;
+            case 7:
+                return 30;
+            case 8:
+                return 20;
+            case 9:
+                return 10;
+            case 10:
+                return 5;
+            default:
+                return 0;
+        }
+    }
+
+    private int calculatePointsForEndYouth(int position) {
+        switch (position) {
+            case 1:
+                return 80;
+            case 2:
+                return 60;
+            case 3:
+                return 40;
+            case 4:
+                return 30;
+            case 5:
+                return 25;
+            case 6:
+                return 20;
+            case 7:
+                return 15;
+            case 8:
+                return 10;
+            case 9:
+                return 5;
+            case 10:
+                return 2;
+            default:
+                return 0;
+        }
     }
 
     private int calculatePointsForStage(int position) {
