@@ -361,7 +361,7 @@ public class StageResultService {
                 .collect(Collectors.toList());
     }
 
-    private static final int RACE_LIMIT = 1;
+    private static final int RACE_LIMIT = 999;
 
     public List<TimeResult> scrapeTimeResult(ScrapeResultType scrapeResultType) throws IOException {
         List<TimeResult> allResults = new ArrayList<>();
@@ -418,7 +418,7 @@ public class StageResultService {
         System.out.println("Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
         List<TimeResult> stageResults = new ArrayList<>();
         int resultCount = 0;
-            Duration lastfinisher = null;
+            Duration latestFinisher = null;
 
             Document doc = fetchStageDocument(race, stage, scrapeResultType);
 
@@ -464,14 +464,14 @@ public class StageResultService {
                 Duration resultTime;
                 if (cumulativeTime == null) {
                     // First finisher: treat as absolute time
-                    resultTime = timeHandlerWithCumulative(time, cumulativeTime, lastfinisher);
+                    resultTime = timeHandlerWithCumulative(time, cumulativeTime, latestFinisher);
                     cumulativeTime = resultTime; // Save for next riders
                     System.out.println("New cumulative time: " + cumulativeTime);
                 } else {
                     // All others: treat as gap relative to first finisher
-                    resultTime = timeHandlerWithCumulative(time, cumulativeTime, lastfinisher);
+                    resultTime = timeHandlerWithCumulative(time, cumulativeTime, latestFinisher);
                 }
-                lastfinisher = resultTime;
+                latestFinisher = resultTime;
                 if (stage.getName().startsWith("Stage 1 |") && scrapeResultType.equals(ScrapeResultType.GC)) {
                     String boniSeconds = "0";
                     Element boniSecondsElement = row.selectFirst("td.bonis.ar.fs11.cu600 > div > a");
