@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
+import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserPerCyclistDTO;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.Cyclist;
@@ -340,6 +341,33 @@ public class RacePointsService {
                 reason.isEmpty() ? null : reason,
                 isMain,
                 userId);
+    }
+
+    public List<PointsPerUserDTO> getAllRacePointsForAllUsers(Long competitionId) {
+        List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
+
+        List<PointsPerUserDTO> result = new ArrayList<>();
+
+        for (UserTeam userTeam : userTeams) {
+            User user = userTeam.getUser();
+            Long userId = user.getId();
+            String fullName = user.getFirstName() + " " + user.getLastName();
+
+            MainReserveCyclistPointsDTO racePointsList = getAllRacePoints(competitionId, userId);
+
+            int totalPoints = 0;
+            for (PointsPerUserPerCyclistDTO cyclist : racePointsList.getMainCyclists()) {
+                totalPoints += cyclist.getPoints(); // Assuming there's a getPoints() method
+            }
+
+            for (PointsPerUserPerCyclistDTO cyclist : racePointsList.getReserveCyclists()) {
+                totalPoints += cyclist.getPoints();
+            }
+
+            result.add(new PointsPerUserDTO(totalPoints, fullName, userId));
+        }
+
+        return result;
     }
 
     public MainReserveCyclistPointsDTO getAllRacePoints(Long competitionId, Long userId) {

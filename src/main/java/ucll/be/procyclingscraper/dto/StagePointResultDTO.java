@@ -1,7 +1,6 @@
 package ucll.be.procyclingscraper.dto;
 
 import lombok.Value;
-import ucll.be.procyclingscraper.model.ParcoursType;
 
 @Value
 public class StagePointResultDTO {
