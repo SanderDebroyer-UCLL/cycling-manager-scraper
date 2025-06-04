@@ -13,6 +13,7 @@ import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.Cyclist;
 import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
+import ucll.be.procyclingscraper.model.Stage;
 import ucll.be.procyclingscraper.model.TimeResult;
 import ucll.be.procyclingscraper.service.StageResultService;
 
@@ -89,6 +90,11 @@ public class StageResultController {
             @PathVariable Long stageId,
             @RequestParam ScrapeResultType type) {
         return stageResultService.getStageResultsByStageIdAndType(stageId, type);
+    }
+
+    @GetMapping("/scrape/TTTStages")
+    public List<TimeResult> scrapeTTTStages() throws IOException {
+        return stageResultService.scrapeResultsForTTTStages();
     }
 
 }

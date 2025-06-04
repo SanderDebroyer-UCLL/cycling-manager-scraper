@@ -286,8 +286,10 @@ public class RacePointsService {
                 .collect(Collectors.groupingBy(
                         rp -> rp.getUser().getId(),
                         Collectors.groupingBy(rp -> rp.getRaceResult().getCyclist().getId())));
-        MainReserveCyclistPointsDTO result = new MainReserveCyclistPointsDTO(
-                Collections.emptyList(), Collections.emptyList());
+
+        List<PointsPerUserPerCyclistDTO> allMainCyclists = new ArrayList<>();
+        List<PointsPerUserPerCyclistDTO> allReserveCyclists = new ArrayList<>();
+
         for (UserTeam userTeam : userTeams) {
             User user = userTeam.getUser();
             Long userId = user.getId();
@@ -310,10 +312,11 @@ public class RacePointsService {
                     .filter(dto -> dto.getPoints() > 0) // Only show cyclists with points
                     .toList();
 
-            result = new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
+            allMainCyclists.addAll(mainCyclists);
+            allReserveCyclists.addAll(reserveCyclists);
         }
 
-        return result;
+        return new MainReserveCyclistPointsDTO(allMainCyclists, allReserveCyclists);
     }
 
     private PointsPerUserPerCyclistDTO createPointsDTO(Cyclist cyclist,
@@ -427,6 +430,10 @@ public class RacePointsService {
     }
 
     private boolean isCyclistActiveInRace(CyclistAssignment assignment, int raceNumber) {
+        if (assignment.getFromEvent() == null && assignment.getToEvent() == null) {
+            return false;
+        }
+
         if (assignment.getFromEvent() != null && raceNumber < assignment.getFromEvent()) {
             return false;
         }

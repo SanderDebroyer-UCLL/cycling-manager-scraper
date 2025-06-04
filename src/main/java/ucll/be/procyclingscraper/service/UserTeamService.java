@@ -89,8 +89,6 @@ public class UserTeamService {
                                 .map(CyclistAssignment::getCyclist)
                                 .collect(Collectors.toSet());
 
-                System.out.println("Active main cyclists: " + activeMainCyclists.size());
-
                 // Find cyclists with DNS/DNF from stage results
                 Set<Cyclist> cyclistsWithDNSFromStages = stageResults.stream()
                                 .filter(sr -> activeMainCyclists.contains(sr.getCyclist()))
@@ -123,8 +121,6 @@ public class UserTeamService {
                 Set<Cyclist> cyclistsWithDNS = new HashSet<>();
                 cyclistsWithDNS.addAll(cyclistsWithDNSFromStages);
                 cyclistsWithDNS.addAll(cyclistsWithDNSFromRaces);
-
-                System.out.println("Cyclists with DNS/DNF: " + cyclistsWithDNS.size());
 
                 // Map to DTOs with reason (check both stage and race results)
                 List<CyclistDTO> cyclistDTOs = cyclistsWithDNS.stream()
@@ -177,7 +173,7 @@ public class UserTeamService {
                 return cyclistDTOs;
         }
 
-        public List<UserTeam> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
+        public List<UserTeamDTO> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
 
                 UserTeam userTeam = userTeamRepository.findById(userTeamId)
                                 .orElseThrow(() -> new RuntimeException("User team not found with ID: " + userTeamId));
@@ -214,7 +210,7 @@ public class UserTeamService {
                                 }
 
                                 if (!shouldKeepAssignment) {
-                                        assignment.setToEvent(currentEvent - 1);
+                                        assignment.setToEvent(currentEvent);
                                 }
                         }
                 }
@@ -261,7 +257,7 @@ public class UserTeamService {
                                                 .userTeam(userTeam)
                                                 .cyclist(cyclist)
                                                 .role(CyclistRole.RESERVE)
-                                                .fromEvent(currentEvent)
+                                                .fromEvent(currentEvent + 1) // Reserve cyclists start from next event
                                                 .toEvent(null)
                                                 .build();
 
@@ -269,8 +265,8 @@ public class UserTeamService {
                         }
                 }
 
-                userTeamRepository.save(userTeam);
-                return List.of(userTeam);
+                UserTeam savedUserTeam = userTeamRepository.save(userTeam);
+                return List.of(mapToUserTeamDTO(savedUserTeam));
         }
 
         @Transactional
