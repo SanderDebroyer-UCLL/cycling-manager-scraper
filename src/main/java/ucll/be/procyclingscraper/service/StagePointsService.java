@@ -143,9 +143,6 @@ public class StagePointsService {
                         position = Integer.parseInt(result.getPosition());
                         points = calculatePoints(resultType, position);
 
-                        System.out.println("Calculated points for cyclist " + cyclist.getName() +
-                                " in stage " + stage.getName() + ": " + points);
-
                     } else {
                         points = 0;
                     }
@@ -164,10 +161,6 @@ public class StagePointsService {
                     String reason = position + "e plaats in " + getResultTypeInDutch(resultType);
 
                     boolean exists = stagePointsRepository.existsByStageIdAndReason(stageId, reason);
-                    System.out.println("Checking existence for reason: '" + reason + "'");
-                    System.out.println("StageResult ID: " + matchingStageResult.getId());
-                    System.out.println("Exists: "
-                            + stagePointsRepository.existsByStageIdAndReason(stageId, reason));
 
                     if (exists) {
                         continue;
@@ -313,33 +306,28 @@ public class StagePointsService {
         List<User> users = userTeams.stream()
                 .map(UserTeam::getUser)
                 .distinct()
-                .collect(Collectors.toList());
-
-        System.out.println("Found " + users.size() + " users for competition " + competitionId);
+                .toList();
 
         // Only stage points relevant to the stage
         List<StagePoints> stagePointsList = users.stream()
                 .peek(user -> System.out.println("User: " + user.getUsername()))
                 .flatMap(user -> user.getStagePoints().stream())
                 .filter(sp -> stageId.equals(sp.getStageResult().getStage().getId()))
-                .collect(Collectors.toList());
+                .toList();
 
-        System.out.println("Found " + stagePointsList.size() + " stage points for stage " + stageId);
-
-        // Create a map for efficient lookup: userId -> cyclistId -> StagePoints
+        // Map for efficient lookup: userId -> cyclistId -> StagePoints
         Map<Long, Map<Long, List<StagePoints>>> userCyclistPointsMap = stagePointsList.stream()
                 .collect(Collectors.groupingBy(
                         sp -> sp.getUser().getId(),
                         Collectors.groupingBy(sp -> sp.getStageResult().getCyclist().getId())));
 
-        MainReserveCyclistPointsDTO result = new MainReserveCyclistPointsDTO(
-                Collections.emptyList(), Collections.emptyList());
+        List<PointsPerUserPerCyclistDTO> allMainCyclists = new ArrayList<>();
+        List<PointsPerUserPerCyclistDTO> allReserveCyclists = new ArrayList<>();
 
         for (UserTeam userTeam : userTeams) {
             User user = userTeam.getUser();
             Long userId = user.getId();
 
-            // Get user's points map for efficient lookup
             Map<Long, List<StagePoints>> cyclistPointsMap = userCyclistPointsMap.getOrDefault(userId,
                     Collections.emptyMap());
 
@@ -347,20 +335,21 @@ public class StagePointsService {
                     .filter(ca -> ca.getRole() == CyclistRole.MAIN)
                     .map(CyclistAssignment::getCyclist)
                     .map(cyclist -> createStagePointsDTO(cyclist, cyclistPointsMap, userId, true))
-                    .filter(dto -> dto.getPoints() > 0) // Only show cyclists with points
+                    .filter(dto -> dto.getPoints() > 0)
                     .toList();
 
             List<PointsPerUserPerCyclistDTO> reserveCyclists = userTeam.getCyclistAssignments().stream()
                     .filter(ca -> ca.getRole() == CyclistRole.RESERVE)
                     .map(CyclistAssignment::getCyclist)
                     .map(cyclist -> createStagePointsDTO(cyclist, cyclistPointsMap, userId, false))
-                    .filter(dto -> dto.getPoints() > 0) // Only show cyclists with points
+                    .filter(dto -> dto.getPoints() > 0)
                     .toList();
 
-            result = new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
+            allMainCyclists.addAll(mainCyclists);
+            allReserveCyclists.addAll(reserveCyclists);
         }
 
-        return result;
+        return new MainReserveCyclistPointsDTO(allMainCyclists, allReserveCyclists);
     }
 
     private PointsPerUserPerCyclistDTO createStagePointsDTO(Cyclist cyclist,
@@ -477,10 +466,16 @@ public class StagePointsService {
     }
 
     private boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber) {
+        if (assignment.getFromEvent() == null && assignment.getToEvent() == null) {
+            return false;
+        }
+
+        // If fromEvent is set and current stage is before it, not active
         if (assignment.getFromEvent() != null && stageNumber < assignment.getFromEvent()) {
             return false;
         }
 
+        // If toEvent is set and current stage is after it, not active
         if (assignment.getToEvent() != null && stageNumber > assignment.getToEvent()) {
             return false;
         }
