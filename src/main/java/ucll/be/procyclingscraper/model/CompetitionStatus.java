@@ -4,4 +4,5 @@ public enum CompetitionStatus {
     SORTING,
     SELECTING,
     STARTED,
+    FINISHED,
 }
