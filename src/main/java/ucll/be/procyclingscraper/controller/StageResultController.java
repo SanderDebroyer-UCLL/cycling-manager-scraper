@@ -90,6 +90,13 @@ public class StageResultController {
         return stageResultService.getStageResultsByStageIdAndType(stageId, type);
     }
 
+    @GetMapping("/last/{raceId}")
+    public List<StageResultWithCyclistDTO> getLastResultsByType(
+            @PathVariable Long raceId,
+            @RequestParam ScrapeResultType type) {
+        return stageResultService.getLastResultsByType(raceId, type);
+    }
+
     @GetMapping("/scrape/TTTStages")
     public List<TimeResult> scrapeTTTStages() throws IOException {
         return stageResultService.scrapeResultsForTTTStages();
