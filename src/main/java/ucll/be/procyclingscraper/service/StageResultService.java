@@ -922,8 +922,14 @@ public class StageResultService {
                 }
             }
             else if (cleanedTime.matches("\\d{1,2}:\\d{2}:\\d{2}")) {
-                Duration inputTime = parseToDuration(cleanedTime);
-                return inputTime;
+                Duration parsed = parseToDuration(cleanedTime);
+                if (firstFinisherTime == null) {
+                    return parsed;
+                } else {
+                    Duration resultTime = firstFinisherTime.plus(parsed.minus(parseToDuration("0:00")));
+                    System.out.println("Calculated Time (relative to first): " + resultTime);
+                    return resultTime;
+                }
             }
             // If the time is in mm:ss
             else if (cleanedTime.matches("\\d{1,2}:\\d{2}")) {
