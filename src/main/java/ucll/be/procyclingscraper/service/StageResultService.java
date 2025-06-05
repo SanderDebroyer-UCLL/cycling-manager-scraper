@@ -443,13 +443,18 @@ public class StageResultService {
     public List<PointResult> scrapePointResult(ScrapeResultType scrapeResultType) {
         List<PointResult> results = new ArrayList<>();
         int resultCount = 0;
-        final int MAX_RESULTS = 2000;
+        final int MAX_RESULTS = 1000;
         try {
             List<Race> races = raceRepository.findAll();
 
             for (Race race : races) {
+                LocalDate raceStartTime = LocalDate.parse(race.getStartDate());
                 List<Stage> stages = race.getStages();
                 for (Stage stage : stages) {
+                    if (raceStartTime.isAfter(LocalDate.now())) {
+                    System.out.println(" stage " + stage.getName() + " has not started yet.");
+                        return results;
+                    }
                     System.out.println("\n Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
 
                     if (stage.getName().contains("Stage 1 |")) {
@@ -492,6 +497,9 @@ public class StageResultService {
 
                         Element riderElement = row.selectFirst("td:nth-child(7) a");
                         riderName = riderElement != null ? riderElement.text() : "Unknown";
+
+                        System.out.println(" Processing row for rider: " + riderName +
+                                " | Position: " + position + " | Points: " + point);
 
                         point = point.replaceAll("[^\\d]", "");
                         if (point.isEmpty()) {
@@ -1025,13 +1033,21 @@ public class StageResultService {
             if (tables.size() > 1) {
                 resultRows = tables.get(1).select("tbody > tr");
             }
-        } else if (scrapeResultType.equals(ScrapeResultType.POINTS) || scrapeResultType.equals(ScrapeResultType.KOM)) {
+        } else if (scrapeResultType.equals(ScrapeResultType.POINTS)) {
             if (tables.size() > 2) {
                 resultRows = tables.get(2).select("tbody > tr");
             } else if (tables.size() > 0) {
                 // fallback: use the first table if only one exists
                 System.out.println("POINTS table not found at index 2, using first table as fallback.");
-                resultRows = tables.get(0).select("tbody > tr");
+                // resultRows = tables.get(0).select("tbody > tr");
+            }
+        } else if (scrapeResultType.equals(ScrapeResultType.KOM)) {
+            if (tables.size() > 3) {
+                resultRows = tables.get(3).select("tbody > tr");
+            } else if (tables.size() > 0) {
+                // fallback: use the first table if only one exists
+                System.out.println("KOM table not found at index 3, using first table as fallback.");
+                // resultRows = tables.get(2).select("tbody > tr");
             }
         } else if (scrapeResultType.equals(ScrapeResultType.YOUTH)) {
             System.out.println("Selecting youth results table.");
