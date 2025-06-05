@@ -29,6 +29,12 @@ public class ScraperScheduler {
     @Autowired
     private StageResultService stageResultService;
 
+    @Autowired
+    private RaceResultService raceResultService;
+
+    @Autowired
+    private RacePointsService racePointsService;
+
     @Scheduled(cron = "0 * 1 * * *")
     public void runRaceScraper() throws IOException {
         teamService.scrape();
@@ -40,10 +46,14 @@ public class ScraperScheduler {
         stageService.scrapeStages();
 
         stageResultService.getStageResultsForAllStagesInCompetitions();
+
+        raceResultService.getRaceResultsForAllRacesInCompetitions();
     }
 
-    @Scheduled(cron = "0 * 2 * * *")
+    @Scheduled(cron = "0 * 3 * * *")
     public void runPointsHandler() {
         stagePointsService.createStagePointsForAllExistingResults();
+
+        racePointsService.createRacePointsForAllExistingResults();
     }
 }

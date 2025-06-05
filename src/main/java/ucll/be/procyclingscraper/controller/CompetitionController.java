@@ -10,12 +10,15 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import ucll.be.procyclingscraper.dto.CompetitionDTO;
 import ucll.be.procyclingscraper.dto.CompetitionModel;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
+import ucll.be.procyclingscraper.dto.StatusNotification;
 import ucll.be.procyclingscraper.model.Competition;
+import ucll.be.procyclingscraper.model.CompetitionStatus;
 import ucll.be.procyclingscraper.security.JwtHelper;
 import ucll.be.procyclingscraper.service.CompetitionService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -23,6 +26,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -43,6 +47,11 @@ public class CompetitionController {
     @GetMapping("/all")
     public List<Competition> getAllCompetitions() {
         return competitionService.getAllCompetitions();
+    }
+
+    @GetMapping("/results/all")
+    public Boolean getResultsForAllCompetitions() {
+        return competitionService.getResultsForAllCompetitions();
     }
 
     @GetMapping("/results/{competitionId}")
@@ -69,6 +78,13 @@ public class CompetitionController {
     @GetMapping("/competitionDTOs")
     public List<CompetitionModel> getCompetionDTOs() {
         return competitionService.getCompetitionDTOs();
+    }
+
+    @PutMapping("/{id}")
+    public StatusNotification updateCompetitionStatus(@RequestHeader(name = "Authorization") String token,
+            @PathVariable Long id, @RequestParam(required = true) String status) {
+        CompetitionStatus inputStatus = CompetitionStatus.valueOf(status);
+        return competitionService.updateCompetitionStatus(inputStatus, id);
     }
 
 }

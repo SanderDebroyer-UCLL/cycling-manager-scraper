@@ -39,7 +39,7 @@ public class StageResultController {
     }
 
     @GetMapping("/scrape/stage/{stageId}")
-    public List<TimeResult> scrapeTimeResultsForStage(@PathVariable Long stageId) throws IOException {
+    public boolean scrapeTimeResultsForStage(@PathVariable Long stageId) throws IOException {
         return stageResultService.scrapeTimeResultsForStage(stageId);
     }
 
@@ -68,7 +68,7 @@ public class StageResultController {
         return stageResultService.findAllResults();
     }
 
-    @GetMapping("/points/{id}")
+    @GetMapping("/points{id}")
     public List<StagePointResultDTO> getStagePointsFromStageId(@PathVariable Long id) {
         return stageResultService.findCyclistInByStageIdAndTypeDto(id, "POINTS");
     }
