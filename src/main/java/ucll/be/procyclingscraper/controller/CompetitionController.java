@@ -23,7 +23,6 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
@@ -47,7 +46,7 @@ public class CompetitionController {
     }
 
     @GetMapping("/results/all")
-    public Boolean getResultsForAllCompetitions(@RequestParam String param) {
+    public Boolean getResultsForAllCompetitions() {
         return competitionService.getResultsForAllCompetitions();
     }
 
