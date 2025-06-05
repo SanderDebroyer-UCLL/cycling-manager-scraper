@@ -792,9 +792,19 @@ public class StageResultService {
             rawTime = timeElement != null ? timeElement.text() : "Unknown";
             System.out.println("Raw time: " + rawTime);
 
-            Element riderElement = row.selectFirst("td:nth-child(7) a");
-            String riderName = riderElement != null ? riderElement.text() : "Unknown";
-            System.out.println("Rider Name: " + riderName);
+            Element riderElement;
+            String riderName="";
+            
+            
+            if (stage.getName().equals("Stage 1 (TTT) | Orihuela - Orihuela")) {
+                riderElement = row.selectFirst("td:nth-child(5) a");
+                riderName = riderElement != null ? riderElement.text() : "Unknown";
+                System.out.println("New Rider Name: " + riderName);
+            } else {
+                riderElement = row.selectFirst("td:nth-child(7) a");
+                riderName = riderElement != null ? riderElement.text() : "Unknown";
+                System.out.println("Rider Name: " + riderName);
+            }
 
             String[] parts = rawTime.split(" ");
             String time = parts[0];
