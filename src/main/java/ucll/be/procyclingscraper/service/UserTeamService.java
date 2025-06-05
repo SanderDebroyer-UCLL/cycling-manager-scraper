@@ -280,11 +280,12 @@ public class UserTeamService {
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Competition not found with ID: " + competitionId));
 
-                Long currentPick = competition.getCurrentPick();
+                final Long originalCurrentPick = competition.getCurrentPick();
+                Long currentPick = originalCurrentPick;
 
                 CompetitionPick currentCompetitionPick = competition.getCompetitionPicks()
                                 .stream()
-                                .filter(pick -> pick.getPickOrder().equals(currentPick))
+                                .filter(pick -> pick.getPickOrder().equals(originalCurrentPick))
                                 .findFirst()
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Current pick not found for competition ID: " + competitionId));
@@ -362,7 +363,50 @@ public class UserTeamService {
 
                 // Move to next pick
                 int totalUsers = competition.getUsers().size();
-                competition.setCurrentPick((currentPick >= totalUsers) ? 1L : currentPick + 1);
+                Long currentRound = competition.getCurrentRound();
+
+                if (currentRound == null)
+                        currentRound = 1L;
+                if (currentPick == null)
+                        currentPick = 1L;
+
+                boolean isAscending = currentRound % 2 == 1;
+                Long nextPick;
+                boolean endOfRound = false;
+
+                if (isAscending) {
+                        // Last user in ascending order
+                        if (currentPick.equals((long) totalUsers)) {
+                                endOfRound = true;
+                        } else {
+                                nextPick = currentPick + 1;
+                                competition.setCurrentPick(nextPick);
+                                competition.setCurrentRound(currentRound);
+                                competitionRepository.save(competition);
+                                return new PickNotification(cyclist.getName(), cyclist.getId(), email, nextPick);
+                        }
+                } else {
+                        // First user in descending order
+                        if (currentPick.equals(1L)) {
+                                endOfRound = true;
+                        } else {
+                                nextPick = currentPick - 1;
+                                competition.setCurrentPick(nextPick);
+                                competition.setCurrentRound(currentRound);
+                                competitionRepository.save(competition);
+                                return new PickNotification(cyclist.getName(), cyclist.getId(), email, nextPick);
+                        }
+                }
+
+                if (endOfRound) {
+                        currentRound += 1;
+                        nextPick = (currentRound % 2 == 1) ? 1L : (long) totalUsers;
+
+                        competition.setCurrentRound(currentRound);
+                        competition.setCurrentPick(nextPick);
+                        competitionRepository.save(competition);
+                }
+
                 competitionRepository.save(competition);
 
                 // Return result
