@@ -68,7 +68,7 @@ public class StageResultController {
         return stageResultService.findAllResults();
     }
 
-    @GetMapping("/points/{id}")
+    @GetMapping("/points{id}")
     public List<StagePointResultDTO> getStagePointsFromStageId(@PathVariable Long id) {
         return stageResultService.findCyclistInByStageIdAndTypeDto(id, "POINTS");
     }
