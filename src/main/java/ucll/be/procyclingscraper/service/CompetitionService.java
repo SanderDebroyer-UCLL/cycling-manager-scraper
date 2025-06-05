@@ -345,6 +345,7 @@ public class CompetitionService {
 
         competition.setCompetitionStatus(CompetitionStatus.SORTING);
         competition.setCurrentPick(1L);
+        competition.setCurrentRound(1L);
         competition.setMaxMainCyclists(15);
         competition.setMaxReserveCyclists(5);
 
