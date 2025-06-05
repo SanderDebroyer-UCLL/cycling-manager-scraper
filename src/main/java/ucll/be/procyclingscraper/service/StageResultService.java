@@ -24,7 +24,10 @@ import ucll.be.procyclingscraper.repository.*;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.MonthDay;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -601,6 +604,66 @@ public class StageResultService {
             pointResult.setCyclist(cyclist);
         }
         return pointResult;
+    }
+
+    public List<StageResultWithCyclistDTO> getLastResultsByType(Long raceId, ScrapeResultType type) {
+        List<Stage> stages = raceRepository.findById(raceId)
+                .orElseThrow(() -> new RuntimeException("Race not found"))
+                .getStages();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
+
+        stages.sort((a, b) -> {
+            MonthDay monthDayA = MonthDay.parse(a.getDate(), formatter);
+            MonthDay monthDayB = MonthDay.parse(b.getDate(), formatter);
+
+            LocalDate dateA = monthDayA.atYear(LocalDate.now().getYear());
+            LocalDate dateB = monthDayB.atYear(LocalDate.now().getYear());
+
+            return dateB.compareTo(dateA); // descending order
+        });
+
+        for (Stage stage : stages) {
+            List<StageResult> stageResults = stage.getResults();
+
+            // Filter by type
+            List<StageResult> filteredResults = stageResults.stream()
+                    .filter(result -> result.getScrapeResultType() == type)
+                    .collect(Collectors.toList());
+
+            if (!filteredResults.isEmpty()) {
+                // Map to DTO and return
+                return filteredResults.stream()
+                        .map(result -> {
+                            Cyclist cyclist = result.getCyclist();
+
+                            Duration time = null;
+                            if (result instanceof TimeResult) {
+                                time = ((TimeResult) result).getTime();
+                            }
+
+                            int point = 0;
+                            if (result instanceof PointResult) {
+                                point = ((PointResult) result).getPoint();
+                            }
+
+                            return StageResultWithCyclistDTO.builder()
+                                    .id(result.getId())
+                                    .time(time)
+                                    .point(point)
+                                    .position(result.getPosition())
+                                    .raceStatus(result.getRaceStatus())
+                                    .scrapeResultType(result.getScrapeResultType())
+                                    .cyclistId(cyclist != null ? cyclist.getId() : null)
+                                    .cyclistName(cyclist != null ? cyclist.getName() : null)
+                                    .cyclistCountry(cyclist != null ? cyclist.getCountry() : null)
+                                    .build();
+                        })
+                        .collect(Collectors.toList());
+            }
+        }
+
+        return Collections.emptyList();
     }
 
     public List<StageResultWithCyclistDTO> getStageResultsByStageIdAndType(Long stageId, ScrapeResultType type) {
