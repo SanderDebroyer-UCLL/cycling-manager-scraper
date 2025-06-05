@@ -95,7 +95,8 @@ public class RaceService {
 
         try {
             Document doc = Jsoup.connect(
-                    "https://www.procyclingstats.com/races.php?season=2025&month=&category=1&racelevel=2&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters")
+                ///////////Change "racelevel=3" to higher or lower to scrape different amounts (level) of races////////////////////////
+                    "https://www.procyclingstats.com/races.php?season=2025&month=&category=1&racelevel=3&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters")
                     .userAgent(USER_AGENT)
                     .get();
             Elements raceRows = doc.select("tbody tr");
