@@ -458,8 +458,6 @@ public class StageResultService {
 
     public List<PointResult> scrapePointResultForRace(ScrapeResultType scrapeResultType, Long raceId) {
         List<PointResult> results = new ArrayList<>();
-        int resultCount = 0;
-        final int MAX_RESULTS = 10000;
 
         try {
             Optional<Race> raceOpt = raceRepository.findById(raceId);
@@ -470,72 +468,94 @@ public class StageResultService {
 
             Race race = raceOpt.get();
             for (Stage stage : race.getStages()) {
-                System.out.println("\n Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
+                List<PointResult> stageResults = scrapePointResultForStage(scrapeResultType, stage.getId());
+                results.addAll(stageResults);
+            }
+        } catch (Exception e) {
+            System.err.println(" Error scraping point results for raceId=" + raceId + ": " + e.getMessage());
+            e.printStackTrace();
+        }
 
-                if (stage.getName().contains("Stage 1 |")) {
-                    System.out.println(" === SPECIAL PROCESSING FOR STAGE 1 ===");
-                    List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), scrapeResultType);
-                    for (PointResult pr : pointResults) {
-                        if (resultCount >= MAX_RESULTS)
-                            break;
-                        pr.setStage(stage);
-                        pr.setScrapeResultType(scrapeResultType);
-                        savePointResult(stage, pr, results);
-                        resultCount++;
-                        System.out.println(" Saved PointResult for " + pr.getCyclist().getName() +
-                                " (ID:" + pr.getCyclist().getId() + "): " + pr.getPoint() + " points");
-                    }
-                    continue;
-                }
+        return results;
+    }
 
-                Document doc = fetchStageDocument(race, stage, scrapeResultType);
-                Elements resultRows = resultRows(doc, stage, scrapeResultType);
-                if (resultRows == null || resultRows.isEmpty()) {
-                    System.out.println(" No rows found in the selected table.");
-                    continue;
-                }
+    public List<PointResult> scrapePointResultForStage(ScrapeResultType scrapeResultType, Long stageId) {
+        List<PointResult> results = new ArrayList<>();
+        int resultCount = 0;
 
-                for (Element row : resultRows) {
+        try {
+            Optional<Stage> stageOpt = stageRepository.findById(stageId);
+            if (stageOpt.isEmpty()) {
+                System.err.println("Stage not found for ID: " + stageId);
+                return results;
+            }
+
+            Stage stage = stageOpt.get();
+            System.out.println("\n Processing stage: " + stage.getName() + " (" + stage.getStageUrl() + ")");
+
+            if (stage.getName().contains("Stage 1 |")) {
+                System.out.println(" === SPECIAL PROCESSING FOR STAGE 1 ===");
+                List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), scrapeResultType);
+                for (PointResult pr : pointResults) {
                     if (resultCount >= MAX_RESULTS)
                         break;
-
-                    String position = "Unknown";
-                    String point = "Unknown";
-                    String riderName = "Unknown";
-
-                    Element pointElement = row.selectFirst("td:nth-child(10) a");
-                    point = pointElement != null ? pointElement.text() : "Unknown";
-
-                    Element positionElement = row.selectFirst("td:first-child");
-                    position = positionElement != null ? positionElement.text() : "Unknown";
-
-                    Element riderElement = row.selectFirst("td:nth-child(7) a");
-                    riderName = riderElement != null ? riderElement.text() : "Unknown";
-
-                    point = point.replaceAll("[^\\d]", "");
-                    if (point.isEmpty()) {
-                        System.out.println(" Skipping row with empty points for: " + riderName);
-                        continue;
-                    }
-
-                    Cyclist cyclist = cyclistService.searchCyclist(riderName);
-                    if (cyclist == null) {
-                        System.out.println(" Cyclist not found for name: " + riderName);
-                        continue;
-                    }
-
-                    PointResult pointResult = getOrCreatePointResult(stage, cyclist, scrapeResultType);
-                    pointResult = (PointResult) checkForDNFAndMore(position, pointResult);
-                    fillPointResultFields(pointResult, position, Integer.parseInt(point), scrapeResultType);
-
-                    savePointResult(stage, pointResult, results);
+                    pr.setStage(stage);
+                    pr.setScrapeResultType(scrapeResultType);
+                    savePointResult(stage, pr, results);
                     resultCount++;
-                    System.out.println(" Saved PointResult for " + riderName +
-                            " (ID:" + cyclist.getId() + "): position " + position + ", " + point + " points");
+                    System.out.println(" Saved PointResult for " + pr.getCyclist().getName() +
+                            " (ID:" + pr.getCyclist().getId() + "): " + pr.getPoint() + " points");
                 }
+                return results;
+            }
+
+            Document doc = fetchStageDocument(stage.getRace(), stage, scrapeResultType);
+            Elements resultRows = resultRows(doc, stage, scrapeResultType);
+            if (resultRows == null || resultRows.isEmpty()) {
+                System.out.println(" No rows found in the selected table.");
+                return results;
+            }
+
+            for (Element row : resultRows) {
+                if (resultCount >= MAX_RESULTS)
+                    break;
+
+                String position = "Unknown";
+                String point = "Unknown";
+                String riderName = "Unknown";
+
+                Element pointElement = row.selectFirst("td:nth-child(10) a");
+                point = pointElement != null ? pointElement.text() : "Unknown";
+
+                Element positionElement = row.selectFirst("td:first-child");
+                position = positionElement != null ? positionElement.text() : "Unknown";
+
+                Element riderElement = row.selectFirst("td:nth-child(7) a");
+                riderName = riderElement != null ? riderElement.text() : "Unknown";
+
+                point = point.replaceAll("[^\\d]", "");
+                if (point.isEmpty()) {
+                    System.out.println(" Skipping row with empty points for: " + riderName);
+                    continue;
+                }
+
+                Cyclist cyclist = cyclistService.searchCyclist(riderName);
+                if (cyclist == null) {
+                    System.out.println(" Cyclist not found for name: " + riderName);
+                    continue;
+                }
+
+                PointResult pointResult = getOrCreatePointResult(stage, cyclist, scrapeResultType);
+                pointResult = (PointResult) checkForDNFAndMore(position, pointResult);
+                fillPointResultFields(pointResult, position, Integer.parseInt(point), scrapeResultType);
+
+                savePointResult(stage, pointResult, results);
+                resultCount++;
+                System.out.println(" Saved PointResult for " + riderName +
+                        " (ID:" + cyclist.getId() + "): position " + position + ", " + point + " points");
             }
         } catch (IOException e) {
-            System.err.println(" Error scraping point results for raceId=" + raceId + ": " + e.getMessage());
+            System.err.println(" Error scraping point results for stageId=" + stageId + ": " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -781,28 +801,22 @@ public class StageResultService {
         return stageResults;
     }
 
-    public List<TimeResult> scrapeTimeResultsForStage(Long stageId) throws IOException {
+    public boolean scrapeTimeResultsForStage(Long stageId) throws IOException {
         Stage stage = stageRepository.findById(stageId).orElse(null);
         if (stage == null) {
             System.out.println("Stage not found for ID: " + stageId);
-            return new ArrayList<>();
+            return false;
         }
 
-        List<TimeResult> allResults = new ArrayList<>();
         System.out.println("Scraping results for stage: " + stage.getName());
 
-        for (ScrapeResultType resultType : ScrapeResultType.values()) {
-            try {
-                List<TimeResult> stageResults = scrapeTimeResultByStage(resultType, stage, stage.getRace(),
-                        MAX_RESULTS);
-                allResults.addAll(stageResults);
-            } catch (Exception e) {
-                System.out.println(
-                        "Error scraping " + resultType + " for stage " + stage.getName() + ": " + e.getMessage());
-            }
-        }
+        scrapeTimeResultByStage(ScrapeResultType.STAGE, stage, stage.getRace(), MAX_RESULTS);
+        scrapeTimeResultByStage(ScrapeResultType.GC, stage, stage.getRace(), MAX_RESULTS);
+        scrapePointResultForStage(ScrapeResultType.POINTS, stage.getId());
+        scrapePointResultForStage(ScrapeResultType.KOM, stage.getId());
+        calculateYouthTimeResultForRace(stage.getRace().getId(), ScrapeResultType.YOUTH);
 
-        return allResults;
+        return true;
     }
 
     public List<TimeResult> scrapeTimeResultForRace(ScrapeResultType scrapeResultType, Long raceId) throws IOException {

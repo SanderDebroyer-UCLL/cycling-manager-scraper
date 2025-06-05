@@ -39,8 +39,8 @@ public class StageResultController {
     }
 
     @GetMapping("/scrape/stage/{stageId}")
-    public void scrapeTimeResultsForStage(@PathVariable Long stageId) throws IOException {
-        stageResultService.scrapeAllResultsForRace(stageId);
+    public boolean scrapeTimeResultsForStage(@PathVariable Long stageId) throws IOException {
+        return stageResultService.scrapeTimeResultsForStage(stageId);
     }
 
     @GetMapping("/scrape/gc")
