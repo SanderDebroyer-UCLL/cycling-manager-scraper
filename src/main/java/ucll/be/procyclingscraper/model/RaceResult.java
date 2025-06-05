@@ -1,6 +1,6 @@
 package ucll.be.procyclingscraper.model;
 
-import java.time.LocalTime;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,7 +26,7 @@ public class RaceResult {
 
     private String position;
 
-    private LocalTime time;
+    private Duration time;
 
     @Enumerated(EnumType.STRING)
     private RaceStatus raceStatus;

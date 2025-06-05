@@ -37,7 +37,7 @@ public class RacePointsController {
     }
 
     @GetMapping("/{competitionId}")
-    public List<PointsPerUserDTO> getRacePointsForRace(@PathVariable Long competitionId,
+    public MainReserveCyclistPointsDTO getRacePointsForRace(@PathVariable Long competitionId,
             @RequestParam Long raceId) {
         return racePointsService.getRacePointsForRace(competitionId, raceId);
     }
@@ -47,4 +47,13 @@ public class RacePointsController {
             @RequestParam Long userId) {
         return racePointsService.getAllRacePoints(competitionId, userId);
     }
+
+    @GetMapping("/all/users/{competitionId}")
+    public List<PointsPerUserDTO> getAllRacePointsForAllUsers(@PathVariable Long competitionId) {
+        return racePointsService.getAllRacePointsForAllUsers(competitionId);
+    }
+    public String getMethodName(@RequestParam String param) {
+        return new String();
+    }
+    
 }

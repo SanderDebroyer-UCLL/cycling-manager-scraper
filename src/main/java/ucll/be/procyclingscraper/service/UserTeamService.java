@@ -89,8 +89,6 @@ public class UserTeamService {
                                 .map(CyclistAssignment::getCyclist)
                                 .collect(Collectors.toSet());
 
-                System.out.println("Active main cyclists: " + activeMainCyclists.size());
-
                 // Find cyclists with DNS/DNF from stage results
                 Set<Cyclist> cyclistsWithDNSFromStages = stageResults.stream()
                                 .filter(sr -> activeMainCyclists.contains(sr.getCyclist()))
@@ -123,8 +121,6 @@ public class UserTeamService {
                 Set<Cyclist> cyclistsWithDNS = new HashSet<>();
                 cyclistsWithDNS.addAll(cyclistsWithDNSFromStages);
                 cyclistsWithDNS.addAll(cyclistsWithDNSFromRaces);
-
-                System.out.println("Cyclists with DNS/DNF: " + cyclistsWithDNS.size());
 
                 // Map to DTOs with reason (check both stage and race results)
                 List<CyclistDTO> cyclistDTOs = cyclistsWithDNS.stream()
@@ -177,7 +173,7 @@ public class UserTeamService {
                 return cyclistDTOs;
         }
 
-        public List<UserTeam> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
+        public List<UserTeamDTO> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
 
                 UserTeam userTeam = userTeamRepository.findById(userTeamId)
                                 .orElseThrow(() -> new RuntimeException("User team not found with ID: " + userTeamId));
@@ -214,7 +210,7 @@ public class UserTeamService {
                                 }
 
                                 if (!shouldKeepAssignment) {
-                                        assignment.setToEvent(currentEvent - 1);
+                                        assignment.setToEvent(currentEvent);
                                 }
                         }
                 }
@@ -261,7 +257,7 @@ public class UserTeamService {
                                                 .userTeam(userTeam)
                                                 .cyclist(cyclist)
                                                 .role(CyclistRole.RESERVE)
-                                                .fromEvent(currentEvent)
+                                                .fromEvent(currentEvent + 1) // Reserve cyclists start from next event
                                                 .toEvent(null)
                                                 .build();
 
@@ -269,8 +265,8 @@ public class UserTeamService {
                         }
                 }
 
-                userTeamRepository.save(userTeam);
-                return List.of(userTeam);
+                UserTeam savedUserTeam = userTeamRepository.save(userTeam);
+                return List.of(mapToUserTeamDTO(savedUserTeam));
         }
 
         @Transactional
@@ -284,11 +280,12 @@ public class UserTeamService {
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Competition not found with ID: " + competitionId));
 
-                Long currentPick = competition.getCurrentPick();
+                final Long originalCurrentPick = competition.getCurrentPick();
+                Long currentPick = originalCurrentPick;
 
                 CompetitionPick currentCompetitionPick = competition.getCompetitionPicks()
                                 .stream()
-                                .filter(pick -> pick.getPickOrder().equals(currentPick))
+                                .filter(pick -> pick.getPickOrder().equals(originalCurrentPick))
                                 .findFirst()
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Current pick not found for competition ID: " + competitionId));
@@ -366,7 +363,50 @@ public class UserTeamService {
 
                 // Move to next pick
                 int totalUsers = competition.getUsers().size();
-                competition.setCurrentPick((currentPick >= totalUsers) ? 1L : currentPick + 1);
+                Long currentRound = competition.getCurrentRound();
+
+                if (currentRound == null)
+                        currentRound = 1L;
+                if (currentPick == null)
+                        currentPick = 1L;
+
+                boolean isAscending = currentRound % 2 == 1;
+                Long nextPick;
+                boolean endOfRound = false;
+
+                if (isAscending) {
+                        // Last user in ascending order
+                        if (currentPick.equals((long) totalUsers)) {
+                                endOfRound = true;
+                        } else {
+                                nextPick = currentPick + 1;
+                                competition.setCurrentPick(nextPick);
+                                competition.setCurrentRound(currentRound);
+                                competitionRepository.save(competition);
+                                return new PickNotification(cyclist.getName(), cyclist.getId(), email, nextPick);
+                        }
+                } else {
+                        // First user in descending order
+                        if (currentPick.equals(1L)) {
+                                endOfRound = true;
+                        } else {
+                                nextPick = currentPick - 1;
+                                competition.setCurrentPick(nextPick);
+                                competition.setCurrentRound(currentRound);
+                                competitionRepository.save(competition);
+                                return new PickNotification(cyclist.getName(), cyclist.getId(), email, nextPick);
+                        }
+                }
+
+                if (endOfRound) {
+                        currentRound += 1;
+                        nextPick = (currentRound % 2 == 1) ? 1L : (long) totalUsers;
+
+                        competition.setCurrentRound(currentRound);
+                        competition.setCurrentPick(nextPick);
+                        competitionRepository.save(competition);
+                }
+
                 competitionRepository.save(competition);
 
                 // Return result

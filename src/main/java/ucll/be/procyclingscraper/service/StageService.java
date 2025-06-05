@@ -7,6 +7,7 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -21,9 +22,6 @@ import ucll.be.procyclingscraper.repository.StageRepository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @Service
 public class StageService {
@@ -61,25 +59,18 @@ public class StageService {
     }
 
     public List<Stage> scrapeStages() {
-        List<Race> races = raceRepository.findAll();
+        List<Race> races = raceRepository.findAll(Sort.by("id"));
+        System.out.println("Number of races found in the database: " + races.size());
         List<Stage> allStages = new ArrayList<>();
 
-        ExecutorService executor = Executors.newFixedThreadPool(8); // You can adjust pool size
-
-        List<CompletableFuture<List<Stage>>> futures = races.stream()
-                .map(race -> CompletableFuture.supplyAsync(() -> scrapeStagesByRaceId(race.getId()), executor))
-                .toList();
-
-        for (CompletableFuture<List<Stage>> future : futures) {
+        for (Race race : races) {
             try {
-                List<Stage> stages = future.get(); // Block until the individual scraping completes
+                List<Stage> stages = scrapeStagesByRaceId(race.getId());
                 allStages.addAll(stages);
             } catch (Exception e) {
-                logger.error("Failed to scrape stages asynchronously", e);
+                logger.error("Failed to scrape stages for race: " + race.getName(), e);
             }
         }
-
-        executor.shutdown(); // Always shutdown executor
 
         return allStages;
     }
@@ -131,7 +122,9 @@ public class StageService {
 
                     List<Stage> existingStages = race.getStages();
                     existingStages.removeIf(stage -> !stagesList.contains(stage));
+                    System.out.println("Existing stages of race" + race.getName() + ": " + existingStages.size());
                     race.setStages(stagesList);
+                    System.out.println("Persisting race " + race.getName() + " after stage added");
                     raceRepository.save(race);
                     break;
                 }

@@ -41,6 +41,7 @@ public class Competition {
     private int maxMainCyclists;
     private int maxReserveCyclists;
     private Long currentPick;
+    private Long currentRound;
 
     @Enumerated(EnumType.STRING)
     private CompetitionStatus competitionStatus;
