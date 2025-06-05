@@ -73,6 +73,20 @@ public class CompetitionService {
         return competitionRepository.findAll();
     }
 
+    public Boolean getResultsForAllCompetitions() {
+        List<Competition> competitions = competitionRepository.findAll();
+        for (Competition competition : competitions) {
+            try {
+                getResults(competition.getId());
+            } catch (IOException e) {
+                System.err.println(
+                        "Error fetching results for competition ID " + competition.getId() + ": " + e.getMessage());
+                return false; // or handle the error as needed
+            }
+        }
+        return true;
+    }
+
     public Boolean getResults(Long competitionId) throws IOException {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));

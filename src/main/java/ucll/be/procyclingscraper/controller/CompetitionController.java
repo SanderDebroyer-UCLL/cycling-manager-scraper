@@ -23,6 +23,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -43,6 +44,11 @@ public class CompetitionController {
     @GetMapping("/all")
     public List<Competition> getAllCompetitions() {
         return competitionService.getAllCompetitions();
+    }
+
+    @GetMapping("/results/all")
+    public Boolean getResultsForAllCompetitions(@RequestParam String param) {
+        return competitionService.getResultsForAllCompetitions();
     }
 
     @GetMapping("/results/{competitionId}")
