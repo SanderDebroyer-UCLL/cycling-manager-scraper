@@ -59,6 +59,8 @@ public class RacePointsService {
             if (races == null)
                 continue;
             for (Race race : races) {
+                if (!race.getStages().isEmpty())
+                    continue;
                 createRacePoints(competition.getId(), race.getId());
             }
         }
