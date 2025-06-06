@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
-@CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
+@CrossOrigin(origins = "*")
 @RequestMapping("/stagePoints")
 public class StagePointsController {
 

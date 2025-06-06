@@ -12,7 +12,7 @@ import ucll.be.procyclingscraper.service.TeamService;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
+@CrossOrigin(origins = "*")
 @RequestMapping("/teams")
 public class TeamController {
 

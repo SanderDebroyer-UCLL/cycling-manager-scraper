@@ -12,7 +12,7 @@ import ucll.be.procyclingscraper.service.CyclistService;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app/")
+@CrossOrigin(origins = "*")
 @RequestMapping("/cyclists")
 public class CyclistController {
 
