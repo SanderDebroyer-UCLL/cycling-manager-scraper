@@ -147,15 +147,11 @@ public class StagePointsService {
 
                     if (resultOption.isPresent()) {
                         StageResult result = resultOption.get();
-                        if ("OTL".equals(result.getPosition()) ||
-                                "DNF".equals(result.getPosition()) ||
-                                "DQS".equals(result.getPosition()) ||
-                                "DNS".equals(result.getPosition()) ||
-                                "NR".equals(result.getPosition())) {
-                            continue; // Skip these results
+                        try {
+                            position = Integer.parseInt(result.getPosition());
+                        } catch (NumberFormatException e) {
+                            continue; // Skip if position is not a valid number
                         }
-                        position = Integer.parseInt(result.getPosition());
-
                         // Calculate points based on result type and whether it's the last stage
                         if (isLastStage && (resultType == ScrapeResultType.GC ||
                                 resultType == ScrapeResultType.POINTS ||

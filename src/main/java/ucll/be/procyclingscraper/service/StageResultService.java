@@ -577,9 +577,6 @@ public class StageResultService {
         } else if (position.equalsIgnoreCase("OTL")) {
             status = RaceStatus.OTL;
         }
-        // else if(position.equalsIgnoreCase("NR")){
-
-        // }
         else {
             status = RaceStatus.FINISHED;
         }
