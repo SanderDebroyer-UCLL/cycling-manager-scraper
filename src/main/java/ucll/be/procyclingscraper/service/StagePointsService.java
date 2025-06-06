@@ -150,7 +150,8 @@ public class StagePointsService {
                         if ("OTL".equals(result.getPosition()) ||
                                 "DNF".equals(result.getPosition()) ||
                                 "DQS".equals(result.getPosition()) ||
-                                "DNS".equals(result.getPosition())) {
+                                "DNS".equals(result.getPosition()) ||
+                                "NR".equals(result.getPosition())) {
                             continue; // Skip these results
                         }
                         position = Integer.parseInt(result.getPosition());
