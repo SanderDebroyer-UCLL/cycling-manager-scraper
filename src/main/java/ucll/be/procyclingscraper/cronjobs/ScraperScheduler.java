@@ -35,25 +35,44 @@ public class ScraperScheduler {
     @Autowired
     private RacePointsService racePointsService;
 
-    @Scheduled(cron = "0 * 1 * * *")
-    public void runRaceScraper() throws IOException {
+    @Scheduled(cron = "0 0 1 * * *")
+    public void scrapeTeams() throws IOException {
         teamService.scrape();
+    }
 
+    @Scheduled(cron = "0 30 1 * * *")
+    public void scrapeCyclists() throws IOException {
         cyclistService.scrapeCyclists();
+    }
 
+    @Scheduled(cron = "0 0 2 * * *")
+    public void scrapeRaces() throws IOException {
         raceService.scrapeRaces();
+    }
 
+    @Scheduled(cron = "0 30 2 * * *")
+    public void scrapeStages() throws IOException {
         stageService.scrapeStages();
+    }
 
+    @Scheduled(cron = "0 0 3 * * *")
+    public void scrapeStageResults() throws IOException {
         stageResultService.getStageResultsForAllStagesInCompetitions();
+    }
 
+    @Scheduled(cron = "0 30 3 * * *")
+    public void scrapeRaceResults() throws IOException {
         raceResultService.getRaceResultsForAllRacesInCompetitions();
     }
 
-    @Scheduled(cron = "0 * 3 * * *")
-    public void runPointsHandler() {
+    @Scheduled(cron = "0 0 4 * * *")
+    public void runStagePointsHandler() {
         stagePointsService.createStagePointsForAllExistingResults();
+    }
 
+    @Scheduled(cron = "0 30 4 * * *")
+    public void runRacePointsHandler() {
         racePointsService.createRacePointsForAllExistingResults();
     }
+
 }
