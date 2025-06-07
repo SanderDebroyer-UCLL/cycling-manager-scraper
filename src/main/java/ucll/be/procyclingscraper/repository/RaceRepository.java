@@ -16,6 +16,9 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
     @Query("SELECT r FROM Race r LEFT JOIN FETCH r.stages WHERE r.id = :id")
     Optional<Race> findByIdWithStages(@Param("id") Long id);
 
+    @Query("SELECT r FROM Race r LEFT JOIN FETCH r.stages LEFT JOIN FETCH r.competitions")
+    List<Race> findAllWithStagesAndCompetitions();
+
     Race findByName(String raceName);
 
     List<Race> findRaceByStagesIsEmpty();

@@ -43,7 +43,7 @@ public class RaceService {
     private CyclistService cyclistService;
 
     public List<RaceDTO> getRaces() {
-        List<Race> races = raceRepository.findAll();
+        List<Race> races = raceRepository.findAllWithStagesAndCompetitions();
         List<RaceDTO> raceDTOs = new ArrayList<>();
 
         for (Race race : races) {
