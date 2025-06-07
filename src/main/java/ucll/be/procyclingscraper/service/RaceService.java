@@ -95,8 +95,9 @@ public class RaceService {
 
         try {
             Document doc = Jsoup.connect(
-                ///////////Change "racelevel=3" to higher or lower to scrape different amounts (level) of races////////////////////////
-                    "https://www.procyclingstats.com/races.php?season=2025&month=&category=1&racelevel=3&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters")
+                    /////////// Change "racelevel=3" to higher or lower to scrape different amounts
+                    /////////// (level) of races////////////////////////
+                    "https://www.procyclingstats.com/races.php?season=2025&month=&category=1&racelevel=4&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters")
                     .userAgent(USER_AGENT)
                     .get();
             Elements raceRows = doc.select("tbody tr");
@@ -255,9 +256,9 @@ public class RaceService {
                 } else {
                     System.out.println("Verwerk nationale selectie: " + teamName);
                 }
-    
+
                 Elements listElements = ridersCont.select("ul li");
-                
+
                 for (Element listElement : listElements) {
                     // The rider's name is inside the <a> tag
                     Element riderAnchor = listElement.selectFirst("a");
@@ -291,9 +292,9 @@ public class RaceService {
                             if (!race.getYouthCyclistsIDs().contains(cyclist.getId())) {
                                 race.addToYouthCyclistsIDs(cyclist.getId());
                                 raceRepository.save(race);
-                            } 
+                            }
                         }
-    
+
                         LocalDate currentDate = LocalDate.now();
                         LocalDate startDate = LocalDate.parse(race.getStartDate(),
                                 DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -333,7 +334,7 @@ public class RaceService {
                                     if (!race.getYouthCyclistsIDs().contains(newCyclist.getId())) {
                                         race.addToYouthCyclistsIDs(newCyclist.getId());
                                         raceRepository.save(race);
-                                    }   
+                                    }
                                 }
 
                                 System.out.println("Nieuwe nationale Renner toegevoegd: " + newCyclist.getName());
