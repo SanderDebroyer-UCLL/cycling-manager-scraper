@@ -79,7 +79,7 @@ public class StageService {
     public List<Stage> scrapeStagesByRaceId(Long raceId) {
         List<Stage> allStages = new ArrayList<>();
 
-        Race race = raceRepository.findById(raceId)
+        Race race = raceRepository.findByIdWithStages(raceId)
                 .orElseThrow(() -> new IllegalArgumentException());
         System.out.println("race: " + race.getName());
         List<Stage> stagesList = new ArrayList<>();
