@@ -29,7 +29,7 @@ public class Race {
     private Integer distance;
     private String raceUrl;
 
-    @OneToMany(mappedBy = "race", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "race", cascade = CascadeType.ALL)
     private List<Stage> stages;
 
     @ManyToMany
