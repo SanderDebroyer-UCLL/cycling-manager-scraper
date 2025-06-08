@@ -171,8 +171,7 @@ public class CompetitionService {
     }
 
     public Set<CompetitionDTO> getCompetitions(String email) {
-        User currentUser = userRepository.findUserByEmail(email);
-        Set<Competition> competitions = currentUser.getCompetitions();
+        Set<Competition> competitions = competitionRepository.findByUsers_Email(email);
 
         Set<CompetitionDTO> competitionDTOs = new HashSet<>();
         for (Competition competition : competitions) {

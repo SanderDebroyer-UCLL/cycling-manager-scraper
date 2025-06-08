@@ -8,9 +8,7 @@ import org.springframework.stereotype.Service;
 
 import ucll.be.procyclingscraper.dto.CreateUserData;
 import ucll.be.procyclingscraper.dto.UserDTO;
-import ucll.be.procyclingscraper.model.RacePoints;
 import ucll.be.procyclingscraper.model.Role;
-import ucll.be.procyclingscraper.model.StagePoints;
 import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.repository.UserRepository;
 
@@ -26,42 +24,35 @@ public class UserService {
     }
 
     public List<UserDTO> getAllUsers() {
-        return userRepo.findAll().stream()
-                .map(user -> new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(),
-                        user.getRole(), user.getRacePoints().stream()
-                                .mapToInt(RacePoints::getValue)
-                                .sum()
-                                + user.getStagePoints().stream()
-                                        .mapToInt(StagePoints::getValue)
-                                        .sum()))
-                .toList();
+        return userRepo.findAllBasicUsers();
     }
 
     public UserDTO getLoggedInUser(String email) {
-        User user = userRepo.findUserByEmail(email);
-        if (user == null) {
-            return null;
-        }
-        return new UserDTO(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole(), 0);
+        return userRepo.findUserDTOByEmail(email)
+                .map(user -> new UserDTO(
+                        user.getId(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        user.getEmail(),
+                        user.getRole(),
+                        0 // explicitly resetting totalPoints
+                ))
+                .orElse(null);
     }
 
     public User addUser(CreateUserData userData) throws ServiceException {
-        User existingUser = userRepo.findUserByEmail(userData.getEmail());
-        if (existingUser != null) {
-            throw new ServiceException("Uh, oh! User with email " + existingUser.getEmail() + " already exists.");
+        if (userRepo.findUserDTOByEmail(userData.getEmail()).isPresent()) {
+            throw new ServiceException("Uh, oh! User with email " + userData.getEmail() + " already exists.");
         }
 
         User newUser = new User();
-
         newUser.setFirstName(userData.getFirstName());
         newUser.setLastName(userData.getLastName());
         newUser.setEmail(userData.getEmail());
         newUser.setPassword(passwordEncoder.encode(userData.getPassword()));
         newUser.setRole(Role.USER);
 
-        userRepo.save(newUser);
-
-        return newUser;
+        return userRepo.save(newUser);
     }
 
     public UserDTO mapToUserDTO(User user) {
@@ -72,5 +63,4 @@ public class UserService {
                 user.getEmail(),
                 user.getRole(), 0);
     }
-
 }
