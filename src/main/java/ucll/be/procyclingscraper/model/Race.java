@@ -30,7 +30,8 @@ public class Race {
     private String raceUrl;
 
     @OneToMany(mappedBy = "race", cascade = CascadeType.ALL)
-    private List<Stage> stages;
+    @JsonManagedReference
+    private List<Stage> stages = new ArrayList<>();
 
     @ManyToMany
     @JsonManagedReference

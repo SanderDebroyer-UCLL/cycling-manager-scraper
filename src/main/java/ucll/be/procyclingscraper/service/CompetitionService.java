@@ -103,7 +103,6 @@ public class CompetitionService {
         return true;
     }
 
-    @Transactional
     public CompetitionDTO scrapeCompetitionStages(Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
