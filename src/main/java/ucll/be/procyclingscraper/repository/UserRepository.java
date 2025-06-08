@@ -13,39 +13,17 @@ import ucll.be.procyclingscraper.model.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     User findUserById(long id);
 
-    @Query("""
-                SELECT new your.package.UserDTO(
-                    u.id,
-                    u.firstName,
-                    u.lastName,
-                    u.email,
-                    u.role,
-                    COALESCE(SUM(rp.value), 0) + COALESCE(SUM(sp.value), 0)
-                )
-                FROM User u
-                LEFT JOIN u.racePoints rp
-                LEFT JOIN u.stagePoints sp
-                WHERE u.email = :email
-                GROUP BY u.id, u.firstName, u.lastName, u.email, u.role
-            """)
+    @Query("SELECT new ucll.be.procyclingscraper.dto.UserDTO(" +
+            "u.id, u.firstName, u.lastName, u.email, u.role, null) " +
+            "FROM User u " +
+            "WHERE u.email = :email")
     Optional<UserDTO> findUserDTOByEmail(@Param("email") String email);
 
     User findUserByEmail(String username);
 
-    @Query("""
-                SELECT new your.package.UserDTO(
-                    u.id,
-                    u.firstName,
-                    u.lastName,
-                    u.email,
-                    u.role,
-                    COALESCE(SUM(rp.value), 0) + COALESCE(SUM(sp.value), 0)
-                )
-                FROM User u
-                LEFT JOIN u.racePoints rp
-                LEFT JOIN u.stagePoints sp
-                GROUP BY u.id, u.firstName, u.lastName, u.email, u.role
-            """)
+    @Query("SELECT new ucll.be.procyclingscraper.dto.UserDTO(" +
+            "u.id, u.firstName, u.lastName, u.email, u.role, null) " +
+            "FROM User u")
     List<UserDTO> findAllBasicUsers();
 
 }

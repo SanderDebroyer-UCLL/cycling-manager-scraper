@@ -35,22 +35,22 @@ public class ScraperScheduler {
     @Autowired
     private RacePointsService racePointsService;
 
-    @Scheduled(cron = "0 0 1 * * *")
+    @Scheduled(cron = "0 0 1 * * SUN") // Sunday at 01:00
     public void scrapeTeams() throws IOException {
         teamService.scrape();
     }
 
-    @Scheduled(cron = "0 30 1 * * *")
+    @Scheduled(cron = "0 30 1 * * SUN") // Sunday 01:30
     public void scrapeCyclists() throws IOException {
         cyclistService.scrapeCyclists();
     }
 
-    @Scheduled(cron = "0 0 2 * * *")
+    @Scheduled(cron = "0 0 2 * * SUN") // Sunday 02:00
     public void scrapeRaces() throws IOException {
         raceService.scrapeRaces();
     }
 
-    @Scheduled(cron = "0 30 2 * * *")
+    @Scheduled(cron = "0 30 2 * * SUN") // Sunday 02:30
     public void scrapeStages() throws IOException {
         stageService.scrapeStages();
     }
