@@ -65,8 +65,8 @@ public class RaceService {
                     race.getId(),
                     race.getName(),
                     race.getNiveau(),
-                    race.getStartDate().toString(),
-                    race.getEndDate().toString(),
+                    race.getStartDate() != null ? race.getStartDate().toString() : "",
+                    race.getEndDate() != null ? race.getEndDate().toString() : "",
                     race.getDistance(),
                     race.getRaceUrl(),
                     race.getCompetitions().stream().map(c -> c.getId()).toList(),
@@ -97,7 +97,7 @@ public class RaceService {
             Document doc = Jsoup.connect(
                     /////////// Change "racelevel=3" to higher or lower to scrape different amounts
                     /////////// (level) of races////////////////////////
-                    "https://www.procyclingstats.com/races.php?season=2025&month=&category=1&racelevel=3&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters")
+                    "https://www.procyclingstats.com/races.php?season=2025&month=&category=1&racelevel=4&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters")
                     .userAgent(USER_AGENT)
                     .get();
             Elements raceRows = doc.select("tbody tr");
