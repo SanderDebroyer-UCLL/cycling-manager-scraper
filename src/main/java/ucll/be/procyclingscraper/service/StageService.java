@@ -79,8 +79,7 @@ public class StageService {
     public List<Stage> scrapeStagesByRaceId(Long raceId) {
         List<Stage> allStages = new ArrayList<>();
 
-        Race race = raceRepository.findByIdWithStages(raceId)
-                .orElseThrow(() -> new IllegalArgumentException());
+        Race race = raceRepository.findById(raceId).orElseThrow(() -> new IllegalArgumentException());
         System.out.println("race: " + race.getName());
         List<Stage> stagesList = new ArrayList<>();
 
@@ -112,6 +111,7 @@ public class StageService {
                             if (stage == null) {
                                 stage = new Stage();
                             }
+                            System.out.println("Stage name: " + stageName);
                             stage.setStageUrl(stageUrl);
                             stage.setDate(date);
                             stage.setName(stageName);
