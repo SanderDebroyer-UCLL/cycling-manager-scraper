@@ -111,10 +111,11 @@ public class StageService {
                             if (stage == null) {
                                 stage = new Stage();
                             }
-                            System.out.println("Stage name: " + stageName);
+                            // TODO: check if this doesnt break anything
                             stage.setStageUrl(stageUrl);
                             stage.setDate(date);
                             stage.setName(stageName);
+                            stage.setRace(race);
                             logger.info("Scraped stage URL: {}", stageUrl);
                             stagesList.add(scrapeStageDetails(stage));
                         }
