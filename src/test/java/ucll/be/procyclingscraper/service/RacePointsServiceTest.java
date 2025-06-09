@@ -31,6 +31,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
+import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserPerCyclistDTO;
 import ucll.be.procyclingscraper.model.Competition;
 import ucll.be.procyclingscraper.model.Cyclist;
@@ -67,14 +68,9 @@ public class RacePointsServiceTest {
     private CyclistRepository cyclistRepository;
 
     @InjectMocks
+    @Spy
     private RacePointsService racePointsService;
 
-    @Spy 
-    @InjectMocks
-    private RacePointsService spyRacePointsService;
-
-
-    // My
     @Test
     void testCreateRacePointsForAllExistingResults() {
         // Sample data
@@ -95,81 +91,80 @@ public class RacePointsServiceTest {
 
         // Use a spy so we can verify internal method call
         doReturn(Collections.emptyList())
-            .when(spyRacePointsService).createRacePoints(100L, 1L);
+            .when(racePointsService).createRacePoints(100L, 1L);
 
         // Call method
-        spyRacePointsService.createRacePointsForAllExistingResults();
+        racePointsService.createRacePointsForAllExistingResults();
 
         // Verify createRacePoints only called for race1
-        verify(spyRacePointsService).createRacePoints(100L, 1L);
-        verify(spyRacePointsService, never()).createRacePoints(100L, 2L);
+        verify(racePointsService).createRacePoints(100L, 1L);
+        verify(racePointsService, never()).createRacePoints(100L, 2L);
     }
 
-    // // My 
-    // @Test
-    // void testCreateRacePoints_success() {
-    //     // --- Arrange ---
-    //     Long competitionId = 1L;
-    //     Long raceId = 2L;
+    // My 
+    @Test
+    void testCreateRacePoints_success() {
+        // --- Arrange ---
+        Long competitionId = 1L;
+        Long raceId = 2L;
 
-    //     // Setup race
-    //     Race race = new Race();
-    //     race.setId(raceId);
-    //     race.setStartDate("06-01-2025");
+        // Setup race
+        Race race = new Race();
+        race.setId(raceId);
+        race.setStartDate("06-01-2025");
 
-    //     // Setup competition
-    //     Competition competition = new Competition();
-    //     competition.setId(competitionId);
-    //     competition.setRaces(Set.of(race));
+        // Setup competition
+        Competition competition = new Competition();
+        competition.setId(competitionId);
+        competition.setRaces(Set.of(race));
 
-    //     // Setup user team
-    //     Cyclist cyclist = new Cyclist();
-    //     cyclist.setId(100L);
-    //     cyclist.setName("Jane Doe");
+        // Setup user team
+        Cyclist cyclist = new Cyclist();
+        cyclist.setId(100L);
+        cyclist.setName("Jane Doe");
 
-    //     RaceResult raceResult = new RaceResult();
-    //     raceResult.setRace(race);
-    //     raceResult.setPosition("1");
-    //     raceResult.setRacePoints(new HashSet<>());
-    //     cyclist.setRaceResults(List.of(raceResult));
+        RaceResult raceResult = new RaceResult();
+        raceResult.setRace(race);
+        raceResult.setPosition("1");
+        raceResult.setRacePoints(new HashSet<>());
+        cyclist.setRaceResults(List.of(raceResult));
 
-    //     CyclistAssignment assignment = new CyclistAssignment();
-    //     assignment.setCyclist(cyclist);
-    //     assignment.setRole(CyclistRole.MAIN);
+        CyclistAssignment assignment = new CyclistAssignment();
+        assignment.setCyclist(cyclist);
+        assignment.setRole(CyclistRole.MAIN);
 
-    //     User user = new User();
-    //     user.setId(999L);
+        User user = new User();
+        user.setId(999L);
 
-    //     UserTeam userTeam = new UserTeam();
-    //     userTeam.setUser(user);
-    //     userTeam.setCyclistAssignments(List.of(assignment));
+        UserTeam userTeam = new UserTeam();
+        userTeam.setUser(user);
+        userTeam.setCyclistAssignments(List.of(assignment));
 
-    //     // Mock repo methods
-    //     when(raceRepository.findById(raceId)).thenReturn(Optional.of(race));
-    //     when(competitionRepository.findById(competitionId)).thenReturn(Optional.of(competition));
-    //     when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam));
-    //     when(cyclistRepository.findCyclistsByRaceId(raceId)).thenReturn(List.of(cyclist));
-    //     when(racePointsRepository.existsByRaceIdAndReason(eq(raceId), anyString())).thenReturn(false);
-    //     RacePointsService spyService = Mockito.spy(racePointsService);
-    //     // doReturn(true).when(spyService).isCyclistActiveInRace(any(), anyInt());
-    //     // doReturn(100).when(spyService).calculateRacePoints(1);
+        // Mock repo methods
+        when(raceRepository.findById(raceId)).thenReturn(Optional.of(race));
+        when(competitionRepository.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam));
+        when(cyclistRepository.findCyclistsByRaceId(raceId)).thenReturn(List.of(cyclist));
+        when(racePointsRepository.existsByRaceIdAndReason(eq(raceId), anyString())).thenReturn(false);
+        doReturn(true).when(racePointsService).isCyclistActiveInRace(any(), anyInt());
+        // doReturn(100).when(racePointsService).calculateRacePoints(1);
 
-    //     // Mock save
-    //     ArgumentCaptor<RacePoints> captor = ArgumentCaptor.forClass(RacePoints.class);
-    //     when(racePointsRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
+        // Mock save
+        ArgumentCaptor<RacePoints> captor = ArgumentCaptor.forClass(RacePoints.class);
+        when(racePointsRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
 
-    //     // --- Act ---
-    //     List<RacePoints> result = spyService.createRacePoints(competitionId, raceId);
+        // --- Act ---
+        List<RacePoints> result = racePointsService.createRacePoints(competitionId, raceId);
 
-    //     // --- Assert ---
-    //     assertEquals(1, result.size());
+        // --- Assert ---
+        assertEquals(1, result.size());
 
-    //     RacePoints savedPoints = captor.getValue();
-    //     assertEquals(100, savedPoints.getValue());
-    //     assertEquals("1e", savedPoints.getReason());
-    //     assertEquals(user, savedPoints.getUser());
-    // }
+        RacePoints savedPoints = captor.getValue();
+        assertEquals(100, savedPoints.getValue());
+        assertEquals("1e", savedPoints.getReason());
+        assertEquals(user, savedPoints.getUser());
+    }
 
     @Test
     void testGetRacePointsForUserPerCyclist_returnsCorrectPointsAndClassification() {
@@ -259,52 +254,48 @@ public class RacePointsServiceTest {
         assertEquals(userId, reserveDto.getUserId());
     }
 
-    // @Test
-    // void testGetAllRacePointsForAllUsers_calculatesTotalPointsCorrectly() {
-    //     Long competitionId = 1L;
+    @Test
+    void testGetAllRacePointsForAllUsers_calculatesTotalPointsCorrectly() {
+        Long competitionId = 1L;
 
-    //     User user = new User();
-    //     user.setId(10L);
-    //     user.setFirstName("John");
-    //     user.setLastName("Doe");
+        User user = new User();
+        user.setId(10L);
+        user.setFirstName("John");
+        user.setLastName("Doe");
 
-    //     Cyclist mainCyclist = new Cyclist();
-    //     mainCyclist.setId(1L);
-    //     mainCyclist.setName("Main Cyclist");
+        Cyclist mainCyclist = new Cyclist();
+        mainCyclist.setId(1L);
+        mainCyclist.setName("Main Cyclist");
 
-    //     Cyclist reserveCyclist = new Cyclist();
-    //     reserveCyclist.setId(2L);
-    //     reserveCyclist.setName("Reserve Cyclist");
+        Cyclist reserveCyclist = new Cyclist();
+        reserveCyclist.setId(2L);
+        reserveCyclist.setName("Reserve Cyclist");
 
-    //     CyclistAssignment mainAssignment = new CyclistAssignment();
-    //     mainAssignment.setCyclist(mainCyclist);
-    //     mainAssignment.setRole(CyclistRole.MAIN);
+        CyclistAssignment mainAssignment = new CyclistAssignment();
+        mainAssignment.setCyclist(mainCyclist);
+        mainAssignment.setRole(CyclistRole.MAIN);
 
-    //     CyclistAssignment reserveAssignment = new CyclistAssignment();
-    //     reserveAssignment.setCyclist(reserveCyclist);
-    //     reserveAssignment.setRole(CyclistRole.RESERVE);
+        CyclistAssignment reserveAssignment = new CyclistAssignment();
+        reserveAssignment.setCyclist(reserveCyclist);
+        reserveAssignment.setRole(CyclistRole.RESERVE);
 
-    //     UserTeam userTeam = new UserTeam();
-    //     userTeam.setUser(user);
-    //     userTeam.setCyclistAssignments(List.of(mainAssignment, reserveAssignment));
+        UserTeam userTeam = new UserTeam();
+        userTeam.setUser(user);
+        userTeam.setCyclistAssignments(List.of(mainAssignment, reserveAssignment));
 
-    //     MainReserveCyclistPointsDTO dto = new MainReserveCyclistPointsDTO(
-    //         List.of(new PointsPerUserPerCyclistDTO(40, "Main Cyclist", 1L, null, true, 10L)),
-    //         List.of(new PointsPerUserPerCyclistDTO(20, "Reserve Cyclist", 2L, null, true, 10L))
-    //     );
+        MainReserveCyclistPointsDTO dto = new MainReserveCyclistPointsDTO(
+            List.of(new PointsPerUserPerCyclistDTO(40, "Main Cyclist", 1L, null, true, 10L)),
+            List.of(new PointsPerUserPerCyclistDTO(20, "Reserve Cyclist", 2L, null, true, 10L))
+        );
 
-    //     when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam));
-    //     when(competitionRepository.findById(competitionId)).thenReturn(Optional.of(new Competition()));
-    //     when(userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, 10L)).thenReturn(userTeam);
-    //     doReturn(dto).when(spyRacePointsService).getAllRacePoints(competitionId, 10L);
+        when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam));
+        doReturn(dto).when(racePointsService).getAllRacePoints(competitionId, 10L);
 
-    //     List<PointsPerUserDTO> result = racePointsService.getAllRacePointsForAllUsers(competitionId);
+        List<PointsPerUserDTO> result = racePointsService.getAllRacePointsForAllUsers(competitionId);
 
-    //     assertEquals(1, result.size());
-    //     assertEquals(60, result.get(0).getPoints());
-    //     assertEquals("John Doe", result.get(0).getFullName());
-    //     assertEquals(10L, result.get(0).getUserId());
-    // }
-
-
+        assertEquals(1, result.size());
+        assertEquals(60, result.get(0).getPoints());
+        assertEquals("John Doe", result.get(0).getFullName());
+        assertEquals(10L, result.get(0).getUserId());
+    }
 }

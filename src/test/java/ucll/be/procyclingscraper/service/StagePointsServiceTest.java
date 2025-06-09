@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
@@ -38,7 +40,6 @@ import ucll.be.procyclingscraper.model.CyclistRole;
 import ucll.be.procyclingscraper.model.PointResult;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.RacePoints;
-import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.model.RaceStatus;
 import ucll.be.procyclingscraper.model.ScrapeResultType;
 import ucll.be.procyclingscraper.model.Stage;
@@ -48,8 +49,6 @@ import ucll.be.procyclingscraper.model.User;
 import ucll.be.procyclingscraper.model.UserTeam;
 import ucll.be.procyclingscraper.repository.CompetitionRepository;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
-import ucll.be.procyclingscraper.repository.RacePointsRepository;
-import ucll.be.procyclingscraper.repository.RaceRepository;
 import ucll.be.procyclingscraper.repository.StagePointsRepository;
 import ucll.be.procyclingscraper.repository.StageRepository;
 import ucll.be.procyclingscraper.repository.UserTeamRepository;
@@ -58,6 +57,7 @@ import ucll.be.procyclingscraper.repository.UserTeamRepository;
 class StagePointsServiceTest {
 
     @InjectMocks
+    @Spy
     private StagePointsService stagePointsService;
 
     @Mock
@@ -75,75 +75,79 @@ class StagePointsServiceTest {
     @Mock
     private StageRepository stageRepository;
 
-    // @Test
-    // void createStagePoints_shouldReturnStagePoints_whenDataIsValid() {
-    //     Long stageId = 1L, competitionId = 10L;
+    @Test
+    void createStagePoints_shouldReturnStagePoints_whenValidDataProvided() {
+        Long competitionId = 1L;
+        Long stageId = 2L;
 
-    //     // Stage & race setup
-    //     Stage stage = new Stage();
-    //     stage.setId(stageId);
-    //     stage.setDate("05/06");
+        // Set up Stage
+        Stage stage = new Stage();
+        stage.setId(stageId);
+        stage.setDate("05/06");
 
-    //     Race race = new Race();
-    //     stage.setRace(race);
-    //     race.setStages(List.of(stage));
+        // Set up Race with Stage
+        Race race = new Race();
+        stage.setRace(race);
+        race.setStages(List.of(stage));
 
-    //     // Competition
-    //     Competition competition = new Competition();
-    //     competition.setId(competitionId);
-    //     competition.setRaces(Set.of(race));
+        // Set up Competition with Race
+        Competition competition = new Competition();
+        competition.setId(competitionId);
+        competition.setRaces(Set.of(race));
 
-    //     // User & team
-    //     User user = new User();
-    //     user.setId(100L);
-    //     user.setFirstName("Bob");
-    //     user.setLastName("Johnson");
+        // Set up Cyclist and Result
+        Cyclist cyclist = new Cyclist();
+        cyclist.setId(101L);
+        cyclist.setName("John Cyclist");
 
-    //     Cyclist cyclist = new Cyclist();
-    //     cyclist.setId(200L);
-    //     cyclist.setName("John Doe");
+        StageResult stageResult = new PointResult();
+        stageResult.setStage(stage);
+        stageResult.setCyclist(cyclist);
+        stageResult.setScrapeResultType(ScrapeResultType.STAGE);
+        stageResult.setPosition("1");
+        ((PointResult) stageResult).setPoint(100); // Suppose this is used in your point calculator
+        stageResult.setRaceStatus(RaceStatus.FINISHED);
 
-    //     CyclistAssignment assignment = new CyclistAssignment();
-    //     assignment.setRole(CyclistRole.MAIN);
-    //     assignment.setCyclist(cyclist);
+        cyclist.setResults(List.of(stageResult));
 
-    //     UserTeam userTeam = new UserTeam();
-    //     userTeam.setUser(user);
-    //     userTeam.setCyclistAssignments(List.of(assignment));
+        // Set up User and Team
+        User user = new User();
+        user.setId(10L);
+        user.setFirstName("Bob");
+        user.setLastName("Smith");
 
-    //     // PointResult instead of abstract StageResult
-    //     PointResult stageResult = new PointResult();
-    //     stageResult.setStage(stage);
-    //     stageResult.setCyclist(cyclist);
-    //     stageResult.setScrapeResultType(ScrapeResultType.STAGE);
-    //     stageResult.setRaceStatus(RaceStatus.FINISHED);
-    //     stageResult.setPosition("1");
-    //     stageResult.setPoint(100);
+        CyclistAssignment assignment = new CyclistAssignment();
+        assignment.setCyclist(cyclist);
+        assignment.setRole(CyclistRole.MAIN);
 
-    //     cyclist.setResults(List.of(stageResult));
+        UserTeam userTeam = new UserTeam();
+        userTeam.setUser(user);
+        userTeam.setCyclistAssignments(List.of(assignment));
 
-    //     when(stageRepository.findById(stageId)).thenReturn(Optional.of(stage));
-    //     when(competitionRepository.findById(competitionId)).thenReturn(Optional.of(competition));
-    //     when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam));
-    //     when(cyclistRepository.findCyclistsByStageIdAndResultType(stageId, "STAGE")).thenReturn(List.of(cyclist));
-    //     when(stagePointsRepository.existsByStageIdAndReason(eq(stageId), anyString())).thenReturn(false);
+        // Mocking repositories
+        when(stageRepository.findById(stageId)).thenReturn(Optional.of(stage));
+        when(competitionRepository.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam));
+        when(cyclistRepository.findCyclistsByStageIdAndResultType(stageId, "STAGE")).thenReturn(List.of(cyclist));
+        when(cyclistRepository.findCyclistsByStageIdAndResultType(stageId, "GC")).thenReturn(List.of());
+        when(cyclistRepository.findCyclistsByStageIdAndResultType(stageId, "POINTS")).thenReturn(List.of());
+        when(stagePointsRepository.existsByStageIdAndReason(eq(stageId), anyString())).thenReturn(false);
+        when(stagePointsRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        doReturn(true).when(stagePointsService).isCyclistActiveInStage(any(), anyInt(), anyInt());
 
-    //     ArgumentCaptor<StagePoints> captor = ArgumentCaptor.forClass(StagePoints.class);
-    //     System.out.println("HERE IS THE VALUE OF THE CAPTOR");
-    //     System.out.println(captor);
-    //     when(stagePointsRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
+        // Act
+        List<StagePoints> result = stagePointsService.createStagePoints(competitionId, stageId);
 
-    //     // Execute
-    //     List<StagePoints> result = stagePointsService.createStagePoints(competitionId, stageId);
+        // Assert
+        assertEquals(1, result.size());
+        StagePoints points = result.get(0);
+        assertEquals(user.getId(), points.getUser().getId());
+        assertEquals(cyclist.getId(), points.getStageResult().getCyclist().getId());
+        assertTrue(points.getValue() > 0);
+        assertTrue(points.getReason().contains("1e plaats"));
 
-    //     // Assert
-    //     assertEquals(1, result.size());
-    //     StagePoints savedPoints = captor.getValue();
-    //     assertEquals(user.getId(), savedPoints.getUser().getId());
-    //     assertEquals(cyclist.getId(), savedPoints.getStageResult().getCyclist().getId());
-    //     assertTrue(savedPoints.getValue() > 0);
-    //     assertTrue(savedPoints.getReason().contains("1e plaats"));
-    // }
+        
+    }
 
     @Test
     void createStagePoints_shouldThrowException_whenStageNotFound() {
