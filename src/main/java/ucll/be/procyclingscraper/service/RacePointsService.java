@@ -459,7 +459,7 @@ public class RacePointsService {
         return new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
     }
 
-    private boolean isCyclistActiveInRace(CyclistAssignment assignment, int raceNumber) {
+    boolean isCyclistActiveInRace(CyclistAssignment assignment, int raceNumber) {
         if (assignment.getFromEvent() == null && assignment.getToEvent() == null) {
             return false;
         }
