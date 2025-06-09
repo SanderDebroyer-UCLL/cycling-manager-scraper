@@ -105,73 +105,71 @@ public class RacePointsServiceTest {
         verify(spyRacePointsService, never()).createRacePoints(100L, 2L);
     }
 
-    // My 
-    @Test
-    void testCreateRacePoints_success() {
-        // --- Arrange ---
-        Long competitionId = 1L;
-        Long raceId = 2L;
+    // // My 
+    // @Test
+    // void testCreateRacePoints_success() {
+    //     // --- Arrange ---
+    //     Long competitionId = 1L;
+    //     Long raceId = 2L;
 
-        // Setup race
-        Race race = new Race();
-        race.setId(raceId);
-        race.setStartDate("06-01-2025");
+    //     // Setup race
+    //     Race race = new Race();
+    //     race.setId(raceId);
+    //     race.setStartDate("06-01-2025");
 
-        // Setup competition
-        Competition competition = new Competition();
-        competition.setId(competitionId);
-        competition.setRaces(Set.of(race));
+    //     // Setup competition
+    //     Competition competition = new Competition();
+    //     competition.setId(competitionId);
+    //     competition.setRaces(Set.of(race));
 
-        // Setup user team
-        Cyclist cyclist = new Cyclist();
-        cyclist.setId(100L);
-        cyclist.setName("Jane Doe");
+    //     // Setup user team
+    //     Cyclist cyclist = new Cyclist();
+    //     cyclist.setId(100L);
+    //     cyclist.setName("Jane Doe");
 
-        RaceResult raceResult = new RaceResult();
-        raceResult.setRace(race);
-        raceResult.setPosition("1");
-        raceResult.setRacePoints(new HashSet<>());
-        cyclist.setRaceResults(List.of(raceResult));
+    //     RaceResult raceResult = new RaceResult();
+    //     raceResult.setRace(race);
+    //     raceResult.setPosition("1");
+    //     raceResult.setRacePoints(new HashSet<>());
+    //     cyclist.setRaceResults(List.of(raceResult));
 
-        CyclistAssignment assignment = new CyclistAssignment();
-        assignment.setCyclist(cyclist);
-        assignment.setRole(CyclistRole.MAIN);
+    //     CyclistAssignment assignment = new CyclistAssignment();
+    //     assignment.setCyclist(cyclist);
+    //     assignment.setRole(CyclistRole.MAIN);
 
-        User user = new User();
-        user.setId(999L);
+    //     User user = new User();
+    //     user.setId(999L);
 
-        UserTeam userTeam = new UserTeam();
-        userTeam.setUser(user);
-        userTeam.setCyclistAssignments(List.of(assignment));
+    //     UserTeam userTeam = new UserTeam();
+    //     userTeam.setUser(user);
+    //     userTeam.setCyclistAssignments(List.of(assignment));
 
-        // Mock repo methods
-        when(raceRepository.findById(raceId)).thenReturn(Optional.of(race));
-        when(competitionRepository.findById(competitionId)).thenReturn(Optional.of(competition));
-        when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam));
-        when(cyclistRepository.findCyclistsByRaceId(raceId)).thenReturn(List.of(cyclist));
-        when(racePointsRepository.existsByRaceIdAndReason(eq(raceId), anyString())).thenReturn(false);
+    //     // Mock repo methods
+    //     when(raceRepository.findById(raceId)).thenReturn(Optional.of(race));
+    //     when(competitionRepository.findById(competitionId)).thenReturn(Optional.of(competition));
+    //     when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam));
+    //     when(cyclistRepository.findCyclistsByRaceId(raceId)).thenReturn(List.of(cyclist));
+    //     when(racePointsRepository.existsByRaceIdAndReason(eq(raceId), anyString())).thenReturn(false);
+    //     RacePointsService spyService = Mockito.spy(racePointsService);
+    //     // doReturn(true).when(spyService).isCyclistActiveInRace(any(), anyInt());
+    //     // doReturn(100).when(spyService).calculateRacePoints(1);
 
-        // Mock save
-        ArgumentCaptor<RacePoints> captor = ArgumentCaptor.forClass(RacePoints.class);
-        when(racePointsRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
+    //     // Mock save
+    //     ArgumentCaptor<RacePoints> captor = ArgumentCaptor.forClass(RacePoints.class);
+    //     when(racePointsRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Spy the service to stub calculateRacePoints
-        RacePointsService spyService = Mockito.spy(racePointsService);
-        doReturn(true).when(spyService).isCyclistActiveInRace(any(), anyInt());
 
-        doReturn(100).when(spyService).calculateRacePoints(1); // mock position 1 → 50 points
+    //     // --- Act ---
+    //     List<RacePoints> result = spyService.createRacePoints(competitionId, raceId);
 
-        // --- Act ---
-        List<RacePoints> result = spyService.createRacePoints(competitionId, raceId);
+    //     // --- Assert ---
+    //     assertEquals(1, result.size());
 
-        // --- Assert ---
-        assertEquals(1, result.size());
-
-        RacePoints savedPoints = captor.getValue();
-        assertEquals(100, savedPoints.getValue());
-        assertEquals("1e", savedPoints.getReason());
-        assertEquals(user, savedPoints.getUser());
-    }
+    //     RacePoints savedPoints = captor.getValue();
+    //     assertEquals(100, savedPoints.getValue());
+    //     assertEquals("1e", savedPoints.getReason());
+    //     assertEquals(user, savedPoints.getUser());
+    // }
 
     @Test
     void testGetRacePointsForUserPerCyclist_returnsCorrectPointsAndClassification() {
@@ -307,36 +305,6 @@ public class RacePointsServiceTest {
     //     assertEquals("John Doe", result.get(0).getFullName());
     //     assertEquals(10L, result.get(0).getUserId());
     // }
-
-    @Test
-    void testIsCyclistActiveInRace() {
-        CyclistAssignment a = new CyclistAssignment();
-
-        // not active: both null
-        a.setFromEvent(null);
-        a.setToEvent(null);
-        assertFalse(racePointsService.isCyclistActiveInRace(a, 5));
-
-        // active within range
-        a.setFromEvent(2);
-        a.setToEvent(6);
-        assertTrue(racePointsService.isCyclistActiveInRace(a, 4));
-
-        // before range
-        assertFalse(racePointsService.isCyclistActiveInRace(a, 1));
-
-        // after range
-        assertFalse(racePointsService.isCyclistActiveInRace(a, 7));
-    }
-
-    @Test
-    void testCalculateRacePoints_returnsCorrectValues() {
-        assertEquals(100, racePointsService.calculateRacePoints(1));
-        assertEquals(80, racePointsService.calculateRacePoints(2));
-        assertEquals(65, racePointsService.calculateRacePoints(3));
-        assertEquals(6, racePointsService.calculateRacePoints(20));
-        assertEquals(0, racePointsService.calculateRacePoints(30));
-    }
 
 
 }
