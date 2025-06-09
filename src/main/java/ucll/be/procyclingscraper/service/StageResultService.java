@@ -335,7 +335,14 @@ public class StageResultService {
         }
     }
 
-    private List<PointResult> getPointResultsFromStage1(String stageUrl, ScrapeResultType scrapeResultType) {
+    private List<PointResult> getPointResultsFromStage1(String stageUrl, ScrapeResultType scrapeResultType, Long stageId) {
+        Optional<Stage> stageOpt = stageRepository.findById(stageId);
+        if (stageOpt.isPresent()) {
+            List<PointResult> existingResults = pointResultRepository.findByStageIdAndScrapeResultType(stageId, scrapeResultType);
+            pointResultRepository.deleteAll(existingResults);
+            System.out.println("Deleted existing results for Stage ID: " + stageId + ", Type: " + scrapeResultType);
+        }
+
         List<PointResult> results = new ArrayList<>();
         Map<String, PointResult> riderResultMap = new HashMap<>();
         String klassementType = scrapeResultType == ScrapeResultType.POINTS ? "POINTS" : "KOM";
@@ -406,7 +413,7 @@ public class StageResultService {
                     System.out.println(cyclist.getName() + " (ID:" + cyclist.getId() +
                             ") earned " + pointValue + " points at position " + position);
 
-                    PointResult pointResult = pointResultRepository.findByCyclistAndScrapeResultType(cyclist, scrapeResultType);
+                    PointResult pointResult = pointResultRepository.findByStageIdAndCyclistAndScrapeResultType(stageId, cyclist, scrapeResultType);
                     if (pointResult == null) {
                         pointResult = new PointResult();
                         pointResult.setCyclist(cyclist);
@@ -448,7 +455,7 @@ public class StageResultService {
 
     public List<PointResult> scrapePointResult(ScrapeResultType scrapeResultType) {
         List<PointResult> results = new ArrayList<>();
-        List<Race> races = raceRepository.findAll();
+        List<Race> races = raceRepository.findAllOrderByIdAsc();
         for (Race race : races) {
             results.addAll(scrapePointResultForRace(scrapeResultType, race.getId()));
         }
@@ -502,7 +509,7 @@ public class StageResultService {
 
             if (stage.getName().contains("Stage 1")) {
                 System.out.println(" === SPECIAL PROCESSING FOR STAGE 1 ===");
-                List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), scrapeResultType);
+                List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), scrapeResultType, stageId);
                 for (PointResult pr : pointResults) {
                     if (resultCount >= MAX_RESULTS)
                         break;
