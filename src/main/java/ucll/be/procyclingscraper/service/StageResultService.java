@@ -402,9 +402,10 @@ public class StageResultService {
 
                     int pointValue = 0;
                     try {
-                        pointValue = Integer.parseInt(point.replaceAll("[^\\d]", ""));
+                        pointValue = Integer.parseInt(point.replaceAll("[^\\d-]", ""));
                     } catch (NumberFormatException e) {
                         System.out.println(" Invalid point value: " + point);
+                        pointValue = 0;
                     }
 
                     System.out.println(cyclist.getName() + " (ID:" + cyclist.getId() +
@@ -536,7 +537,7 @@ public class StageResultService {
                 Element riderElement = row.selectFirst("td:nth-child(7) a");
                 riderName = riderElement != null ? riderElement.text() : "Unknown";
 
-                point = point.replaceAll("[^\\d]", "");
+                point = point.replaceAll("[^\\d-]", "");
                 if (point.isEmpty()) {
                     System.out.println(" Skipping row with empty points for: " + riderName);
                     continue;
@@ -575,7 +576,8 @@ public class StageResultService {
             status = RaceStatus.DSQ;
         } else if (position.equalsIgnoreCase("OTL")) {
             status = RaceStatus.OTL;
-        } else {
+        }
+        else {
             status = RaceStatus.FINISHED;
         }
 
@@ -728,7 +730,7 @@ public class StageResultService {
         return allResults;
     }
 
-    private static final int MAX_RESULTS = 10000;
+    private static final int MAX_RESULTS = 1000;
 
     // Parent method - handles multiple stages
     private List<TimeResult> scrapeTimeResultByRace(ScrapeResultType scrapeResultType, List<Stage> stages, Race race)
@@ -793,9 +795,8 @@ public class StageResultService {
             System.out.println("Raw time: " + rawTime);
 
             Element riderElement;
-            String riderName="";
-            
-            
+            String riderName = "";
+
             if (stage.getName().equals("Stage 1 (TTT) | Orihuela - Orihuela")) {
                 riderElement = row.selectFirst("td:nth-child(5) a");
                 riderName = riderElement != null ? riderElement.text() : "Unknown";

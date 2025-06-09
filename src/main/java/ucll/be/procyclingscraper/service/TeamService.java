@@ -20,16 +20,16 @@ public class TeamService {
     @Autowired
     private TeamRepository teamRepository;
 
-
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3";
-    private static final int TEAM_LIMIT = 36;
+    private static final int TEAM_LIMIT = 194;
 
     public List<Team> getTeams() {
         return teamRepository.findAll();
     }
+
     public List<Team> scrape() {
         List<Team> teams = new ArrayList<>();
-        
+
         try {
             Document doc = Jsoup.connect("https://www.procyclingstats.com/rankings/me/teams")
                     .userAgent(USER_AGENT)
@@ -54,9 +54,9 @@ public class TeamService {
                 }
                 Team team = teamRepository.findByName(name);
                 if (team == null) {
-                    team = new Team(); 
+                    team = new Team();
                 }
-                
+
                 team.setName(name);
                 team.setRanking(ranking);
 
@@ -71,6 +71,7 @@ public class TeamService {
 
         return teams;
     }
+
     public List<TeamModel> getTeamDTOs() {
         List<Team> teams = teamRepository.findAll();
         List<TeamModel> teamDTOs = new ArrayList<>();
@@ -83,9 +84,5 @@ public class TeamService {
         }
         return teamDTOs;
     }
-
-
-
-
 
 }

@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 import ucll.be.procyclingscraper.dto.CompetitionDTO;
-import ucll.be.procyclingscraper.dto.CompetitionModel;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.dto.StatusNotification;
 import ucll.be.procyclingscraper.model.Competition;
@@ -60,7 +59,7 @@ public class CompetitionController {
     }
 
     @PostMapping()
-    public Competition createCompetition(@RequestBody @Valid CreateCompetitionData competition) {
+    public CompetitionDTO createCompetition(@RequestBody @Valid CreateCompetitionData competition) {
         return competitionService.createCompetition(competition);
     }
 
@@ -73,11 +72,6 @@ public class CompetitionController {
     public Set<CompetitionDTO> getCompetitions(@RequestHeader(name = "Authorization") String token) {
         String username = jwtHelper.getUsernameFromToken(token.substring(7));
         return competitionService.getCompetitions(username);
-    }
-
-    @GetMapping("/competitionDTOs")
-    public List<CompetitionModel> getCompetionDTOs() {
-        return competitionService.getCompetitionDTOs();
     }
 
     @PutMapping("/{id}")

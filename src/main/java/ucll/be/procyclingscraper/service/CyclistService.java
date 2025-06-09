@@ -32,19 +32,7 @@ public class CyclistService {
     private TeamRepository teamRepository;
 
     public List<CyclistDTO> getCyclists() {
-        List<Cyclist> cyclists = cyclistRepository.findAll();
-        return cyclists.stream()
-                .map(cyclist -> new CyclistDTO(
-                        cyclist.getId(),
-                        cyclist.getName(),
-                        cyclist.getRanking(),
-                        cyclist.getAge(),
-                        cyclist.getCountry(),
-                        cyclist.getCyclistUrl(),
-                        cyclist.getTeam(),
-                        cyclist.getUpcomingRaces(),
-                        ""))
-                .collect(java.util.stream.Collectors.toList());
+        return cyclistRepository.findAllBasicCyclists();
     }
 
     public List<Cyclist> scrapeCyclists() {

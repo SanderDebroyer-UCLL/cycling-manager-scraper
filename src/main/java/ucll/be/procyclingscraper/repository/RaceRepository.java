@@ -1,6 +1,7 @@
 package ucll.be.procyclingscraper.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,7 +13,11 @@ import ucll.be.procyclingscraper.model.Race;
 @Repository
 public interface RaceRepository extends JpaRepository<Race, Long> {
 
-    // Race findRaceById(int int1);
+    @Query("SELECT r FROM Race r LEFT JOIN FETCH r.stages WHERE r.id = :id")
+    Optional<Race> findByIdWithStages(@Param("id") Long id);
+
+    @Query("SELECT r FROM Race r LEFT JOIN FETCH r.stages LEFT JOIN FETCH r.competitions")
+    List<Race> findAllWithStagesAndCompetitions();
 
     Race findByName(String raceName);
 
