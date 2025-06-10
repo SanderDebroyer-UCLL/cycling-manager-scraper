@@ -28,7 +28,6 @@ public class RaceResultController {
 
     @GetMapping("/scrape/{raceId}")
     public List<RaceResult> getOneDayRaceResultById(@PathVariable Long raceId) throws IOException {
-        System.out.println("I entered the controller");
         return raceResultService.scrapeOneDayRaceResultsById(raceId);
     }
 
