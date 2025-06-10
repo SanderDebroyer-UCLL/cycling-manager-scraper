@@ -336,8 +336,8 @@ public class StageResultService {
     }
 
     private List<PointResult> getPointResultsFromStage1(String stageUrl, ScrapeResultType scrapeResultType, Long stageId) {
-        Optional<Stage> stageOpt = stageRepository.findById(stageId);
-        if (stageOpt.isPresent()) {
+        Stage stageOpt = stageRepository.findStageById(stageId);
+        if (stageOpt == null) {
             List<PointResult> existingResults = pointResultRepository.findByStageIdAndScrapeResultType(stageId, scrapeResultType);
             pointResultRepository.deleteAll(existingResults);
             System.out.println("Deleted existing results for Stage ID: " + stageId + ", Type: " + scrapeResultType);
@@ -420,12 +420,16 @@ public class StageResultService {
                         pointResult.setPosition(position);
                         pointResult.setPoint(pointValue);
                         pointResult.setRaceStatus(RaceStatus.FINISHED);
+                        pointResult.setStage(stageOpt); // Ensure stage is set
+                        pointResult.setScrapeResultType(scrapeResultType); // Ensure scrapeResultType is set
                         riderResultMap.put(riderName, pointResult);
+                        pointResultRepository.save(pointResult);
                     } else {
                         int currentPoints = pointResult.getPoint();
                         pointResult.setPoint(currentPoints + pointValue);
                         System.out.println(" Updated total: " + currentPoints + " + " +
                                 pointValue + " = " + pointResult.getPoint());
+                        pointResultRepository.save(pointResult);        
                     }
                 }
             }
@@ -510,17 +514,17 @@ public class StageResultService {
             if (stage.getName().contains("Stage 1")) {
                 System.out.println(" === SPECIAL PROCESSING FOR STAGE 1 ===");
                 List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), scrapeResultType, stageId);
-                for (PointResult pr : pointResults) {
-                    if (resultCount >= MAX_RESULTS)
-                        break;
-                    pr.setStage(stage);
-                    pr.setScrapeResultType(scrapeResultType);
-                    savePointResult(stage, pr, results);
-                    resultCount++;
+                // for (PointResult pr : pointResults) {
+                //     if (resultCount >= MAX_RESULTS)
+                //         break;
+                //     pr.setStage(stage);
+                //     pr.setScrapeResultType(scrapeResultType);
+                //     savePointResult(stage, pr, results);
+                //     resultCount++;
                     // System.out.println(" Saved PointResult for " + pr.getCyclist().getName() +
                     //         " (ID:" + pr.getCyclist().getId() + "): " + pr.getPoint() + " points");
-                }
-                return results;
+                // }
+                return pointResults;
             }
             else{
                 Document doc = fetchStageDocument(stage.getRace(), stage, scrapeResultType);
@@ -566,7 +570,7 @@ public class StageResultService {
                     PointResult pointResult = getOrCreatePointResult(stage, cyclist, scrapeResultType);
                     pointResult = (PointResult) checkForDNFAndMore(position, pointResult);
                     fillPointResultFields(pointResult, position, Integer.parseInt(point), scrapeResultType);
-
+                    
                     savePointResult(stage, pointResult, results);
                     resultCount++;
                     System.out.println(" Saved PointResult for " + riderName +
