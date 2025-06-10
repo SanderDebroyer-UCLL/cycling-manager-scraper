@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.CreateRacePointsDTO;
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserPerCyclistDTO;
@@ -32,6 +33,7 @@ import ucll.be.procyclingscraper.repository.CompetitionRepository;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RacePointsRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
+import ucll.be.procyclingscraper.repository.UserRepository;
 import ucll.be.procyclingscraper.repository.UserTeamRepository;
 
 @Service
@@ -51,6 +53,25 @@ public class RacePointsService {
 
     @Autowired
     private CyclistRepository cyclistRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public boolean createNewRacePoints(CreateRacePointsDTO racePoints, String email) {
+        RacePoints newRacePoints = RacePoints.builder()
+                .competition(competitionRepository.findById(racePoints.getCompetitionId())
+                        .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: "
+                                + racePoints.getCompetitionId())))
+                .raceId(racePoints.getRaceId())
+                .value(racePoints.getValue())
+                .reason(racePoints.getReason())
+                .user(userRepository.findUserByEmail(email))
+                .raceResult(null)
+                .build();
+
+        racePointsRepository.save(newRacePoints);
+        return true;
+    }
 
     public void createRacePointsForAllExistingResults() {
         List<Competition> competitions = competitionRepository.findAll();

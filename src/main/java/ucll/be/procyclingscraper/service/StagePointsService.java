@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.CreateStagePointsDTO;
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserPerCyclistDTO;
@@ -37,6 +38,7 @@ import ucll.be.procyclingscraper.repository.CompetitionRepository;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.StagePointsRepository;
 import ucll.be.procyclingscraper.repository.StageRepository;
+import ucll.be.procyclingscraper.repository.UserRepository;
 import ucll.be.procyclingscraper.repository.UserTeamRepository;
 
 @Service
@@ -56,6 +58,25 @@ public class StagePointsService {
 
     @Autowired
     private StageRepository stageRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public boolean createNewStagePoints(CreateStagePointsDTO stagePoints, String email) {
+        StagePoints newStagePoints = StagePoints.builder()
+                .competition(competitionRepository.findById(stagePoints.getCompetitionId())
+                        .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: "
+                                + stagePoints.getCompetitionId())))
+                .stageId(stagePoints.getStageId())
+                .value(stagePoints.getValue())
+                .reason(stagePoints.getReason())
+                .user(userRepository.findUserByEmail(email))
+                .stageResult(null)
+                .build();
+
+        stagePointsRepository.save(newStagePoints);
+        return true;
+    }
 
     public List<StagePoints> createStagePoints(Long competitionId, Long stageId) {
         Stage stage = stageRepository.findById(stageId)
