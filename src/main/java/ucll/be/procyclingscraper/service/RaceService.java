@@ -81,7 +81,7 @@ public class RaceService {
     public String getRaceUrlByName(String name) {
         Race race = raceRepository.findByName(name.trim());
         if (race == null) {
-            throw new IllegalArgumentException("Race with name '" + name + "' not found in the database.");
+            throw new IllegalArgumentException("Race met naam '" + name + "' is niet gevonden in de database.");
         }
         return race.getRaceUrl();
     }

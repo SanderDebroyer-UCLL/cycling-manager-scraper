@@ -20,7 +20,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -34,10 +33,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private UserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         String requestHeader = request.getHeader("Authorization");
-        //Bearer 2352345235sdfrsfgsdfsdf
+        // Bearer 2352345235sdfrsfgsdfsdf
         logger.info(" Header :  {}", requestHeader);
 
         // Username extracted from the payload of JWT token will be stored in this var
@@ -47,19 +47,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = null;
 
         if (requestHeader != null && requestHeader.startsWith("Bearer")) {
-            //looking good
+            // looking good
             token = requestHeader.substring(7);
             try {
                 username = this.jwtHelper.getUsernameFromToken(token);
                 System.out.println(username);
             } catch (IllegalArgumentException e) {
-                logger.info("Illegal Argument while fetching the username !!");
+                logger.info("Ongeldig argument tijdens het opvragen van de gebruikersnaam !");
                 e.printStackTrace();
             } catch (ExpiredJwtException e) {
-                logger.info("Given jwt token is expired !!");
+                logger.info("Gegeven jwt token is verlopen !!");
                 e.printStackTrace();
             } catch (MalformedJwtException e) {
-                logger.info("Some changed has done in token !! Invalid Token.");
+                logger.info("Er zijn wijzigingen aangebracht in het token !! Ongeldig Token.");
                 e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -68,18 +68,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            //fetch user detail from username
+            // fetch user detail from username
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
             Boolean validateToken = this.jwtHelper.validateToken(token, userDetails);
             if (validateToken) {
-                //set the authentication
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                // set the authentication
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                logger.info("Authentication set in SecurityContextHolder: {}", SecurityContextHolder.getContext().getAuthentication());
+                logger.info("Authentication set in SecurityContextHolder: {}",
+                        SecurityContextHolder.getContext().getAuthentication());
 
             } else {
-                logger.info("Validation fails !!");
+                logger.info("Validatie mislukt !!");
             }
         }
         filterChain.doFilter(request, response);
