@@ -55,6 +55,9 @@ public class StageResultService {
     PointResultRepository pointResultRepository;
 
     @Autowired
+    StageResultRepository stageResultRepository;
+
+    @Autowired
     CompetitionRepository competitionRepository;
 
     // For TTT Stage format: "31.58,21" => 31 min, 58 sec, 21 hundredths
@@ -433,6 +436,44 @@ public class StageResultService {
                     }
                 }
             }
+
+            // Special fix for Stage 1 where multiple entries can have the same position
+            HashMap<String, String> cyclistWithPosition = new HashMap<>();
+                if (stageOpt.getName().contains("Stage 1")) {
+                    List<PointResult> stageResults = pointResultRepository.findByStageIdAndScrapeResultType(stageId, ScrapeResultType.STAGE);
+                    for (PointResult stageResult : stageResults) {
+                        if (stageResult.getCyclist() != null) {
+                            String cyclistName = stageResult.getCyclist().getName();
+                            String position = stageResult.getPosition();
+                            cyclistWithPosition.put(cyclistName, position);
+                        }
+                    }
+
+                    System.out.println("Constructed hashmap of cyclists with positions: " + cyclistWithPosition.size() + " entries");
+
+                    List<PointResult> komResults = pointResultRepository.findByStageIdAndScrapeResultTypeOrderByPointDesc(stageId, ScrapeResultType.KOM);
+
+                    // Sort further by position in hashmap if points are equal
+                    komResults.sort((a, b) -> {
+                        int pointCompare = Integer.compare(b.getPoint(), a.getPoint()); // DESC
+                        if (pointCompare != 0) return pointCompare;
+
+                        String nameA = a.getCyclist().getName();
+                        String nameB = b.getCyclist().getName();
+                        int posA = Integer.parseInt(cyclistWithPosition.getOrDefault(nameA, "999"));
+                        int posB = Integer.parseInt(cyclistWithPosition.getOrDefault(nameB, "999"));
+                        return Integer.compare(posA, posB); // ASC
+                    });
+
+                    int rank = 1;
+                    for (PointResult result : komResults) {
+                        result.setPosition(String.valueOf(rank));
+                        stageResultRepository.save(result); 
+                        rank++;
+                    }
+                }
+           
+
         } catch (Exception e) {
             System.err.println(" Failed to retrieve point results: " + e.getMessage());
             e.printStackTrace();
