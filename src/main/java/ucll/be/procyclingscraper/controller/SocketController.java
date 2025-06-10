@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import ucll.be.procyclingscraper.dto.CountMessage;
 import ucll.be.procyclingscraper.dto.CountNotification;
@@ -17,6 +18,7 @@ import ucll.be.procyclingscraper.service.CompetitionService;
 import ucll.be.procyclingscraper.service.UserTeamService;
 
 @Controller
+@CrossOrigin(origins = "*")
 public class SocketController {
 
     @Autowired

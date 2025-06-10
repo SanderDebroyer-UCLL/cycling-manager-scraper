@@ -14,8 +14,8 @@ import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.service.RaceResultService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/raceResults")
+@CrossOrigin(origins = "*")
 public class RaceResultController {
 
     @Autowired

@@ -11,7 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import ucll.be.procyclingscraper.dto.StageModel;
+import ucll.be.procyclingscraper.dto.StageDTO;
 import ucll.be.procyclingscraper.model.ParcoursType;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
@@ -40,22 +40,8 @@ public class StageService {
     @Autowired
     CyclistService cyclistService;
 
-    public List<Stage> getStages() {
-        return stageRepository.findAll();
-    }
-
-    public List<StageModel> getStageDTOs() {
-        List<Stage> stages = stageRepository.findAll();
-        List<StageModel> stageDTOs = new ArrayList<>();
-        for (Stage stage : stages) {
-            StageModel stageModel = new StageModel();
-            stageModel.setId(stage.getId());
-            stageModel.setName(stage.getName());
-            stageModel.setStageUrl(stage.getStageUrl());
-            stageDTOs.add(stageModel);
-        }
-
-        return stageDTOs;
+    public List<StageDTO> getStages() {
+        return stageRepository.findAllBasicStages();
     }
 
     public List<Stage> scrapeStages() {
@@ -79,8 +65,10 @@ public class StageService {
     public List<Stage> scrapeStagesByRaceId(Long raceId) {
         List<Stage> allStages = new ArrayList<>();
 
-        Race race = raceRepository.findById(raceId)
+        Race race = raceRepository.findByIdWithStages(raceId)
                 .orElseThrow(() -> new IllegalArgumentException());
+        // Race race = raceRepository.findById(raceId).orElseThrow(() -> new
+        // IllegalArgumentException());
         System.out.println("race: " + race.getName());
         List<Stage> stagesList = new ArrayList<>();
 
@@ -112,9 +100,11 @@ public class StageService {
                             if (stage == null) {
                                 stage = new Stage();
                             }
+                            // TODO: check if this doesnt break anything
                             stage.setStageUrl(stageUrl);
                             stage.setDate(date);
                             stage.setName(stageName);
+                            stage.setRace(race);
                             logger.info("Scraped stage URL: {}", stageUrl);
                             stagesList.add(scrapeStageDetails(stage));
                         }

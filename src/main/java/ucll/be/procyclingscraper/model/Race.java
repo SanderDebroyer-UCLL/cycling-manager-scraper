@@ -29,19 +29,15 @@ public class Race {
     private Integer distance;
     private String raceUrl;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "race_id")
-    private List<Stage> stages;
+    @OneToMany(mappedBy = "race", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private List<Stage> stages = new ArrayList<>();
 
     @ManyToMany
     @JsonManagedReference
-    @JoinTable(
-        name = "race_cyclist",
-        joinColumns = @JoinColumn(name = "race_id"),
-        inverseJoinColumns = @JoinColumn(name = "cyclist_id")
-    )
+    @JoinTable(name = "race_cyclist", joinColumns = @JoinColumn(name = "race_id"), inverseJoinColumns = @JoinColumn(name = "cyclist_id"))
     private List<Cyclist> startList;
-    
+
     private List<Long> youthCyclistsIDs = new ArrayList<>();
 
     @JsonIgnore
