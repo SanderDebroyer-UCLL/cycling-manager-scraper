@@ -530,7 +530,7 @@ public class StagePointsService {
         return new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
     }
 
-    private boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber, int lastStageNumber) {
+    boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber, int lastStageNumber) {
 
         if (assignment.getFromEvent() == null && assignment.getToEvent() == null) {
             return false;
