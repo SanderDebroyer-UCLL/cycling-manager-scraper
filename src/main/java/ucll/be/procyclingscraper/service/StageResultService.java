@@ -420,8 +420,8 @@ public class StageResultService {
                         pointResult.setPosition(position);
                         pointResult.setPoint(pointValue);
                         pointResult.setRaceStatus(RaceStatus.FINISHED);
-                        pointResult.setStage(stageOpt); // Ensure stage is set
-                        pointResult.setScrapeResultType(scrapeResultType); // Ensure scrapeResultType is set
+                        pointResult.setStage(stageOpt);
+                        pointResult.setScrapeResultType(scrapeResultType);
                         riderResultMap.put(riderName, pointResult);
                         pointResultRepository.save(pointResult);
                     } else {
@@ -499,7 +499,7 @@ public class StageResultService {
     public List<PointResult> scrapePointResultForStage(ScrapeResultType scrapeResultType, Long stageId) {
         List<PointResult> results = new ArrayList<>();
         int resultCount = 0;
-        final int MAX_RESULTS = 20;
+        final int MAX_RESULTS = 2000;
         try {
             Optional<Stage> stageOpt = stageRepository.findById(stageId);
 
@@ -514,16 +514,6 @@ public class StageResultService {
             if (stage.getName().contains("Stage 1")) {
                 System.out.println(" === SPECIAL PROCESSING FOR STAGE 1 ===");
                 List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), scrapeResultType, stageId);
-                // for (PointResult pr : pointResults) {
-                //     if (resultCount >= MAX_RESULTS)
-                //         break;
-                //     pr.setStage(stage);
-                //     pr.setScrapeResultType(scrapeResultType);
-                //     savePointResult(stage, pr, results);
-                //     resultCount++;
-                    // System.out.println(" Saved PointResult for " + pr.getCyclist().getName() +
-                    //         " (ID:" + pr.getCyclist().getId() + "): " + pr.getPoint() + " points");
-                // }
                 return pointResults;
             }
             else{
@@ -542,8 +532,8 @@ public class StageResultService {
                     String position = "Unknown";
                     String point = "Unknown";
                     String riderName = "Unknown";
-
-                    Element pointElement = row.selectFirst("td:nth-child(10)");
+                    
+                        Element pointElement = row.selectFirst("td:nth-child(10)");
                     point = pointElement != null ? pointElement.text() : "Unknown";
 
                     Element positionElement = row.selectFirst("td:first-child");
@@ -1094,7 +1084,7 @@ public class StageResultService {
             }
         } else if (scrapeResultType.equals(ScrapeResultType.KOM)) {
             if (tables.size() >= 4) {
-                resultRows = tables.get(5).select("tbody > tr");
+                resultRows = tables.get(6).select("tbody > tr");
             } else if (tables.size() > 0) {
                 // fallback: use the first table if only one exists
                 System.out.println("KOM table not found at index 3, using first table as fallback.");
