@@ -11,7 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import ucll.be.procyclingscraper.dto.StageModel;
+import ucll.be.procyclingscraper.dto.StageDTO;
 import ucll.be.procyclingscraper.model.ParcoursType;
 import ucll.be.procyclingscraper.model.Race;
 import ucll.be.procyclingscraper.model.Stage;
@@ -40,22 +40,8 @@ public class StageService {
     @Autowired
     CyclistService cyclistService;
 
-    public List<Stage> getStages() {
-        return stageRepository.findAll();
-    }
-
-    public List<StageModel> getStageDTOs() {
-        List<Stage> stages = stageRepository.findAll();
-        List<StageModel> stageDTOs = new ArrayList<>();
-        for (Stage stage : stages) {
-            StageModel stageModel = new StageModel();
-            stageModel.setId(stage.getId());
-            stageModel.setName(stage.getName());
-            stageModel.setStageUrl(stage.getStageUrl());
-            stageDTOs.add(stageModel);
-        }
-
-        return stageDTOs;
+    public List<StageDTO> getStages() {
+        return stageRepository.findAllBasicStages();
     }
 
     public List<Stage> scrapeStages() {

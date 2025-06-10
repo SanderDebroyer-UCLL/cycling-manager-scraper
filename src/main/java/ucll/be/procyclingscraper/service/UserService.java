@@ -3,6 +3,7 @@ package ucll.be.procyclingscraper.service;
 import java.util.List;
 
 import org.hibernate.service.spi.ServiceException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,20 +16,28 @@ import ucll.be.procyclingscraper.repository.UserRepository;
 @Service
 public class UserService {
 
-    private UserRepository userRepo;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepo, PasswordEncoder passwordEncoder) {
-        this.userRepo = userRepo;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     public List<UserDTO> getAllUsers() {
-        return userRepo.findAllBasicUsers();
+        List<Object[]> rawUsers = userRepository.findAllBasicUsersWithPointsRaw();
+
+        return rawUsers.stream().map(row -> new UserDTO(
+                (Long) row[0],
+                (String) row[1],
+                (String) row[2],
+                (String) row[3],
+                (Role) row[4],
+                ((Long) row[5]).intValue() + ((Long) row[6]).intValue() // sum and cast to int
+        )).toList();
     }
 
     public UserDTO getLoggedInUser(String email) {
-        return userRepo.findUserDTOByEmail(email)
+        return userRepository.findUserDTOByEmail(email)
                 .map(user -> new UserDTO(
                         user.getId(),
                         user.getFirstName(),
@@ -41,7 +50,7 @@ public class UserService {
     }
 
     public User addUser(CreateUserData userData) throws ServiceException {
-        if (userRepo.findUserDTOByEmail(userData.getEmail()).isPresent()) {
+        if (userRepository.findUserDTOByEmail(userData.getEmail()).isPresent()) {
             throw new ServiceException("Uh, oh! User with email " + userData.getEmail() + " already exists.");
         }
 
@@ -52,7 +61,7 @@ public class UserService {
         newUser.setPassword(passwordEncoder.encode(userData.getPassword()));
         newUser.setRole(Role.USER);
 
-        return userRepo.save(newUser);
+        return userRepository.save(newUser);
     }
 
     public UserDTO mapToUserDTO(User user) {
