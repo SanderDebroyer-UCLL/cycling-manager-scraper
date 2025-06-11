@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ucll.be.procyclingscraper.dto.CreateRacePointsDTO;
-    import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
+import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.model.RacePoints;
 import ucll.be.procyclingscraper.security.JwtHelper;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app")
 @RequestMapping("/racePoints")
 public class RacePointsController {
 

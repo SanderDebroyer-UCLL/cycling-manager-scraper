@@ -30,7 +30,7 @@ import ucll.be.procyclingscraper.service.UserService;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "https://cycling-manager-frontend-psi.vercel.app")
 public class AuthController {
 
     @Autowired
