@@ -1,6 +1,7 @@
 package ucll.be.procyclingscraper.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
 
@@ -23,6 +24,14 @@ public interface PointResultRepository extends JpaRepository<PointResult,Long> {
 
         @Query("SELECT p FROM PointResult p WHERE p.stage.id = :stageId AND p.scrapeResultType = :scrapeResultType ORDER BY p.point DESC")
         List<PointResult> findByStageIdAndScrapeResultTypeOrderByPointDesc(
+            @Param("stageId") Long stageId,
+            @Param("scrapeResultType") ScrapeResultType scrapeResultType
+        );
+
+        @Modifying
+        @org.springframework.transaction.annotation.Transactional
+        @Query("DELETE FROM PointResult p WHERE p.stage.id = :stageId AND p.scrapeResultType = :scrapeResultType")
+        void deleteByStageIdAndScrapeResultType(
             @Param("stageId") Long stageId,
             @Param("scrapeResultType") ScrapeResultType scrapeResultType
         );

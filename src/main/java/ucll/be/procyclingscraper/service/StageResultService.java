@@ -6,8 +6,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.geo.Point;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import ucll.be.procyclingscraper.dto.StagePointResultDTO;
 import ucll.be.procyclingscraper.dto.StageResultWithCyclistDTO;
 import ucll.be.procyclingscraper.model.Competition;
@@ -435,6 +437,7 @@ public class StageResultService {
                         pointResultRepository.save(pointResult);        
                     }
                 }
+                
             }
 
             // Special fix for Stage 1 where multiple entries can have the same position
@@ -479,7 +482,7 @@ public class StageResultService {
             e.printStackTrace();
         }
 
-        System.out.println("\n FINAL " + klassementType + " RESULTS FOR STAGE 1:");
+        System.out.println("\n FINAL " + klassementType + " RESULTS FOR STAGE: " + stageOpt.getName());
         for (Map.Entry<String, PointResult> entry : riderResultMap.entrySet()) {
             PointResult pointResult = entry.getValue();
             results.add(pointResult);
@@ -489,7 +492,7 @@ public class StageResultService {
         }
 
         System.out.println(" Found " + results.size() + " riders with points");
-        System.out.println(" ======= END STAGE 1 " + klassementType + " SCRAPING =======\n");
+        System.out.println(" ======= END STAGE " + stageOpt.getName() + " " + klassementType + " SCRAPING =======\n");
         return results;
     }
 
@@ -537,7 +540,11 @@ public class StageResultService {
         return results;
     }
 
+    @Transactional
     public List<PointResult> scrapePointResultForStage(ScrapeResultType scrapeResultType, Long stageId) {
+        
+        pointResultRepository.deleteByStageIdAndScrapeResultType(stageId, scrapeResultType);
+
         List<PointResult> results = new ArrayList<>();
         int resultCount = 0;
         final int MAX_RESULTS = 2000;
@@ -554,7 +561,6 @@ public class StageResultService {
         // if (stage.getName().contains("Stage 1")) {
             System.out.println(" === SPECIAL PROCESSING FOR STAGE " + stageId + " " + stage.getName() + " ===");
             List<PointResult> pointResults = getPointResultsFromStage1(stage.getStageUrl(), scrapeResultType, stageId);
-            results.addAll(pointResults);
             // return pointResults;
         // }    
         // else{
@@ -564,6 +570,71 @@ public class StageResultService {
         //         System.out.println(" No rows found in the selected table.");
         //         return results;
         //     }
+        if (!stage.getName().contains("Stage 1")) {
+            List<Long> cyclistIds = new ArrayList<>();
+            System.out.println(" Stage 1 detected, processing KOM results separately");
+            for (PointResult pr : pointResults) {
+            if (pr.getCyclist() != null) {
+                cyclistIds.add(pr.getCyclist().getId());
+            }
+            }
+            System.out.println(" Cyclist IDs array: " + cyclistIds);
+
+            List<PointResult> pointResultsPrev = pointResultRepository.findByStageIdAndScrapeResultType(stageId - 1, scrapeResultType);
+
+            for (Long cyclistId : cyclistIds) {
+            // Find previous stage's result for this cyclist
+            PointResult prevResult = null;
+            for (PointResult pr : pointResultsPrev) {
+                if (pr.getCyclist() != null && pr.getCyclist().getId().equals(cyclistId)) {
+                prevResult = pr;
+                break;
+                }
+            }
+            if (prevResult != null) {
+                // Find the current stage result for this cyclist
+                PointResult currentResult = null;
+                for (PointResult pr : pointResults) {
+                if (pr.getCyclist() != null && pr.getCyclist().getId().equals(cyclistId)) {
+                    currentResult = pr;
+                    break;
+                }
+                }
+                if (currentResult != null) {
+                System.out.println("Adding previous stage points to existing result for cyclist: " + currentResult.getCyclist().getName());
+                int updatedPoints = currentResult.getPoint() + prevResult.getPoint();
+
+                System.out.println("Updated points for cyclist " + currentResult.getCyclist().getName() + ": " + updatedPoints);
+                currentResult.setPoint(updatedPoints);
+                pointResultRepository.save(currentResult);
+
+                pointResultsPrev.remove(currentResult);
+
+                // Update the object in pointResults as well
+                for (int i = 0; i < pointResults.size(); i++) {
+                    PointResult p = pointResults.get(i);
+                    if (p.getCyclist() != null && p.getCyclist().getId().equals(cyclistId)) {
+                    pointResults.set(i, currentResult);
+                    break;
+                    }
+                }
+                }
+            }
+            }
+        for (PointResult pr: pointResultsPrev) {
+            System.out.println("Adding previous stage points to new result for cyclist: " + pr.getCyclist().getName());
+            PointResult newPointResult = getOrCreatePointResult(stage, pr.getCyclist(), scrapeResultType);
+            fillPointResultFields(newPointResult, pr.getPosition(), pr.getPoint(), scrapeResultType);
+            newPointResult.setRaceStatus(pr.getRaceStatus());
+            pointResultRepository.save(newPointResult);
+            results.add(newPointResult);
+            System.out.println("Added new PointResult for cyclist: " + pr.getCyclist().getName() + " with points: " + pr.getPoint());
+        }
+        } else {
+            System.out.println(" Stage " + stage.getName() + " processed successfully");
+        }
+
+        results.addAll(pointResults);
 
         return results;
     }
