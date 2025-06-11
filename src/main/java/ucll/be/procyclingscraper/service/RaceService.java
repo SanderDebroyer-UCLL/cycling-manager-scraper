@@ -81,7 +81,7 @@ public class RaceService {
     public String getRaceUrlByName(String name) {
         Race race = raceRepository.findByName(name.trim());
         if (race == null) {
-            throw new IllegalArgumentException("Race with name '" + name + "' not found in the database.");
+            throw new IllegalArgumentException("Race met naam '" + name + "' is niet gevonden in de database.");
         }
         return race.getRaceUrl();
     }
@@ -94,72 +94,79 @@ public class RaceService {
         List<Race> races = new ArrayList<>();
 
         try {
-            Document doc = Jsoup.connect(
-                    /////////// Change "racelevel=3" to higher or lower to scrape different amounts
-                    /////////// (level) of races////////////////////////
-                    "https://www.procyclingstats.com/races.php?season=2025&month=&category=1&racelevel=4&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters")
-                    .userAgent(USER_AGENT)
-                    .get();
-            Elements raceRows = doc.select("tbody tr");
+            List<String> urls = new ArrayList<>();
+            //pas maand aan naar wat ge wilt scrapen
+            for (int month = 1; month <= 12; month++) {
+                int currentYear = java.time.LocalDate.now().getYear();
+                urls.add("https://www.procyclingstats.com/races.php?season=" + currentYear + "&month=" + month + "&category=1&racelevel=4&pracelevel=smallerorequal&racenation=&class=&filter=Filter&p=uci&s=calendar-plus-filters");
+            }
+            System.out.println("Scraping URLs: " + urls);
+            for (String url : urls) {
+                Document doc = Jsoup.connect(url)
+                        .userAgent(USER_AGENT)
+                        .get();
 
-            for (Element row : raceRows) {
-                Elements cells = row.select("td");
-                if (cells.size() >= 3) {
-                    Element raceLinkElement = cells.get(1).selectFirst("a");
-                    String raceName = raceLinkElement.text();
-                    String raceHref = raceLinkElement.attr("href");
-                    String raceLevel = cells.get(2).text();
-                    String raceUrl = "https://www.procyclingstats.com/" + raceHref;
-                    Race race = raceRepository.findByName(raceName);
-                    if (race == null) {
-                        race = new Race();
-                    }
+                Elements raceRows = doc.select("tbody tr");
 
-                    try {
-                        Document docRaceInfo = Jsoup.connect(raceUrl).userAgent(USER_AGENT).get();
-                        race.setName(raceName);
-                        race.setNiveau(raceLevel);
-                        race.setRaceUrl(raceUrl);
-                        System.out.println("Race: " + raceName + ", URL: " + raceUrl);
-
-                        Element startDateElement = docRaceInfo
-                                .select("ul.infolist.fs13 li:contains(Startdate:) div:last-child").first();
-                        if (startDateElement != null) {
-                            race.setStartDate(startDateElement.text());
-                            System.out.println("Start date: " + startDateElement.text());
-                        } else {
-                            System.err.println("Start date element not found.");
+                for (Element row : raceRows) {
+                    Elements cells = row.select("td");
+                    if (cells.size() >= 3) {
+                        Element raceLinkElement = cells.get(1).selectFirst("a");
+                        String raceName = raceLinkElement.text();
+                        String raceHref = raceLinkElement.attr("href");
+                        String raceLevel = cells.get(2).text();
+                        String raceUrl = "https://www.procyclingstats.com/" + raceHref;
+                        Race race = raceRepository.findByName(raceName);
+                        if (race == null) {
+                            race = new Race();
                         }
 
-                        Element endDateElement = docRaceInfo
-                                .select("ul.infolist.fs13 li:contains(Enddate:) div:last-child").first();
-                        if (endDateElement != null) {
-                            race.setEndDate(endDateElement.text());
-                            System.out.println("End date: " + endDateElement.text());
-                        } else {
-                            System.err.println("End date element not found.");
-                        }
+                        try {
+                            Document docRaceInfo = Jsoup.connect(raceUrl).userAgent(USER_AGENT).get();
+                            race.setName(raceName);
+                            race.setNiveau(raceLevel);
+                            race.setRaceUrl(raceUrl);
+                            System.out.println("Race: " + raceName + ", URL: " + raceUrl);
 
-                        Element distanceElement = docRaceInfo
-                                .select("ul.infolist.fs13 li:contains(Total distance:) div:last-child").first();
-                        if (distanceElement != null) {
-                            try {
-                                race.setDistance(Integer.parseInt(distanceElement.text().replaceAll("[^0-9]", "")));
-                                System.out.println("Total distance: " + distanceElement.text());
-                            } catch (NumberFormatException e) {
-                                System.err.println("Invalid distance format: " + distanceElement.text());
+                            Element startDateElement = docRaceInfo
+                                    .select("ul.infolist.fs13 li:contains(Startdate:) div:last-child").first();
+                            if (startDateElement != null) {
+                                race.setStartDate(startDateElement.text());
+                                System.out.println("Start date: " + startDateElement.text());
+                            } else {
+                                System.err.println("Start date element not found.");
                             }
-                        } else {
-                            System.err.println("Distance element not found.");
+
+                            Element endDateElement = docRaceInfo
+                                    .select("ul.infolist.fs13 li:contains(Enddate:) div:last-child").first();
+                            if (endDateElement != null) {
+                                race.setEndDate(endDateElement.text());
+                                System.out.println("End date: " + endDateElement.text());
+                            } else {
+                                System.err.println("End date element not found.");
+                            }
+
+                            Element distanceElement = docRaceInfo
+                                    .select("ul.infolist.fs13 li:contains(Total distance:) div:last-child").first();
+                            if (distanceElement != null) {
+                                try {
+                                    race.setDistance(Integer.parseInt(distanceElement.text().replaceAll("[^0-9]", "")));
+                                    System.out.println("Total distance: " + distanceElement.text());
+                                } catch (NumberFormatException e) {
+                                    System.err.println("Invalid distance format: " + distanceElement.text());
+                                }
+                            } else {
+                                System.err.println("Distance element not found.");
+                            }
+                            List<Cyclist> startlist = scrapeAndSaveStartlist(raceUrl + "/startlist", race);
+                            race.setStartList(startlist);
+                            race.setStages(new ArrayList<>());
+                            races.add(race);
+                            raceRepository.save(race);
+                        } catch (Exception e) {
+                            System.err.println("Error scraping stages for race: " + raceName);
+                            e.printStackTrace();
                         }
-                        List<Cyclist> startlist = scrapeAndSaveStartlist(raceUrl + "/startlist", race);
-                        race.setStartList(startlist);
-                        race.setStages(new ArrayList<>());
-                        races.add(race);
-                        raceRepository.save(race);
-                    } catch (Exception e) {
-                        System.err.println("Error scraping stages for race: " + raceName);
-                        e.printStackTrace();
                     }
                 }
             }
@@ -271,7 +278,7 @@ public class RaceService {
 
                     String asterisks = hasAsterisk ? "*" : "";
 
-                    // System.out.println("Extracted Rider Name: " + riderName);
+                    System.out.println("Extracted Rider Name: " + riderName);
 
                     String[] nameParts = riderName.trim().split("\s+");
                     String fixedName = "";
@@ -315,7 +322,7 @@ public class RaceService {
                         if (!isChampionship && teamName.contains("(NAT)")) {
                             System.out.println("Nationaal team gevonden: " + teamName);
                             String riderUrl = riderAnchor.attr("href");
-                            // System.out.println(riderUrl);
+                            System.out.println(riderUrl);
                             if (riderUrl != null && !riderUrl.isEmpty()) {
                                 riderUrl = "https://www.procyclingstats.com/" + riderUrl;
                                 System.out.println("Scraping details from: " + riderUrl);

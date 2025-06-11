@@ -205,7 +205,7 @@ public class StageResultService {
                             cyclist,
                             ScrapeResultType.STAGE);
                     if (timeResult == null) {
-                        System.out.println("✨ Creating new TimeResult for Stage: " + stage.getName());
+                        System.out.println("Creating new TimeResult for Stage: " + stage.getName());
                         timeResult = new TimeResult();
                         System.out.println("Current postion: " + positionCounter);
                         timeResult.setPosition(String.valueOf(positionCounter));
@@ -576,8 +576,7 @@ public class StageResultService {
             status = RaceStatus.DSQ;
         } else if (position.equalsIgnoreCase("OTL")) {
             status = RaceStatus.OTL;
-        }
-        else {
+        } else {
             status = RaceStatus.FINISHED;
         }
 
@@ -600,7 +599,7 @@ public class StageResultService {
         PointResult pointResult = pointResultRepository.findByStageAndCyclistAndScrapeResultType(stage, cyclist,
                 scrapeResultType);
         if (pointResult == null) {
-            System.out.println("✨ Creating new PointResult for Stage: " + stage.getName());
+            System.out.println("Creating new PointResult for Stage: " + stage.getName());
             pointResult = new PointResult();
             pointResult.setStage(stage);
             pointResult.setCyclist(cyclist);

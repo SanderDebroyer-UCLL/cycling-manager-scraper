@@ -101,7 +101,7 @@ class StagePointsServiceTest {
         stageResult.setCyclist(cyclist);
         stageResult.setScrapeResultType(ScrapeResultType.STAGE);
         stageResult.setPosition("1");
-        ((PointResult) stageResult).setPoint(100); 
+        ((PointResult) stageResult).setPoint(100);
         stageResult.setRaceStatus(RaceStatus.FINISHED);
 
         cyclist.setResults(List.of(stageResult));
@@ -140,17 +140,16 @@ class StagePointsServiceTest {
         assertTrue(points.getValue() > 0);
         assertTrue(points.getReason().contains("1e plaats"));
 
-        
     }
 
     @Test
     void createStagePoints_shouldThrowException_whenStageNotFound() {
         when(stageRepository.findById(1L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-            stagePointsService.createStagePoints(10L, 1L));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> stagePointsService.createStagePoints(10L, 1L));
 
-        assertEquals("Stage not found with id: 1", exception.getMessage());
+        assertEquals("Etappe niet gevonden met ID: 1", exception.getMessage());
     }
 
     @Test
@@ -162,10 +161,10 @@ class StagePointsServiceTest {
         when(stageRepository.findById(1L)).thenReturn(Optional.of(stage));
         when(competitionRepository.findById(10L)).thenReturn(Optional.empty());
 
-        var exception = assertThrows(IllegalArgumentException.class, () ->
-            stagePointsService.createStagePoints(10L, 1L));
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> stagePointsService.createStagePoints(10L, 1L));
 
-        assertEquals("Competition not found with id: 10", exception.getMessage());
+        assertEquals("Competitie niet gevonden met ID: 10", exception.getMessage());
     }
 
     @Test
@@ -232,13 +231,13 @@ class StagePointsServiceTest {
         race1.setStages(List.of(stage1, stage2));
 
         Race race2 = new Race();
-        race2.setStages(null); 
+        race2.setStages(null);
 
         comp1.setRaces(Set.of(race1, race2));
 
         Competition comp2 = new Competition();
         comp2.setId(2L);
-        comp2.setRaces(null); 
+        comp2.setRaces(null);
 
         when(competitionRepository.findAll()).thenReturn(List.of(comp1, comp2));
 
@@ -299,7 +298,7 @@ class StagePointsServiceTest {
         when(userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId)).thenReturn(userTeam);
         when(competitionRepository.findById(competitionId)).thenReturn(Optional.of(competition));
         when(stagePointsRepository.findByCompetition_idAndStageResult_Stage_id(competitionId, stageId))
-            .thenReturn(List.of(stagePoints));
+                .thenReturn(List.of(stagePoints));
 
         var resultDTO = stagePointsService.getStagePointsForUserPerCylicst(competitionId, userId, stageId);
 
@@ -370,12 +369,11 @@ class StagePointsServiceTest {
         assertNotNull(result);
 
         assertTrue(result.getMainCyclists().stream()
-            .anyMatch(dto -> dto.getCyclistId().equals(cyclist1.getId()) && dto.getPoints() == 50));
+                .anyMatch(dto -> dto.getCyclistId().equals(cyclist1.getId()) && dto.getPoints() == 50));
 
         assertTrue(result.getReserveCyclists().stream()
-            .anyMatch(dto -> dto.getCyclistId().equals(cyclist2.getId()) && dto.getPoints() == 20));
+                .anyMatch(dto -> dto.getCyclistId().equals(cyclist2.getId()) && dto.getPoints() == 20));
     }
-
 
     @Test
     void getAllStagePointsForAllUsers_shouldReturnTotalPointsPerUser() {
@@ -401,16 +399,14 @@ class StagePointsServiceTest {
         when(userTeamRepository.findByCompetitionId(competitionId)).thenReturn(List.of(userTeam1, userTeam2));
 
         MainReserveCyclistPointsDTO user1Points = new MainReserveCyclistPointsDTO(
-            List.of(new PointsPerUserPerCyclistDTO(15, "Cyclist1", 201L, null, true, 100L)),
-            List.of(new PointsPerUserPerCyclistDTO(15, "Cyclist2", 202L, null, true, 100L))
-        );
+                List.of(new PointsPerUserPerCyclistDTO(15, "Cyclist1", 201L, null, true, 100L)),
+                List.of(new PointsPerUserPerCyclistDTO(15, "Cyclist2", 202L, null, true, 100L)));
 
         // Total points = 15 + 15 = 30 for user1
 
         MainReserveCyclistPointsDTO user2Points = new MainReserveCyclistPointsDTO(
-            List.of(new PointsPerUserPerCyclistDTO(10, "Cyclist3", 203L, null, true, 101L)),
-            List.of()
-        );
+                List.of(new PointsPerUserPerCyclistDTO(10, "Cyclist3", 203L, null, true, 101L)),
+                List.of());
 
         // Total points = 10 for user2
         doReturn(user1Points).when(stagePointsService).getAllStagePoints(competitionId, 100L);
@@ -429,8 +425,4 @@ class StagePointsServiceTest {
         assertEquals("Bob Jones", dto2.getFullName());
     }
 
-
-
-    
 }
-

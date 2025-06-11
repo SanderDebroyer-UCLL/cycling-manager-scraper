@@ -81,7 +81,7 @@ public class Competition {
         if (!this.races.isEmpty() && !this.races.stream().findFirst().get().getStages().isEmpty()) {
             stages = this.races.stream()
                     .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("No race found"))
+                    .orElseThrow(() -> new IllegalStateException("Geen race gevonden"))
                     .getStages();
 
             return stages.stream()

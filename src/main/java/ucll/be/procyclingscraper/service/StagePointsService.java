@@ -65,7 +65,7 @@ public class StagePointsService {
     public boolean createNewStagePoints(CreateStagePointsDTO stagePoints, String email) {
         StagePoints newStagePoints = StagePoints.builder()
                 .competition(competitionRepository.findById(stagePoints.getCompetitionId())
-                        .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: "
+                        .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: "
                                 + stagePoints.getCompetitionId())))
                 .stageId(stagePoints.getStageId())
                 .value(stagePoints.getValue())
@@ -80,10 +80,10 @@ public class StagePointsService {
 
     public List<StagePoints> createStagePoints(Long competitionId, Long stageId) {
         Stage stage = stageRepository.findById(stageId)
-                .orElseThrow(() -> new IllegalArgumentException("Stage not found with id: " + stageId));
+                .orElseThrow(() -> new IllegalArgumentException("Etappe niet gevonden met ID: " + stageId));
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         List<Stage> allStages = new ArrayList<>(stage.getRace().getStages());
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM");
@@ -112,7 +112,7 @@ public class StagePointsService {
         }
 
         if (tempStageNumber == -1) {
-            throw new IllegalStateException("Stage ID not found in competition stages.");
+            throw new IllegalStateException("Etappe ID niet gevonden in de competitie etappes.");
         }
 
         final int currentStageNumber = tempStageNumber;
@@ -199,7 +199,7 @@ public class StagePointsService {
                                     sr.getStage().equals(stage))
                             .findFirst()
                             .orElseThrow(() -> new IllegalStateException(
-                                    "StageResult not found for cyclist " + cyclist.getName()));
+                                    "StageResult niet gevonden voor renner " + cyclist.getName()));
 
                     String reason = reasonPrefix + position + "e plaats in " + getResultTypeInDutch(resultType);
 
@@ -272,7 +272,7 @@ public class StagePointsService {
         List<PointsPerUserPerCyclistDTO> reserveCyclists = new ArrayList<>();
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         List<StageResult> stageResults = competition.getRaces().stream()
                 .flatMap(race -> race.getStages().stream())
@@ -468,7 +468,7 @@ public class StagePointsService {
         UserTeam userTeam = userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId);
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         List<StageResult> stageResults = competition.getRaces().stream()
                 .flatMap(race -> race.getStages().stream())

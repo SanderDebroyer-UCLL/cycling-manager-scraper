@@ -79,7 +79,7 @@ public class AuthController {
         try {
             authenticationManager.authenticate(authentication);
         } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("Invalid password!!");
+            throw new BadCredentialsException("Onjuist wachtwoord!");
         }
     }
 

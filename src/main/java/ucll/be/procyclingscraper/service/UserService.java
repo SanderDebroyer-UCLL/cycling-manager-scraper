@@ -22,7 +22,6 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-
     public List<UserDTO> getAllUsers() {
         List<Object[]> rawUsers = userRepository.findAllBasicUsersWithPointsRaw();
 
@@ -51,7 +50,7 @@ public class UserService {
 
     public User addUser(CreateUserData userData) throws ServiceException {
         if (userRepository.findUserDTOByEmail(userData.getEmail()).isPresent()) {
-            throw new ServiceException("Uh, oh! User with email " + userData.getEmail() + " already exists.");
+            throw new ServiceException("Uh, oh! Gebruiker met email " + userData.getEmail() + " bestaat al.");
         }
 
         User newUser = new User();

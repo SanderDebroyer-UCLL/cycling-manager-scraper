@@ -62,7 +62,7 @@ public class UserTeamService {
                 List<UserTeam> userTeams = userTeamRepository.findByCompetitionId(competitionId);
                 Competition competition = competitionRepository.findById(competitionId)
                                 .orElseThrow(() -> new IllegalArgumentException(
-                                                "Competition not found with id: " + competitionId));
+                                                "Competitie niet gevonden met ID: " + competitionId));
 
                 // Collect stage results and race results separately
                 List<StageResult> stageResults = new ArrayList<>();
@@ -176,7 +176,8 @@ public class UserTeamService {
         public List<UserTeamDTO> updateUserTeam(Long userTeamId, String email, UpdateUserTeamDTO updateUserTeamDTO) {
 
                 UserTeam userTeam = userTeamRepository.findById(userTeamId)
-                                .orElseThrow(() -> new RuntimeException("User team not found with ID: " + userTeamId));
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Gebruiker team niet gevonden met ID: " + userTeamId));
 
                 List<String> updatedMainIds = updateUserTeamDTO.getMainCyclistIds();
                 List<String> updatedReserveIds = updateUserTeamDTO.getReserveCyclistIds();
@@ -186,7 +187,7 @@ public class UserTeamService {
 
                 Competition competition = competitionRepository.findById(userTeam.getCompetitionId())
                                 .orElseThrow(() -> new RuntimeException(
-                                                "Competition not found with ID: " + userTeam.getCompetitionId()));
+                                                "Competitie niet gevonden met ID: " + userTeam.getCompetitionId()));
 
                 Integer currentEvent = competition.getCurrentEvent();
 
@@ -226,7 +227,7 @@ public class UserTeamService {
                         if (!hasActiveMainAssignment) {
                                 Cyclist cyclist = cyclistRepository.findById(cyclistId)
                                                 .orElseThrow(() -> new RuntimeException(
-                                                                "Cyclist not found: " + cyclistId));
+                                                                "Renner niet gevonden: " + cyclistId));
 
                                 CyclistAssignment newAssignment = CyclistAssignment.builder()
                                                 .userTeam(userTeam)
@@ -251,7 +252,7 @@ public class UserTeamService {
                         if (!hasActiveReserveAssignment) {
                                 Cyclist cyclist = cyclistRepository.findById(cyclistId)
                                                 .orElseThrow(() -> new RuntimeException(
-                                                                "Cyclist not found: " + cyclistId));
+                                                                "Renner niet gevonden: " + cyclistId));
 
                                 CyclistAssignment newAssignment = CyclistAssignment.builder()
                                                 .userTeam(userTeam)
@@ -274,11 +275,11 @@ public class UserTeamService {
                 User user = userRepository.findUserByEmail(email);
 
                 Cyclist cyclist = cyclistRepository.findById(cyclistId)
-                                .orElseThrow(() -> new RuntimeException("Cyclist not found with ID: " + cyclistId));
+                                .orElseThrow(() -> new RuntimeException("Renner niet gevonden met ID: " + cyclistId));
 
                 Competition competition = competitionRepository.findById(competitionId)
                                 .orElseThrow(() -> new RuntimeException(
-                                                "Competition not found with ID: " + competitionId));
+                                                "Competitie niet gevonden met ID: " + competitionId));
 
                 final Long originalCurrentPick = competition.getCurrentPick();
                 Long currentPick = originalCurrentPick;
@@ -288,15 +289,15 @@ public class UserTeamService {
                                 .filter(pick -> pick.getPickOrder().equals(originalCurrentPick))
                                 .findFirst()
                                 .orElseThrow(() -> new RuntimeException(
-                                                "Current pick not found for competition ID: " + competitionId));
+                                                "Huidige keuzen niet gevonden voor competitie ID: " + competitionId));
 
                 if (!currentCompetitionPick.getUserId().equals(user.getId())) {
-                        throw new RuntimeException("It's not your turn to pick");
+                        throw new RuntimeException("Het is niet jouw beurt om te kiezen.");
                 }
 
                 // Validate user participation
                 if (user.getCompetitions().stream().noneMatch(c -> c.getId().equals(competitionId))) {
-                        throw new RuntimeException("User not in competition");
+                        throw new RuntimeException("Gebruiker niet in competitie");
                 }
 
                 // Find user's team
@@ -304,7 +305,7 @@ public class UserTeamService {
                                 .filter(team -> team.getCompetitionId().equals(competitionId))
                                 .findFirst()
                                 .orElseThrow(() -> new RuntimeException(
-                                                "User does not have a team in this competition"));
+                                                "Gebruiker heeft geen team in deze competitie"));
 
                 // Prevent duplicate picks
                 for (User otherUser : competition.getUsers()) {
@@ -317,7 +318,7 @@ public class UserTeamService {
                                                                 && a.getToEvent() == null);
 
                                 if (alreadyPicked) {
-                                        throw new RuntimeException("Cyclist is already in a team in this competition");
+                                        throw new RuntimeException("Renner zit al in een team in deze competitie.");
                                 }
                         }
                 }
@@ -335,7 +336,7 @@ public class UserTeamService {
                 int maxReserve = competition.getMaxReserveCyclists();
 
                 if (currentMain + currentReserve >= maxMain + maxReserve) {
-                        throw new RuntimeException("User already has max number of cyclists in their team");
+                        throw new RuntimeException("Gebruiker heeft al het maximaal aantal renners in hun team");
                 }
 
                 CyclistRole roleToAssign;
@@ -344,7 +345,7 @@ public class UserTeamService {
                 } else if (currentReserve < maxReserve) {
                         roleToAssign = CyclistRole.RESERVE;
                 } else {
-                        throw new RuntimeException("No available slot for this cyclist");
+                        throw new RuntimeException("Geen vrije plek voor renner");
                 }
 
                 System.out.println("current stage: " + competition.getCurrentEvent());
