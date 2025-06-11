@@ -608,7 +608,7 @@ public class StageResultService {
                 currentResult.setPoint(updatedPoints);
                 pointResultRepository.save(currentResult);
 
-                pointResultsPrev.remove(currentResult);
+                pointResultsPrev.remove(prevResult);
 
                 // Update the object in pointResults as well
                 for (int i = 0; i < pointResults.size(); i++) {
