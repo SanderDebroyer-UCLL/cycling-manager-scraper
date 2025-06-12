@@ -250,6 +250,54 @@ public class StageResultService {
 
     }
 
+    private void assignPositionsForStage(Long stageId, ScrapeResultType scrapeResultType) {
+        List<PointResult> pointResults = pointResultRepository.findByStageIdAndScrapeResultTypeOrderByPointDesc(stageId, scrapeResultType);
+        List<TimeResult> stageResults = timeResultRepository.findByStageIdAndScrapeResultType(stageId, ScrapeResultType.STAGE);
+
+        // Build a map of cyclist name to position from time results
+        Map<String, String> cyclistWithPosition = new HashMap<>();
+        for (TimeResult stageResult : stageResults) {
+            if (stageResult.getCyclist() != null) {
+                String cyclistName = stageResult.getCyclist().getName();
+                String position = stageResult.getPosition();
+                cyclistWithPosition.put(cyclistName, position);
+            }
+        }
+
+        // Sort point results by points desc, then by position in time results
+        pointResults.sort((a, b) -> {
+            int pointCompare = Integer.compare(b.getPoint(), a.getPoint());
+            if (pointCompare != 0) return pointCompare;
+
+            String nameA = a.getCyclist().getName();
+            String nameB = b.getCyclist().getName();
+            String posAStr = cyclistWithPosition.getOrDefault(nameA, "999");
+            String posBStr = cyclistWithPosition.getOrDefault(nameB, "999");
+            int posA = posAStr.matches("\\d+") ? Integer.parseInt(posAStr) : 999;
+            int posB = posBStr.matches("\\d+") ? Integer.parseInt(posBStr) : 999;
+            return Integer.compare(posA, posB);
+        });
+
+        int rank = 1;
+        for (PointResult result : pointResults) {
+            String origPos = cyclistWithPosition.getOrDefault(
+                result.getCyclist() != null ? result.getCyclist().getName() : "", "999"
+            );
+            // If original position is DNS, DNF, NR, OTL, DSQ, use that instead of rank
+            if (origPos.equalsIgnoreCase("DNS") ||
+                origPos.equalsIgnoreCase("DNF") ||
+                origPos.equalsIgnoreCase("NR") ||
+                origPos.equalsIgnoreCase("OTL") ||
+                origPos.equalsIgnoreCase("DSQ")) {
+                result.setPosition(origPos);
+            } else {
+                result.setPosition(String.valueOf(rank));
+                rank++;
+            }
+            stageResultRepository.save(result);
+        }
+    }
+
     public List<TimeResult> scrapeResultsForTTTStages() {
         List<Stage> allStages = stageRepository.findAll(Sort.by("id"));
         List<Stage> tttStages = new ArrayList<>();
@@ -440,44 +488,7 @@ public class StageResultService {
                 
             }
 
-            // Special fix for Stage 1 where multiple entries can have the same position
-            HashMap<String, String> cyclistWithPosition = new HashMap<>();
-            // if (stageOpt.getName().contains("Stage 1")) {
-            List<TimeResult> stageResults = timeResultRepository.findByStageIdAndScrapeResultType(stageId, ScrapeResultType.STAGE);
-            System.out.println("Stage1Function: Stageresults to use as reference: " + stageResults.size());
-
-            for (TimeResult stageResult : stageResults) {
-                if (stageResult.getCyclist() != null) {
-                    String cyclistName = stageResult.getCyclist().getName();
-                    String position = stageResult.getPosition();
-                    cyclistWithPosition.put(cyclistName, position);
-                }
-            }
-
-            System.out.println("Constructed hashmap of cyclists with positions: " + cyclistWithPosition.size() + " entries");
-
-            List<PointResult> komResults = pointResultRepository.findByStageIdAndScrapeResultTypeOrderByPointDesc(stageId, scrapeResultType);
-
-            // Sort further by position in hashmap if points are equal
-            komResults.sort((a, b) -> {
-                int pointCompare = Integer.compare(b.getPoint(), a.getPoint()); // DESC
-                if (pointCompare != 0) return pointCompare;
-
-                String nameA = a.getCyclist().getName();
-                String nameB = b.getCyclist().getName();
-                String posAStr = cyclistWithPosition.getOrDefault(nameA, "999");
-                String posBStr = cyclistWithPosition.getOrDefault(nameB, "999");
-                int posA = posAStr.matches("\\d+") ? Integer.parseInt(posAStr) : 999;
-                int posB = posBStr.matches("\\d+") ? Integer.parseInt(posBStr) : 999;
-                return Integer.compare(posA, posB); // ASC
-            });
-
-            int rank = 1;
-            for (PointResult result : komResults) {
-                result.setPosition(String.valueOf(rank));
-                stageResultRepository.save(result); 
-                rank++;
-            }   
+            assignPositionsForStage(stageId, scrapeResultType);
         } catch (Exception e) {
             System.err.println(" Failed to retrieve point results: " + e.getMessage());
             e.printStackTrace();
@@ -571,6 +582,7 @@ public class StageResultService {
         //         System.out.println(" No rows found in the selected table.");
         //         return results;
         //     }
+        List<TimeResult> stageResults = timeResultRepository.findByStageIdAndScrapeResultType(stageId, ScrapeResultType.STAGE);
         if (!stage.getName().contains("Stage 1")) {
             List<Long> cyclistIds = new ArrayList<>();
             System.out.println("Stage is not 1, fetching previous stages results");
@@ -622,25 +634,44 @@ public class StageResultService {
                 }
             }
         }
+        
         for (PointResult pr: pointResultsPrev) {
             System.out.println("Adding remaining previous stage points to new result for cyclist: " + pr.getCyclist().getName());
-            PointResult newPointResult = getOrCreatePointResult(stage, pr.getCyclist(), scrapeResultType);
-            fillPointResultFields(newPointResult, pr.getPosition(), pr.getPoint(), scrapeResultType);
-            newPointResult.setRaceStatus(pr.getRaceStatus());
-            pointResultRepository.save(newPointResult);
-            results.add(newPointResult);
-            System.out.println("Added new PointResult for cyclist: " + pr.getCyclist().getName() + " with points: " + pr.getPoint());
+            // Only add if position is NOT DNS, DNF, NR, OTL, DSQ (case-insensitive)
+            String pos = pr.getPosition();
+            // Find the corresponding TimeResult for this cyclist in stageResults
+            String stageResultPosition = null;
+            for (TimeResult tr : stageResults) {
+                if (tr.getCyclist() != null && pr.getCyclist() != null &&
+                    tr.getCyclist().getId().equals(pr.getCyclist().getId())) {
+                    stageResultPosition = tr.getPosition();
+                    break;
+                }
+            }
+            if (stageResultPosition != null &&
+                !(stageResultPosition.equalsIgnoreCase("DNS") ||
+                  stageResultPosition.equalsIgnoreCase("DNF") ||
+                  stageResultPosition.equalsIgnoreCase("NR") ||
+                  stageResultPosition.equalsIgnoreCase("OTL") ||
+                  stageResultPosition.equalsIgnoreCase("DSQ"))) {
+                PointResult newPointResult = getOrCreatePointResult(stage, pr.getCyclist(), scrapeResultType);
+                fillPointResultFields(newPointResult, pr.getPosition(), pr.getPoint(), scrapeResultType);
+                newPointResult.setRaceStatus(pr.getRaceStatus());
+                pointResultRepository.save(newPointResult);
+                results.add(newPointResult);
+                System.out.println("Added new PointResult for cyclist: " + pr.getCyclist().getName() + " with points: " + pr.getPoint());
+            }
         }
         } else {
             System.out.println(" Stage " + stage.getName() + " processed successfully");
         }
 
         results.addAll(pointResults);
-
+        // List<TimeResult> stageResults = timeResultRepository.findByStageIdAndScrapeResultType(stageId, ScrapeResultType.STAGE);
         // Special fix for Stage 1 where multiple entries can have the same position
         HashMap<String, String> cyclistWithPosition = new HashMap<>();
         // if (stageOpt.getName().contains("Stage 1")) {
-        List<TimeResult> stageResults = timeResultRepository.findByStageIdAndScrapeResultType(stageId, ScrapeResultType.STAGE);
+       
         System.out.println("Stageresults to use as reference: " + stageResults.size());
         for (TimeResult stageResult : stageResults) {
             if (stageResult.getCyclist() != null) {
@@ -651,28 +682,7 @@ public class StageResultService {
         }
 
         System.out.println("Constructed hashmap of cyclists with positions: " + cyclistWithPosition.size() + " entries");
-        List<PointResult> komResults = pointResultRepository.findByStageIdAndScrapeResultTypeOrderByPointDesc(stageId, scrapeResultType);
-
-        // Sort further by position in hashmap if points are equal
-        komResults.sort((a, b) -> {
-            int pointCompare = Integer.compare(b.getPoint(), a.getPoint()); // DESC
-            if (pointCompare != 0) return pointCompare;
-
-            String nameA = a.getCyclist().getName();
-            String nameB = b.getCyclist().getName();
-            String posAStr = cyclistWithPosition.getOrDefault(nameA, "999");
-            String posBStr = cyclistWithPosition.getOrDefault(nameB, "999");
-            int posA = posAStr.matches("\\d+") ? Integer.parseInt(posAStr) : 999;
-            int posB = posBStr.matches("\\d+") ? Integer.parseInt(posBStr) : 999;
-            return Integer.compare(posA, posB); // ASC
-        });
-
-        int rank = 1;
-        for (PointResult result : komResults) {
-            result.setPosition(String.valueOf(rank));
-            stageResultRepository.save(result); 
-            rank++;
-        }   
+        assignPositionsForStage(stageId, scrapeResultType);
         return results;
     }
 
@@ -686,6 +696,8 @@ public class StageResultService {
             status = RaceStatus.DSQ;
         } else if (position.equalsIgnoreCase("OTL")) {
             status = RaceStatus.OTL;
+        } else if (position.equalsIgnoreCase("NR")) {
+            status = RaceStatus.NR;
         } else {
             status = RaceStatus.FINISHED;
         }
