@@ -31,7 +31,7 @@ public class TeamService {
         List<Team> teams = new ArrayList<>();
 
         try {
-            Document doc = Jsoup.connect("https://www.procyclingstats.com/rankings/me/teams")
+            Document doc = Jsoup.connect("https://w*+ww.procyclingstats.com/rankings/me/teams")
                     .userAgent(USER_AGENT)
                     .get();
             Elements rows = doc.select("tbody tr");
