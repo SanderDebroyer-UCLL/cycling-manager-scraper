@@ -1,5 +1,5 @@
 package ucll.be.procyclingscraper.repository;
-    import java.util.List;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -29,4 +29,6 @@ public interface TimeResultRepository extends JpaRepository<TimeResult,Long> {
         @Param("scrapeResultType") ScrapeResultType scrapeResultType,
         @Param("cyclistIds") List<Long> cyclistIds
     );
+
+    List<TimeResult> findByStageIdAndScrapeResultType(Long stageId, ScrapeResultType stage);
 }
