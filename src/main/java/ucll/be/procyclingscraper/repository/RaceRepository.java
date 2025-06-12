@@ -25,4 +25,7 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
 
     @Query("SELECT r FROM Race r JOIN r.competitions c WHERE c.id = :competitionId ORDER BY r.startDate ASC")
     List<Race> findByCompetitionIdOrderByStartDateAsc(@Param("competitionId") Long competitionId);
+
+    @Query("SELECT r FROM Race r ORDER BY r.id ASC")
+    List<Race> findAllOrderByIdAsc();
 }

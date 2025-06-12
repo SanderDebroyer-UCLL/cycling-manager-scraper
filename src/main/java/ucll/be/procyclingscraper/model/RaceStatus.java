@@ -5,5 +5,6 @@ public enum RaceStatus {
     DNS,
     DNF,
     DSQ,
-    OTL
+    OTL, 
+    NR
 }

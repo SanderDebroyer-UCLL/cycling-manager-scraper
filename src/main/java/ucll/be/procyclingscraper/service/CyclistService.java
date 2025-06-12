@@ -209,11 +209,19 @@ public class CyclistService {
 
             // System.out.println("Trying rearranged name: " + fixedName);
 
-            Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
-            if (cyclist != null) {
-                System.out.println("Found cyclist: " + fixedName);
-                return cyclist;
+            try {
+                Cyclist cyclist = cyclistRepository.findByNameIgnoreCase(fixedName);
+                if (cyclist != null) {
+                    System.out.println("Found cyclist: " + fixedName);
+                    return cyclist;
+                } 
+            } catch (Exception e) {
+                System.err.println("Error searching for cyclist: " + fixedName);
+                e.printStackTrace();
+                continue; // Continue to the next iteration if an error occurs
             }
+            
+            
         }
 
         System.out.println("No cyclist found for name: " + riderName);
