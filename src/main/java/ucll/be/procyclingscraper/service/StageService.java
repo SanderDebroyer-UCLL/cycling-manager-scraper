@@ -100,7 +100,6 @@ public class StageService {
                             if (stage == null) {
                                 stage = new Stage();
                             }
-                            // TODO: check if this doesnt break anything
                             stage.setStageUrl(stageUrl);
                             stage.setDate(date);
                             stage.setName(stageName);
