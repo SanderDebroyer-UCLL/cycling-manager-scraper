@@ -455,10 +455,12 @@ public class StageResultService {
                         System.out.println(" Cyclist not found: " + riderName);
                         continue;
                     }
-
+                    
                     int pointValue = 0;
                     try {
-                        pointValue = Integer.parseInt(point.replaceAll("[^\\d]", ""));
+                        // Check for negative sign before parsing
+                        String cleanedPoint = point.replaceAll("[^\\d-]", "");
+                        pointValue = Integer.parseInt(cleanedPoint);
                     } catch (NumberFormatException e) {
                         System.out.println(" Invalid point value: " + point);
                     }
