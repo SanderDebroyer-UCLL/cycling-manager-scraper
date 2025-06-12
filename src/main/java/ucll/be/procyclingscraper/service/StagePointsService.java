@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.CreateStagePointsDTO;
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserPerCyclistDTO;
@@ -37,6 +38,7 @@ import ucll.be.procyclingscraper.repository.CompetitionRepository;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.StagePointsRepository;
 import ucll.be.procyclingscraper.repository.StageRepository;
+import ucll.be.procyclingscraper.repository.UserRepository;
 import ucll.be.procyclingscraper.repository.UserTeamRepository;
 
 @Service
@@ -57,12 +59,31 @@ public class StagePointsService {
     @Autowired
     private StageRepository stageRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    public boolean createNewStagePoints(CreateStagePointsDTO stagePoints, String email) {
+        StagePoints newStagePoints = StagePoints.builder()
+                .competition(competitionRepository.findById(stagePoints.getCompetitionId())
+                        .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: "
+                                + stagePoints.getCompetitionId())))
+                .stageId(stagePoints.getStageId())
+                .value(stagePoints.getValue())
+                .reason(stagePoints.getReason())
+                .user(userRepository.findUserByEmail(email))
+                .stageResult(null)
+                .build();
+
+        stagePointsRepository.save(newStagePoints);
+        return true;
+    }
+
     public List<StagePoints> createStagePoints(Long competitionId, Long stageId) {
         Stage stage = stageRepository.findById(stageId)
-                .orElseThrow(() -> new IllegalArgumentException("Stage not found with id: " + stageId));
+                .orElseThrow(() -> new IllegalArgumentException("Etappe niet gevonden met ID: " + stageId));
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         List<Stage> allStages = new ArrayList<>(stage.getRace().getStages());
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM");
@@ -91,7 +112,7 @@ public class StagePointsService {
         }
 
         if (tempStageNumber == -1) {
-            throw new IllegalStateException("Stage ID not found in competition stages.");
+            throw new IllegalStateException("Etappe ID niet gevonden in de competitie etappes.");
         }
 
         final int currentStageNumber = tempStageNumber;
@@ -147,14 +168,11 @@ public class StagePointsService {
 
                     if (resultOption.isPresent()) {
                         StageResult result = resultOption.get();
-                        if ("OTL".equals(result.getPosition()) ||
-                                "DNF".equals(result.getPosition()) ||
-                                "DQS".equals(result.getPosition()) ||
-                                "DNS".equals(result.getPosition())) {
-                            continue; // Skip these results
+                        try {
+                            position = Integer.parseInt(result.getPosition());
+                        } catch (NumberFormatException e) {
+                            continue; // Skip if position is not a valid number
                         }
-                        position = Integer.parseInt(result.getPosition());
-
                         // Calculate points based on result type and whether it's the last stage
                         if (isLastStage && (resultType == ScrapeResultType.GC ||
                                 resultType == ScrapeResultType.POINTS ||
@@ -181,7 +199,7 @@ public class StagePointsService {
                                     sr.getStage().equals(stage))
                             .findFirst()
                             .orElseThrow(() -> new IllegalStateException(
-                                    "StageResult not found for cyclist " + cyclist.getName()));
+                                    "StageResult niet gevonden voor renner " + cyclist.getName()));
 
                     String reason = reasonPrefix + position + "e plaats in " + getResultTypeInDutch(resultType);
 
@@ -254,7 +272,7 @@ public class StagePointsService {
         List<PointsPerUserPerCyclistDTO> reserveCyclists = new ArrayList<>();
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         List<StageResult> stageResults = competition.getRaces().stream()
                 .flatMap(race -> race.getStages().stream())
@@ -450,7 +468,7 @@ public class StagePointsService {
         UserTeam userTeam = userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId);
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         List<StageResult> stageResults = competition.getRaces().stream()
                 .flatMap(race -> race.getStages().stream())
@@ -533,7 +551,7 @@ public class StagePointsService {
         return new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
     }
 
-    private boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber, int lastStageNumber) {
+    boolean isCyclistActiveInStage(CyclistAssignment assignment, int stageNumber, int lastStageNumber) {
 
         if (assignment.getFromEvent() == null && assignment.getToEvent() == null) {
             return false;

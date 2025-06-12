@@ -29,7 +29,7 @@ public class WebScraperService {
 
             result.setLinks(links);
         } catch (IOException e) {
-            result.setError("Failed to scrape: " + e.getMessage());
+            result.setError("Scrapen mislukt: " + e.getMessage());
         }
 
         return result;

@@ -11,7 +11,6 @@ import ucll.be.procyclingscraper.service.CyclistService;
 
 import java.util.List;
 
-
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/cyclists")
@@ -32,5 +31,5 @@ public class CyclistController {
     public List<CyclistDTO> getCyclists() {
         return cyclistService.getCyclists();
     }
-    
+
 }

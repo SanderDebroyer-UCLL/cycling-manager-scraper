@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ucll.be.procyclingscraper.dto.CompetitionDTO;
-import ucll.be.procyclingscraper.dto.CompetitionModel;
 import ucll.be.procyclingscraper.dto.CountNotification;
 import ucll.be.procyclingscraper.dto.CreateCompetitionData;
 import ucll.be.procyclingscraper.dto.OrderNotification;
@@ -73,9 +72,23 @@ public class CompetitionService {
         return competitionRepository.findAll();
     }
 
+    public Boolean getResultsForAllCompetitions() {
+        List<Competition> competitions = competitionRepository.findAll();
+        for (Competition competition : competitions) {
+            try {
+                getResults(competition.getId());
+            } catch (IOException e) {
+                System.err.println(
+                        "Error fetching results for competition ID " + competition.getId() + ": " + e.getMessage());
+                return false; // or handle the error as needed
+            }
+        }
+        return true;
+    }
+
     public Boolean getResults(Long competitionId) throws IOException {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         if (!competition.getRaces().isEmpty()
                 && !competition.getRaces().stream().findFirst().get().getStages().isEmpty()) {
@@ -85,14 +98,14 @@ public class CompetitionService {
             raceResultService.getRaceResultsForAllRacesInCompetition(competitionId);
             racePointsService.createRacePointsForAllExistingResults();
         } else {
-            throw new IllegalArgumentException("Competition with ID " + competitionId + " has no races or stages.");
+            throw new IllegalArgumentException("Competitie met ID " + competitionId + " heeft geen races of etappes.");
         }
         return true;
     }
 
     public CompetitionDTO scrapeCompetitionStages(Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         Set<Race> races = competition.getRaces();
 
@@ -109,7 +122,7 @@ public class CompetitionService {
 
         // Re-fetch updated race entities (to make sure we get updated stages from DB)
         competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalStateException("Competition disappeared after scraping"));
+                .orElseThrow(() -> new IllegalStateException("Competitie verdwenen na het scrapen"));
 
         // Convert races to DTOs
         Set<RaceDTO> raceDTOs = competition.getRaces().stream().map(race -> {
@@ -158,8 +171,7 @@ public class CompetitionService {
     }
 
     public Set<CompetitionDTO> getCompetitions(String email) {
-        User currentUser = userRepository.findUserByEmail(email);
-        Set<Competition> competitions = currentUser.getCompetitions();
+        Set<Competition> competitions = competitionRepository.findByUsers_Email(email);
 
         Set<CompetitionDTO> competitionDTOs = new HashSet<>();
         for (Competition competition : competitions) {
@@ -272,9 +284,9 @@ public class CompetitionService {
     @Transactional
     public CountNotification handleCyclistCount(int maxMainCyclists, int maxReserveCyclists, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
         if (maxMainCyclists < 0 || maxReserveCyclists < 0) {
-            throw new IllegalArgumentException("Cyclist counts must be non-negative");
+            throw new IllegalArgumentException("Cyclist optelling moet positief zijn.");
         }
 
         competition.setMaxMainCyclists(maxMainCyclists);
@@ -292,7 +304,7 @@ public class CompetitionService {
     @Transactional
     public StatusNotification updateCompetitionStatus(CompetitionStatus status, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         competition.setCompetitionStatus(status);
         competitionRepository.save(competition);
@@ -304,7 +316,7 @@ public class CompetitionService {
     @Transactional
     public OrderNotification updateOrderToCompetition(List<UserModel> users, Long competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with ID: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         // Clear existing picks if you want to replace them
         competition.getCompetitionPicks().clear();
@@ -329,18 +341,18 @@ public class CompetitionService {
         return notification;
     }
 
-    public Competition createCompetition(CreateCompetitionData competitionData) {
+    public CompetitionDTO createCompetition(CreateCompetitionData competitionData) {
 
-        System.out.println("Received competitionData: " + competitionData);
+        System.out.println("Ontvangen competitieData: " + competitionData);
 
         Competition existingCompetition = competitionRepository.findByName(competitionData.getName());
         if (existingCompetition != null) {
-            throw new IllegalArgumentException("Competition with this name already exists");
+            throw new IllegalArgumentException("Competitie met deze naam bestaat al");
         }
 
         Competition competition = new Competition(competitionData.getName());
 
-        // First save the competition (to get its ID if needed)
+        // First save the competition to generate ID
         competition = competitionRepository.save(competition);
 
         competition.setCompetitionStatus(CompetitionStatus.SORTING);
@@ -349,59 +361,90 @@ public class CompetitionService {
         competition.setMaxMainCyclists(15);
         competition.setMaxReserveCyclists(5);
 
-        Long pickOrder = 1L; // initialize pick order for users
+        Long pickOrder = 1L;
 
         for (String email : competitionData.getUserEmails()) {
             User user = userRepository.findUserByEmail(email);
             if (user == null) {
-                throw new IllegalArgumentException("User with email " + email + " not found.");
-            } else {
-                competition.getUsers().add(user);
-
-                // Create a CompetitionPick for the user
-                CompetitionPick pick = new CompetitionPick();
-                pick.setCompetition(competition);
-                pick.setUserId(user.getId());
-                pick.setPickOrder(pickOrder++);
-                competition.getCompetitionPicks().add(pick);
-
-                // Create a user team for this user
-                UserTeam userTeam = UserTeam.builder()
-                        .name(user.getFirstName() + " " + user.getLastName() + "'s Team") // Or any naming logic
-                        .competitionId(competition.getId())
-                        .user(user)
-                        .cyclistAssignments(new ArrayList<>()) // Empty initial list
-                        .build();
-
-                userTeamRepository.save(userTeam);
+                throw new IllegalArgumentException("User met email " + email + " niet gevonden.");
             }
+
+            competition.getUsers().add(user);
+
+            // Create CompetitionPick
+            CompetitionPick pick = new CompetitionPick();
+            pick.setCompetition(competition);
+            pick.setUserId(user.getId());
+            pick.setPickOrder(pickOrder++);
+            competition.getCompetitionPicks().add(pick);
+
+            // Create UserTeam
+            UserTeam userTeam = UserTeam.builder()
+                    .name(user.getFirstName() + " " + user.getLastName() + "'s Team")
+                    .competitionId(competition.getId())
+                    .user(user)
+                    .cyclistAssignments(new ArrayList<>())
+                    .build();
+
+            userTeamRepository.save(userTeam);
         }
 
         for (String raceId : competitionData.getRaceIds()) {
-
             Race race = raceRepository.findById(Long.parseLong(raceId)).orElse(null);
             if (race == null) {
-                System.out.println("Race with ID " + raceId + " not found.");
+                System.out.println("Race met ID " + raceId + " niet gevonden.");
                 continue;
             }
             competition.getRaces().add(race);
         }
 
-        // Save updated competition with users, races, and picks
-        return competitionRepository.save(competition);
-    }
+        // Save updated competition
+        competition = competitionRepository.save(competition);
 
-    public List<CompetitionModel> getCompetitionDTOs() {
-        List<Competition> competitions = competitionRepository.findAll();
-        List<CompetitionModel> competitionDTOs = new ArrayList<>();
+        // Convert races to DTOs
+        Set<RaceDTO> raceDTOs = competition.getRaces().stream().map(race -> {
+            List<StageDTO> stageDTOs = race.getStages().stream().map(stage -> new StageDTO(
+                    stage.getId(),
+                    stage.getName(),
+                    stage.getDeparture(),
+                    stage.getArrival(),
+                    stage.getDate().toString(),
+                    stage.getStartTime(),
+                    stage.getDistance(),
+                    stage.getStageUrl(),
+                    stage.getVerticalMeters(),
+                    stage.getParcoursType())).collect(Collectors.toList());
 
-        for (Competition competition : competitions) {
-            CompetitionModel competitionDTO = new CompetitionModel();
-            competitionDTO.setId(competition.getId());
-            competitionDTO.setName(competition.getName());
-            competitionDTOs.add(competitionDTO);
-        }
+            return new RaceDTO(
+                    race.getId(),
+                    race.getName(),
+                    race.getNiveau(),
+                    race.getStartDate().toString(),
+                    race.getEndDate().toString(),
+                    race.getDistance(),
+                    race.getRaceUrl(),
+                    race.getCompetitions().stream().map(c -> c.getId()).collect(Collectors.toList()),
+                    stageDTOs);
+        }).collect(Collectors.toSet());
 
-        return competitionDTOs;
+        // Convert users to DTOs
+        Set<UserDTO> userDTOs = competition.getUsers().stream().map(user -> new UserDTO(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getRole(), 0)).collect(Collectors.toSet());
+
+        // Create and return the DTO
+        return new CompetitionDTO(
+                competition.getId(),
+                competition.getName(),
+                raceDTOs,
+                userDTOs,
+                competition.getCompetitionStatus(),
+                competition.getMaxMainCyclists(),
+                competition.getMaxReserveCyclists(),
+                competition.getCurrentPick(),
+                competition.getCompetitionPicks());
     }
 }

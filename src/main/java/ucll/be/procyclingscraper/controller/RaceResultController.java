@@ -14,8 +14,8 @@ import ucll.be.procyclingscraper.model.RaceResult;
 import ucll.be.procyclingscraper.service.RaceResultService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/raceResults")
+@CrossOrigin(origins = "*")
 public class RaceResultController {
 
     @Autowired
@@ -28,7 +28,6 @@ public class RaceResultController {
 
     @GetMapping("/scrape/{raceId}")
     public List<RaceResult> getOneDayRaceResultById(@PathVariable Long raceId) throws IOException {
-        System.out.println("I entered the controller");
         return raceResultService.scrapeOneDayRaceResultsById(raceId);
     }
 

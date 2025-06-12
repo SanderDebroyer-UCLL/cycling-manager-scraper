@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ucll.be.procyclingscraper.model.CompetitionStatus;
 
-
 @Setter
 @Getter
 @AllArgsConstructor

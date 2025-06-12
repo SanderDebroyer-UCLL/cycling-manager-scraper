@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ucll.be.procyclingscraper.dto.CreateRacePointsDTO;
 import ucll.be.procyclingscraper.dto.MainReserveCyclistPointsDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserDTO;
 import ucll.be.procyclingscraper.dto.PointsPerUserPerCyclistDTO;
@@ -32,6 +33,7 @@ import ucll.be.procyclingscraper.repository.CompetitionRepository;
 import ucll.be.procyclingscraper.repository.CyclistRepository;
 import ucll.be.procyclingscraper.repository.RacePointsRepository;
 import ucll.be.procyclingscraper.repository.RaceRepository;
+import ucll.be.procyclingscraper.repository.UserRepository;
 import ucll.be.procyclingscraper.repository.UserTeamRepository;
 
 @Service
@@ -52,6 +54,25 @@ public class RacePointsService {
     @Autowired
     private CyclistRepository cyclistRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    public boolean createNewRacePoints(CreateRacePointsDTO racePoints, String email) {
+        RacePoints newRacePoints = RacePoints.builder()
+                .competition(competitionRepository.findById(racePoints.getCompetitionId())
+                        .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: "
+                                + racePoints.getCompetitionId())))
+                .raceId(racePoints.getRaceId())
+                .value(racePoints.getValue())
+                .reason(racePoints.getReason())
+                .user(userRepository.findUserByEmail(email))
+                .raceResult(null)
+                .build();
+
+        racePointsRepository.save(newRacePoints);
+        return true;
+    }
+
     public void createRacePointsForAllExistingResults() {
         List<Competition> competitions = competitionRepository.findAll();
         for (Competition competition : competitions) {
@@ -59,6 +80,8 @@ public class RacePointsService {
             if (races == null)
                 continue;
             for (Race race : races) {
+                if (!race.getStages().isEmpty())
+                    continue;
                 createRacePoints(competition.getId(), race.getId());
             }
         }
@@ -66,10 +89,10 @@ public class RacePointsService {
 
     public List<RacePoints> createRacePoints(Long competitionId, Long raceId) {
         Race race = raceRepository.findById(raceId)
-                .orElseThrow(() -> new IllegalArgumentException("Race not found with id: " + raceId));
+                .orElseThrow(() -> new IllegalArgumentException("Race niet gevonden met ID: " + raceId));
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         // 1. Get all races in competition and sort by start_date
         List<Race> allRaces = new ArrayList<>(competition.getRaces());
@@ -96,7 +119,7 @@ public class RacePointsService {
         }
 
         if (tempRaceNumber == -1) {
-            throw new IllegalStateException("Race ID not found in competition races.");
+            throw new IllegalStateException("Race ID niet gevonden in de competitie races.");
         }
 
         final int currentRaceNumber = tempRaceNumber;
@@ -149,7 +172,7 @@ public class RacePointsService {
                         .filter(rr -> rr.getRace().equals(race))
                         .findFirst()
                         .orElseThrow(() -> new IllegalStateException(
-                                "RaceResult not found for cyclist " + cyclist.getName()));
+                                "RaceResultaat niet gevonden voor renner " + cyclist.getName()));
 
                 String reason = position + "e";
 
@@ -188,7 +211,7 @@ public class RacePointsService {
         List<PointsPerUserPerCyclistDTO> reserveCyclists = new ArrayList<>();
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         List<RaceResult> raceResults = competition.getRaces().stream()
                 .flatMap(race -> race.getRaceResult().stream())
@@ -271,7 +294,7 @@ public class RacePointsService {
                 .distinct()
                 .collect(Collectors.toList());
 
-        System.out.println("Found " + users.size() + " users for competition " + competitionId);
+        System.out.println(users.size() + "gebruikers gevonden voor competitie " + competitionId);
 
         // Only race points relevant to the race
         List<RacePoints> racePointsList = users.stream()
@@ -280,7 +303,7 @@ public class RacePointsService {
                 .filter(rp -> raceId.equals(rp.getRaceId()))
                 .collect(Collectors.toList());
 
-        System.out.println("Found " + racePointsList.size() + " race points for race " + raceId);
+        System.out.println(racePointsList.size() + " race punten gevonden voor race " + raceId);
 
         // Create a map for efficient lookup: userId -> cyclistId -> RacePoints
         Map<Long, Map<Long, List<RacePoints>>> userCyclistPointsMap = racePointsList.stream()
@@ -375,7 +398,7 @@ public class RacePointsService {
         UserTeam userTeam = userTeamRepository.findByCompetitionIdAndUser_Id(competitionId, userId);
 
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found with id: " + competitionId));
+                .orElseThrow(() -> new IllegalArgumentException("Competitie niet gevonden met ID: " + competitionId));
 
         List<RaceResult> raceResults = competition.getRaces().stream()
                 .flatMap(race -> race.getRaceResult().stream())
@@ -457,7 +480,7 @@ public class RacePointsService {
         return new MainReserveCyclistPointsDTO(mainCyclists, reserveCyclists);
     }
 
-    private boolean isCyclistActiveInRace(CyclistAssignment assignment, int raceNumber) {
+    boolean isCyclistActiveInRace(CyclistAssignment assignment, int raceNumber) {
         if (assignment.getFromEvent() == null && assignment.getToEvent() == null) {
             return false;
         }

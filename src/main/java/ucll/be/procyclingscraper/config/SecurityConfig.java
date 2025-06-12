@@ -21,7 +21,6 @@ public class SecurityConfig {
 
         private JwtAuthEntryPoint jwtAuthEntryPoint;
 
-
         public SecurityConfig(JwtAuthFilter filter, JwtAuthEntryPoint jwtAuthEntryPoint,
                         UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
                 this.jwtAuthEntryPoint = jwtAuthEntryPoint;
