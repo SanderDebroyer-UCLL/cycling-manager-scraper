@@ -64,6 +64,9 @@ public class StageResultService {
     @Autowired
     CompetitionRepository competitionRepository;
 
+    @Autowired
+    StagePointsService stagePointsService;
+
     // For TTT Stage format: "31.58,21" => 31 min, 58 sec, 21 hundredths
     public List<Integer> manipulateStringF1(String timeStr) {
         // Split on comma
@@ -1030,6 +1033,8 @@ public class StageResultService {
         scrapePointResultForStage(ScrapeResultType.POINTS, stage.getId());
         scrapePointResultForStage(ScrapeResultType.KOM, stage.getId());
         calculateYouthTimeResultForRace(stage.getRace().getId(), ScrapeResultType.YOUTH);
+
+        stagePointsService.createStagePointsForAllExistingResults();
 
         return true;
     }
